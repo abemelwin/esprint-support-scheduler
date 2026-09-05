@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ES Print Group — Support Team Scheduler</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --surface-2: #f4f3f0;
+    --surface-3: #eceae5;
+    --page: #f9f9f7;
+    --ink-1: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+
+    /* service type hues */
+    --t-install: #4a3aa7;  /* violet */
+    --t-onsite:  #2a78d6;  /* blue */
+    --t-hotline: #eb6834;  /* orange */
+    --t-others:  #6d6b66;  /* slate */
+
+    /* role hues */
+    --senior: #2a78d6;
+    --junior: #1baf7a;
+    --trainee: #eda100;
+    --sm-mgr: #4a3aa7;
+    --role-bsm: #b5179e;
+
+    /* status */
+    --st-success: #0ca30c;
+    --st-success-ink: #006300;
+    --st-pending: #898781;
+    --st-ongoing: #2a78d6;
+    --st-fail: #d03b3b;
+
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(11,11,11,0.06), 0 4px 16px rgba(11,11,11,0.05);
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --surface-2: #232322;
+    --surface-3: #2c2c2a;
+    --page: #0d0d0d;
+    --ink-1: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --t-install: #9085e9;
+    --t-onsite:  #3987e5;
+    --t-hotline: #d95926;
+    --t-others:  #8a8880;
+    --senior: #3987e5;
+    --junior: #199e70;
+    --trainee: #c98500;
+    --sm-mgr: #9085e9;
+    --role-bsm: #d55181;
+    --st-success: #0ca30c;
+    --st-success-ink: #0ca30c;
+    --st-ongoing: #3987e5;
+    --st-fail: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font); background: var(--page); color: var(--ink-1);
+    font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+  }
+
+  header.app {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px 20px; background: var(--surface-1); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 30;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .logo { width: 38px; height: 38px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--senior), var(--sm-mgr));
+    display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px; }
+  header.app h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  header.app .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .spacer { flex: 1; }
+
+  .tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 3px; border-radius: 9px; }
+  .tabs button { border: none; background: transparent; color: var(--ink-2); font-family: var(--font);
+    font-size: 13px; font-weight: 600; padding: 7px 15px; border-radius: 7px; cursor: pointer; }
+  .tabs button.active { background: var(--surface-1); color: var(--ink-1); box-shadow: var(--shadow); }
+
+  .btn { font-family: var(--font); font-size: 13px; font-weight: 550;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--ink-1);
+    padding: 7px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px; transition: background .12s; }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--senior); border-color: var(--senior); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.05); }
+  .btn.danger { color: var(--st-fail); border-color: color-mix(in srgb, var(--st-fail) 40%, transparent); }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn.ghost:hover { background: var(--surface-2); }
+  .btn.sm { padding: 4px 9px; font-size: 12px; }
+
+  main { padding: 16px 20px 60px; max-width: 1640px; margin: 0 auto; }
+
+  /* KPI row */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 11px; margin-bottom: 15px; }
+  .kpi { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; box-shadow: var(--shadow); }
+  .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+  .kpi .value { font-size: 25px; font-weight: 700; margin-top: 4px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .kpi .foot { font-size: 11.5px; color: var(--ink-2); margin-top: 5px; }
+  .kpi.clickable { cursor: pointer; transition: border-color .12s, transform .06s; }
+  .kpi.clickable:hover { border-color: var(--senior); transform: translateY(-1px); }
+  .kpi.clickable:active { transform: translateY(0); }
+  .kpi .foot .arrow { color: var(--senior); font-weight: 700; }
+  .kpi.accent-good .value { color: var(--st-success-ink); }
+  .kpi.accent-warn .value { color: var(--st-fail); }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+
+  /* toolbar / filters */
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 9px 13px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .month-nav { display: flex; align-items: center; gap: 4px; }
+  .month-label { font-weight: 650; font-size: 15px; min-width: 150px; text-align: center; }
+  .sep { width: 1px; height: 26px; background: var(--border); }
+  .fl { display: flex; align-items: center; gap: 5px; }
+  .fl label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  select.sel, input.txt { font-family: var(--font); font-size: 13px; padding: 6px 9px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--ink-1); }
+  select.sel { cursor: pointer; }
+
+  .layout { display: grid; grid-template-columns: 1fr 300px; gap: 15px; align-items: start; }
+  @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden; }
+  .panel-head { padding: 11px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .panel-head h2 { font-size: 14px; margin: 0; font-weight: 650; }
+
+  /* month calendar */
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal .dow { background: var(--surface-2); font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--ink-2); font-weight: 650; padding: 7px 9px; border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid); }
+  .cal .dow:nth-child(7n) { border-right: none; }
+  .cell { min-height: 108px; border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid);
+    padding: 4px 5px; cursor: pointer; position: relative; transition: background .1s; display: flex; flex-direction: column; }
+  .cell:nth-child(7n) { border-right: none; }
+  .cell:hover { background: var(--surface-2); }
+  .cell.other { background: var(--surface-2); }
+  .cell.other .dnum { color: var(--muted); }
+  .cell.today .dnum { background: var(--senior); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; }
+  .cell .dnum { font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 3px; align-self: flex-start; padding: 1px; }
+  .cell .jobs { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; max-height: 132px; }
+  .cell .addhint { color: var(--muted); font-size: 15px; position: absolute; right: 6px; top: 3px; opacity: 0; }
+  .cell:hover .addhint { opacity: .8; }
+
+  .jchip { font-size: 11px; border-radius: 6px; padding: 3px 5px; background: var(--surface-2);
+    border-left: 3px solid var(--muted); display: flex; align-items: center; gap: 4px; line-height: 1.2; }
+  .jchip.t-install { border-left-color: var(--t-install); }
+  .jchip.t-onsite  { border-left-color: var(--t-onsite); }
+  .jchip.t-hotline { border-left-color: var(--t-hotline); }
+  .jchip.t-others  { border-left-color: var(--t-others); }
+  .jchip .st { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .jchip .st.success { background: var(--st-success); }
+  .jchip .st.pending { background: var(--st-pending); }
+  .jchip .st.ongoing { background: var(--st-ongoing); }
+  .jchip .st.fail { background: var(--st-fail); }
+  .jchip .jn { font-weight: 650; }
+  .jchip .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .jchip .cross { color: var(--t-hotline); font-weight: 700; }
+  .jchip.hl { outline: 2px solid var(--senior); }
+
+  /* availability */
+  .avail .seg { display: flex; gap: 4px; background: var(--surface-2); border-radius: 8px; padding: 3px; }
+  .avail .seg button { flex: 1; border: none; background: transparent; color: var(--ink-2); font-family: var(--font);
+    font-size: 12px; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-weight: 550; }
+  .avail .seg button.active { background: var(--surface-1); color: var(--ink-1); box-shadow: var(--shadow); }
+  .avail-body { padding: 11px 13px; max-height: 560px; overflow-y: auto; }
+  .role-group { margin-bottom: 13px; }
+  .role-group h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 6px;
+    display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+  .role-group h3 .cnt { margin-left: auto; color: var(--muted); font-weight: 600; }
+  .person { display: flex; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 8px;
+    background: var(--surface-2); margin-bottom: 5px; border: 1px solid transparent; }
+  .person .pname { font-weight: 550; font-size: 13px; }
+  .person .pmeta { font-size: 11px; color: var(--muted); }
+  .person .pspacer { flex: 1; }
+  .person.free { border-color: color-mix(in srgb, var(--st-success) 40%, transparent); }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 650; }
+  .badge.free { background: color-mix(in srgb, var(--st-success) 16%, transparent); color: var(--st-success-ink); }
+  .empty-note { color: var(--muted); font-size: 12px; padding: 8px 4px; text-align: center; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; display: inline-block; }
+
+  /* legend */
+  .legend { display: flex; gap: 13px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--ink-2); }
+  .legend span.li { display: inline-flex; align-items: center; gap: 5px; }
+
+  /* reports */
+  .report { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; }
+  .report .rhead { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .report .rhead h2 { font-size: 15px; margin: 0; }
+  .report .rhead p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  .rtable-wrap { overflow-x: auto; }
+  table.rt { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.rt th, table.rt td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  table.rt thead th { background: var(--surface-2); font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--ink-2); font-weight: 650; position: sticky; top: 0; }
+  table.rt td.num, table.rt th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.rt tr.grp td { background: var(--surface-3); font-weight: 700; }
+  table.rt tr.tot td { font-weight: 700; border-top: 2px solid var(--baseline); }
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 650; display: inline-block; }
+  .pill.pending { background: var(--surface-3); color: var(--ink-2); }
+  .pill.ongoing { background: color-mix(in srgb, var(--st-ongoing) 16%, transparent); color: var(--st-ongoing); }
+  .pill.fail { background: color-mix(in srgb, var(--st-fail) 16%, transparent); color: var(--st-fail); }
+  .pill.success { background: color-mix(in srgb, var(--st-success) 16%, transparent); color: var(--st-success-ink); }
+  .type-tag { font-size: 10px; padding: 1px 6px; border-radius: 5px; font-weight: 650; color: #fff; }
+  .type-tag.t-install { background: var(--t-install); }
+  .type-tag.t-onsite { background: var(--t-onsite); }
+  .type-tag.t-hotline { background: var(--t-hotline); }
+  .type-tag.t-others { background: var(--t-others); }
+
+  /* modal */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.42); display: none; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; width: min(520px, 96vw);
+    max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); display: flex; flex-direction: column; }
+  .modal-head { padding: 15px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+  .modal-head h3 { margin: 0; font-size: 15px; }
+  .modal-head .spacer { flex: 1; }
+  .modal-body { padding: 15px 18px; overflow-y: auto; }
+  .modal-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .grid2 .full { grid-column: 1 / -1; }
+  label.fld { display: block; font-size: 11.5px; font-weight: 600; color: var(--ink-2); margin: 0 0 4px; }
+  .fld .req { color: var(--st-fail); }
+  input.txt, select.sel { width: 100%; }
+  .seg-radio { display: flex; gap: 6px; }
+  .seg-radio button { flex: 1; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink-2);
+    font-family: var(--font); font-size: 12.5px; font-weight: 600; padding: 7px 6px; border-radius: 8px; cursor: pointer; }
+  .seg-radio button.active { color: #fff; }
+  .seg-radio button.active[data-v="installation"] { background: var(--t-install); border-color: var(--t-install); }
+  .seg-radio button.active[data-v="onsite"] { background: var(--t-onsite); border-color: var(--t-onsite); }
+  .seg-radio button.active[data-v="hotline"] { background: var(--t-hotline); border-color: var(--t-hotline); }
+  .seg-radio button.active[data-v="others"] { background: var(--t-others); border-color: var(--t-others); }
+  .seg-radio.status button.active[data-v="pending"] { background: var(--st-pending); border-color: var(--st-pending); }
+  .seg-radio.status button.active[data-v="ongoing"] { background: var(--st-ongoing); border-color: var(--st-ongoing); }
+  .seg-radio.status button.active[data-v="success"] { background: var(--st-success); border-color: var(--st-success); }
+  .seg-radio.status button.active[data-v="fail"] { background: var(--st-fail); border-color: var(--st-fail); }
+
+  .pick-list { display: flex; flex-direction: column; gap: 4px; }
+  .pick { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-2); }
+  .pick:hover { background: var(--surface-1); border-color: var(--senior); }
+
+  /* login */
+  .login-bg { position: fixed; inset: 0; background: var(--page); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .login-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; width: min(400px, 96vw);
+    box-shadow: 0 20px 60px rgba(0,0,0,.28); overflow: hidden; }
+  .login-card .lhead { padding: 26px 26px 18px; text-align: center; }
+  .login-card .logo { width: 52px; height: 52px; border-radius: 12px; margin: 0 auto 12px;
+    background: linear-gradient(135deg, var(--senior), var(--sm-mgr)); display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 20px; }
+  .login-card h2 { margin: 0; font-size: 18px; }
+  .login-card .lsub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .login-card .lbody { padding: 4px 26px 22px; }
+  .login-card label.fld { margin-top: 12px; }
+  .login-err { color: var(--st-fail); font-size: 12.5px; margin-top: 12px; min-height: 16px; text-align: center; }
+  .login-note { font-size: 11px; color: var(--muted); text-align: center; padding: 12px 26px 20px; border-top: 1px solid var(--border); line-height: 1.5; }
+  .user-chip { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 5px 10px; border-radius: 20px; background: var(--surface-2); border: 1px solid var(--border); }
+  .user-chip .uname { font-weight: 650; }
+  .user-chip .urole { color: var(--muted); }
+  .role-tag { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700; color: #fff; }
+  .role-tag.admin { background: var(--sm-mgr); }
+  .role-tag.branch { background: var(--junior); }
+  .htag { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700; color: #fff; background: var(--t-hotline); }
+  .hrow { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-2); cursor: pointer; }
+  .hrow input { width: 15px; height: 15px; cursor: pointer; }
+  select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
+  .branch-check { display: flex; flex-direction: column; gap: 3px; max-height: 150px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px; background: var(--surface-2); }
+  .branch-check label { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+  .branch-check label:hover { background: var(--surface-1); }
+  .branch-check input { width: 15px; height: 15px; cursor: pointer; }
+  .branch-check .empty { font-size: 12px; color: var(--muted); padding: 4px; }
+
+  .hidden { display: none !important; }
+  .footer-note { margin-top: 20px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  @media print {
+    header.app .btn, .tabs, .toolbar .btn, .search, .addhint, .modal-bg { display: none !important; }
+    .layout { grid-template-columns: 1fr; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<!-- Login -->
+<div class="login-bg" id="loginScreen">
+  <div class="login-card">
+    <div class="lhead">
+      <div class="logo">ES</div>
+      <h2>Support Team Scheduler</h2>
+      <div class="lsub">ES Print Group of Companies — please sign in</div>
+    </div>
+    <div class="lbody">
+      <label class="fld">Username</label>
+      <input type="text" class="txt" id="loginUser" autocomplete="username" placeholder="username">
+      <label class="fld">Password</label>
+      <input type="password" class="txt" id="loginPass" autocomplete="current-password" placeholder="password">
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn primary" id="loginBtn" style="width:100%; justify-content:center; margin-top:6px">Sign in</button>
+    </div>
+    <div class="login-note">
+      🔒 Access is applied inside this page only — it organizes who sees what, but it is <b>not</b> server-grade security.
+      Don't store this file where untrusted people can open it. Ask your admin for a hosted version if you need real protection.
+    </div>
+  </div>
+</div>
+
+<header class="app">
+  <div class="brand">
+    <div class="logo">ES</div>
+    <div>
+      <h1>Support Team Scheduler</h1>
+      <div class="sub">ES Print Group of Companies · Field Service</div>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button data-view="calendar" class="active">📅 Schedule</button>
+    <button data-view="reports">📊 Reports</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="user-chip" id="userChip"></div>
+  <button class="btn ghost" id="themeBtn" title="Toggle light/dark">🌓</button>
+  <button class="btn adminOnly" id="usersBtn">🔑 Users</button>
+  <button class="btn adminOnly" id="manageStaffBtn">👥 Staff</button>
+  <button class="btn adminOnly" id="addBranchBtn">＋ Branch</button>
+  <button class="btn adminOnly" id="importBtn">⤓ Import</button>
+  <button class="btn adminOnly" id="exportBtn">⤒ Export</button>
+  <button class="btn" id="logoutBtn">⏻ Sign out</button>
+  <input type="file" id="fileInput" accept="application/json" class="hidden">
+</header>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <!-- ============ CALENDAR VIEW ============ -->
+  <div id="calendarView">
+    <div class="toolbar">
+      <div class="month-nav">
+        <button class="btn sm" id="prevMonth">◀</button>
+        <div class="month-label" id="monthLabel">—</div>
+        <button class="btn sm" id="nextMonth">▶</button>
+      </div>
+      <button class="btn sm" id="todayBtn">Today</button>
+      <div class="sep"></div>
+      <div class="fl"><label>Branch</label><select class="sel" id="fBranch"></select></div>
+      <div class="fl"><label>Employee</label><select class="sel" id="fEmp"></select></div>
+      <div class="fl"><label>Type</label><select class="sel" id="fType">
+        <option value="">All</option><option value="installation">Installation</option>
+        <option value="onsite">Onsite</option><option value="hotline">Hotline</option></select></div>
+      <div class="fl"><label>Status</label><select class="sel" id="fStatus">
+        <option value="">All</option><option value="pending">Pending</option>
+        <option value="ongoing">Ongoing</option>
+        <option value="success">Successful</option><option value="fail">Not successful</option></select></div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Monthly Schedule</h2>
+          <div class="spacer" style="flex:1"></div>
+          <div class="legend">
+            <span class="li"><span class="swatch" style="background:var(--t-install)"></span>Installation</span>
+            <span class="li"><span class="swatch" style="background:var(--t-onsite)"></span>Onsite</span>
+            <span class="li"><span class="swatch" style="background:var(--t-hotline)"></span>Hotline</span>
+            <span class="li"><span class="swatch" style="background:var(--t-others)"></span>Others</span>
+            <span class="li"><span class="dot" style="background:var(--st-success)"></span>Done</span>
+            <span class="li"><span class="dot" style="background:var(--st-ongoing)"></span>Ongoing</span>
+            <span class="li"><span class="dot" style="background:var(--st-pending)"></span>Pending</span>
+            <span class="li"><span class="dot" style="background:var(--st-fail)"></span>Failed</span>
+          </div>
+        </div>
+        <div class="cal" id="cal"></div>
+      </div>
+
+      <div class="panel avail">
+        <div class="panel-head"><h2>Available (no task)</h2></div>
+        <div style="padding:11px 13px 0">
+          <div class="seg" id="availSeg">
+            <button data-mode="month" class="active">This month</button>
+            <button data-mode="day">Specific day</button>
+          </div>
+          <select class="sel" id="availDay" style="margin-top:8px; display:none; width:100%"></select>
+        </div>
+        <div class="avail-body" id="availBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ REPORTS VIEW ============ -->
+  <div id="reportsView" class="hidden">
+    <div class="toolbar">
+      <div class="month-nav">
+        <button class="btn sm" id="rPrevMonth">◀</button>
+        <div class="month-label" id="rMonthLabel">—</div>
+        <button class="btn sm" id="rNextMonth">▶</button>
+      </div>
+      <button class="btn sm" id="rTodayBtn">Today</button>
+      <div class="sep"></div>
+      <div class="fl"><label>Branch</label><select class="sel" id="rfBranch"></select></div>
+      <div class="fl"><label>Employee</label><select class="sel" id="rfEmp"></select></div>
+    </div>
+
+    <div class="report">
+      <div class="rhead">
+        <div>
+          <h2>1 · Service Summary — per Employee / Week / Type</h2>
+          <p id="r1sub">—</p>
+        </div>
+        <div class="spacer" style="flex:1"></div>
+        <button class="btn sm" id="r1csv">⤒ CSV</button>
+      </div>
+      <div class="rtable-wrap"><table class="rt" id="r1table"></table></div>
+    </div>
+
+    <div class="report">
+      <div class="rhead">
+        <div>
+          <h2>2 · Service Not Yet Successful</h2>
+          <p>All open job tickets (Pending or Not Successful) — the follow-up backlog across all dates.</p>
+        </div>
+        <div class="spacer" style="flex:1"></div>
+        <button class="btn sm" id="r2csv">⤒ CSV</button>
+      </div>
+      <div class="rtable-wrap"><table class="rt" id="r2table"></table></div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Data is held in this page. Use <b>Export</b> to save the schedule to a file and <b>Import</b> to reload or share it with your team.
+  </div>
+</main>
+
+<!-- Job Ticket modal -->
+<div class="modal-bg" id="jobModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="jobTitle">New Job Ticket</h3><div class="spacer"></div></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div>
+          <label class="fld">Date <span class="req">*</span></label>
+          <input type="date" class="txt" id="jDate">
+        </div>
+        <div>
+          <label class="fld">JT No. <span class="req">*</span></label>
+          <input type="text" class="txt" id="jJT" placeholder="e.g. JT-1050">
+        </div>
+        <div>
+          <label class="fld">Employee <span class="req">*</span></label>
+          <select class="sel" id="jEmp"></select>
+        </div>
+        <div>
+          <label class="fld">Branch serviced <span class="req">*</span></label>
+          <select class="sel" id="jBranch"></select>
+        </div>
+        <div class="full">
+          <label class="fld">Customer name <span class="req">*</span></label>
+          <input type="text" class="txt" id="jCustomer" placeholder="e.g. National Bookstore">
+        </div>
+        <div class="full">
+          <label class="fld">Location</label>
+          <input type="text" class="txt" id="jLocation" placeholder="e.g. 2F, near foodcourt">
+        </div>
+        <div class="full">
+          <label class="fld">Type <span class="req">*</span></label>
+          <div class="seg-radio" id="jType">
+            <button type="button" data-v="installation">Installation</button>
+            <button type="button" data-v="onsite">Onsite</button>
+            <button type="button" data-v="hotline">Hotline</button>
+            <button type="button" data-v="others">Others</button>
+          </div>
+        </div>
+        <div class="full" id="jTypeOtherWrap" style="display:none">
+          <label class="fld">Describe the service (Others) <span class="req">*</span></label>
+          <input type="text" class="txt" id="jTypeOther" placeholder="e.g. Preventive maintenance, parts pickup, survey…">
+        </div>
+        <div class="full">
+          <label class="fld">Status</label>
+          <div class="seg-radio status" id="jStatus" style="flex-wrap:wrap">
+            <button type="button" data-v="pending">⏳ Pending</button>
+            <button type="button" data-v="ongoing">◐ Ongoing</button>
+            <button type="button" data-v="success">✓ Successful</button>
+            <button type="button" data-v="fail">✕ Not successful</button>
+          </div>
+        </div>
+        <div class="full" id="jStatusNoteWrap" style="display:none">
+          <label class="fld" id="jStatusNoteLabel">Reason <span class="req">*</span></label>
+          <input type="text" class="txt" id="jStatusNote" placeholder="">
+        </div>
+      </div>
+      <div id="jHomeNote" class="empty-note" style="text-align:left; padding-top:8px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" id="jDelete" style="margin-right:auto; display:none">Delete</button>
+      <button class="btn ghost" data-close>Cancel</button>
+      <button class="btn primary" id="jSave">Save Job Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- Staff manager modal -->
+<div class="modal-bg" id="staffModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Manage Staff</h3><div class="spacer"></div></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div class="full"><label class="fld">Name</label><input type="text" class="txt" id="newStaffName" placeholder="e.g. Juan Dela Cruz"></div>
+        <div><label class="fld">Role</label>
+          <select class="sel" id="newStaffRole">
+            <option value="manager">Service Manager</option>
+            <option value="bsm">Branch Service Manager</option>
+            <option value="senior">Senior FSE</option>
+            <option value="junior" selected>Junior FSE</option>
+            <option value="trainee">Trainee</option>
+          </select></div>
+        <div><label class="fld">Home branch</label><select class="sel" id="newStaffBranch"></select></div>
+        <div class="full"><label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; margin-top:2px">
+          <input type="checkbox" id="newStaffHotline" style="width:16px; height:16px; cursor:pointer"> ☎ Hotline team (Manila)</label></div>
+      </div>
+      <button class="btn primary" id="addStaffConfirm" style="margin-top:10px">＋ Add staff</button>
+      <div style="margin-top:14px" id="staffList"></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close>Done</button></div>
+  </div>
+</div>
+
+<!-- KPI drill-down report modal -->
+<div class="modal-bg" id="kpiModal">
+  <div class="modal" style="width:min(680px,96vw)">
+    <div class="modal-head"><h3 id="kpiTitle">Report</h3><div class="spacer"></div></div>
+    <div class="modal-body">
+      <p id="kpiSub" class="empty-note" style="text-align:left; padding:0 0 12px; margin:0"></p>
+      <div class="rtable-wrap"><table class="rt" id="kpiTable"></table></div>
+      <div id="kpiExtra" style="margin-top:14px"></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close>Close</button></div>
+  </div>
+</div>
+
+<!-- Users modal -->
+<div class="modal-bg" id="usersModal">
+  <div class="modal">
+    <div class="modal-head"><h3>User Access</h3><div class="spacer"></div></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div><label class="fld">Full name</label><input type="text" class="txt" id="nuName" placeholder="e.g. Grace Villanueva"></div>
+        <div><label class="fld">Username</label><input type="text" class="txt" id="nuUser" placeholder="e.g. grace"></div>
+        <div><label class="fld">Password</label><input type="text" class="txt" id="nuPass" placeholder="set a password"></div>
+        <div><label class="fld">Access level</label>
+          <select class="sel" id="nuRole">
+            <option value="admin">All access (Service Mgr / Manila hotline)</option>
+            <option value="branch">Branch only (Branch Service Mgr)</option>
+          </select></div>
+        <div class="full" id="nuBranchWrap" style="display:none"><label class="fld">Assigned branches (tick all that apply)</label><div class="branch-check" id="nuBranches"></div></div>
+      </div>
+      <button class="btn primary" id="addUserConfirm" style="margin-top:10px">＋ Add user</button>
+      <div style="margin-top:16px" id="usersList"></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close>Done</button></div>
+  </div>
+</div>
+
+<!-- Branch modal -->
+<div class="modal-bg" id="branchModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add SM Branch</h3><div class="spacer"></div></div>
+    <div class="modal-body">
+      <label class="fld">Branch name</label>
+      <input type="text" class="txt" id="newBranchName" placeholder="e.g. SM City Baguio">
+      <label class="fld" style="margin-top:10px">Location / note (optional)</label>
+      <input type="text" class="txt" id="newBranchNote" placeholder="e.g. North Luzon">
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="addBranchConfirm">Add branch</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const ROLES = {
+  manager: { label: "Service Manager",       short: "Svc Mgr",    color: "var(--sm-mgr)" },
+  bsm:     { label: "Branch Service Manager", short: "Branch Mgr", color: "var(--role-bsm)" },
+  senior:  { label: "Senior FSE",             short: "Senior",     color: "var(--senior)" },
+  junior:  { label: "Junior FSE",             short: "Junior",     color: "var(--junior)" },
+  trainee: { label: "Trainee",                short: "Trainee",    color: "var(--trainee)" },
+};
+const ROLE_ORDER = ["manager","bsm","senior","junior","trainee"];
+const TYPES = {
+  installation: { label: "Installation", cls: "t-install" },
+  onsite:       { label: "Onsite",       cls: "t-onsite" },
+  hotline:      { label: "Hotline",      cls: "t-hotline" },
+  others:       { label: "Others",       cls: "t-others" },
+};
+const TYPE_KEYS = ["installation","onsite","hotline","others"];
+const STATUS = {
+  pending: { label: "Pending",        cls: "pending", dot: "pending" },
+  ongoing: { label: "Ongoing",        cls: "ongoing", dot: "ongoing" },
+  success: { label: "Successful",     cls: "success", dot: "success" },
+  fail:    { label: "Not successful", cls: "fail",    dot: "fail" },
+};
+const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+let uid = 1;
+const nid = (p) => p + "-" + (uid++);
+
+let state = seedTemplate();
+
+function seedTemplate() {
+  const branches = [
+    { id:"b1", name:"BAC", note:"Bacolod" },
+    { id:"b2", name:"BUK", note:"Bukidnon" },
+    { id:"b3", name:"BUT", note:"Butuan" },
+    { id:"b4", name:"CAB", note:"Cabanatuan" },
+    { id:"b5", name:"CAMSUR", note:"Camarines Sur" },
+    { id:"b6", name:"CAV", note:"Cavite" },
+    { id:"b7", name:"CDO", note:"Cagayan De Oro" },
+    { id:"b8", name:"CEB", note:"Cebu" },
+    { id:"b9", name:"DAV", note:"Davao" },
+    { id:"b10", name:"GENSAN", note:"General Santos" },
+    { id:"b11", name:"ILO", note:"Iloilo" },
+    { id:"b12", name:"ISA", note:"Isabela" },
+    { id:"b13", name:"MAK", note:"Makati" },
+    { id:"b14", name:"PAG", note:"Pagadian" },
+    { id:"b15", name:"PAL", note:"Palawan" },
+    { id:"b16", name:"PANG", note:"Pangasinan" },
+    { id:"b17", name:"RIZ", note:"Rizal" },
+    { id:"b18", name:"TAC", note:"Tacloban" },
+    { id:"b19", name:"TAG", note:"Tagum" },
+    { id:"b20", name:"ZAM", note:"Zamboanga" },
+  ];
+  const staff = [
+    { id:"s1", name:"Aguilar, Kennemark Magbanua", role:"senior", homeBranchId:"b1" },
+    { id:"s2", name:"Arevalo, Franz Neilsen Panisa", role:"senior", homeBranchId:"b1" },
+    { id:"s3", name:"Carangan, Jose Aldrin Cabisag", role:"senior", homeBranchId:"b1" },
+    { id:"s4", name:"Hormigoso, Gene Roussle Laya-on", role:"junior", homeBranchId:"b1" },
+    { id:"s5", name:"Lamata, Aeron Hallara", role:"trainee", homeBranchId:"b1" },
+    { id:"s6", name:"Pasagdan, Paul Andrian", role:"senior", homeBranchId:"b1" },
+    { id:"s7", name:"Principe, Michael John Oliver Lagtapon", role:"senior", homeBranchId:"b1" },
+    { id:"s8", name:"Sericon, Joevic Ondrade", role:"senior", homeBranchId:"b1" },
+    { id:"s9", name:"Uy, Joseph Taladro", role:"senior", homeBranchId:"b1" },
+    { id:"s10", name:"Sabularse, Mark Dave Loren Fernandez", role:"trainee", homeBranchId:"b2" },
+    { id:"s11", name:"Gantia, Rey Arco", role:"senior", homeBranchId:"b3" },
+    { id:"s12", name:"Melecio, Bernard Lupos", role:"trainee", homeBranchId:"b3" },
+    { id:"s13", name:"Garcia, Albert Pineda", role:"senior", homeBranchId:"b4" },
+    { id:"s14", name:"Velasquez, Dean Lester Guarin", role:"senior", homeBranchId:"b4" },
+    { id:"s15", name:"Agum, Jhopet Jay Apas", role:"junior", homeBranchId:"b7" },
+    { id:"s16", name:"Caserayan, Delmar Besa", role:"senior", homeBranchId:"b7" },
+    { id:"s17", name:"Dabatian, Paul Anthony Bacleon", role:"senior", homeBranchId:"b7" },
+    { id:"s18", name:"Dael, Denniel Labadan", role:"junior", homeBranchId:"b7" },
+    { id:"s19", name:"Ello, Barry Angelo Laranjo", role:"senior", homeBranchId:"b7" },
+    { id:"s20", name:"Medillo, Jeric Hernando", role:"senior", homeBranchId:"b7" },
+    { id:"s21", name:"Rabanes, Jaimie Atienza", role:"senior", homeBranchId:"b7" },
+    { id:"s22", name:"Rupio, Chege Hopel Pacuribot", role:"senior", homeBranchId:"b7" },
+    { id:"s23", name:"Sacuan, Gerald Igaran", role:"bsm", homeBranchId:"b7" },
+    { id:"s24", name:"Salise, Metj Allen Maagad", role:"senior", homeBranchId:"b7" },
+    { id:"s25", name:"Sayson, Angelo Abria", role:"junior", homeBranchId:"b7" },
+    { id:"s26", name:"Suazo, Jemon Pavillan", role:"senior", homeBranchId:"b7" },
+    { id:"s27", name:"Tagupa, Michael Jhonry Sabella", role:"senior", homeBranchId:"b7" },
+    { id:"s28", name:"Ugsod, Carl Edison Daba", role:"junior", homeBranchId:"b7" },
+    { id:"s29", name:"Bangngayan, Jerry Parma", role:"senior", homeBranchId:"b5" },
+    { id:"s30", name:"Bron, Gerald Portuguez", role:"senior", homeBranchId:"b5" },
+    { id:"s31", name:"Flores, Armando Palomania", role:"senior", homeBranchId:"b5" },
+    { id:"s32", name:"Moral, Francis Orolfo", role:"junior", homeBranchId:"b5" },
+    { id:"s33", name:"Sibulo, Allan De Los Santos", role:"trainee", homeBranchId:"b5" },
+    { id:"s34", name:"Trillanes, Khristian Vincent Bolalin", role:"senior", homeBranchId:"b5" },
+    { id:"s35", name:"Caling, Franklin Co-Ot", role:"senior", homeBranchId:"b8" },
+    { id:"s36", name:"Calvo, Jerus Pasaje", role:"senior", homeBranchId:"b8" },
+    { id:"s37", name:"Calvo, Jessriel Pasaje", role:"bsm", homeBranchId:"b8" },
+    { id:"s38", name:"Javierto, Ariel Capistrano", role:"junior", homeBranchId:"b8" },
+    { id:"s39", name:"Mabanag, Jelson Fernandez", role:"junior", homeBranchId:"b8" },
+    { id:"s40", name:"Magallon, Melvin Mandawe", role:"junior", homeBranchId:"b8" },
+    { id:"s41", name:"Mahusay, Michael Mandawe", role:"senior", homeBranchId:"b8" },
+    { id:"s42", name:"Oaper, Michael James Baring", role:"senior", homeBranchId:"b8" },
+    { id:"s43", name:"Ouano, Jason Bonifacio", role:"junior", homeBranchId:"b8" },
+    { id:"s44", name:"Perida, Clariolito Alfanta", role:"senior", homeBranchId:"b8" },
+    { id:"s45", name:"Pulgo, Michael Cantila", role:"senior", homeBranchId:"b8" },
+    { id:"s46", name:"Versoza, Danilo Jr. Montellano", role:"junior", homeBranchId:"b8" },
+    { id:"s47", name:"Decolongon, Joshua Cabilto", role:"senior", homeBranchId:"b9" },
+    { id:"s48", name:"Genabe, Martin Jamin", role:"bsm", homeBranchId:"b9" },
+    { id:"s49", name:"Masanting, Mohaimin Balindong", role:"junior", homeBranchId:"b9" },
+    { id:"s50", name:"Mediano, John Lloyd Item", role:"senior", homeBranchId:"b9" },
+    { id:"s51", name:"Pakong, Almuhaimen Baluntitik", role:"senior", homeBranchId:"b9" },
+    { id:"s52", name:"Pallaya, Earl Jhonel Frondoza", role:"senior", homeBranchId:"b9" },
+    { id:"s53", name:"Taypin, Christian Dave Gemino", role:"senior", homeBranchId:"b9" },
+    { id:"s54", name:"Cajes, Dyve Calope", role:"junior", homeBranchId:"b9" },
+    { id:"s55", name:"Alviso, Alizandro Musa", role:"trainee", homeBranchId:"b10" },
+    { id:"s56", name:"Ariego, Mariel Butron", role:"senior", homeBranchId:"b10" },
+    { id:"s57", name:"Basal, Haber Morsal", role:"senior", homeBranchId:"b10" },
+    { id:"s58", name:"Buya, Jovanie Timbol", role:"trainee", homeBranchId:"b10" },
+    { id:"s59", name:"Dequinto, Jairus Deq Baligasa", role:"junior", homeBranchId:"b10" },
+    { id:"s60", name:"Gastardo, Kevin Christian Bulaqueña", role:"junior", homeBranchId:"b10" },
+    { id:"s61", name:"Jovenal, Jude Cariazo", role:"trainee", homeBranchId:"b10" },
+    { id:"s62", name:"Mike, Jehanoor Shiekalabi", role:"senior", homeBranchId:"b10" },
+    { id:"s63", name:"Panganiban, Jericho Maitim", role:"junior", homeBranchId:"b10" },
+    { id:"s64", name:"Perlas, Elpidio Jamir Daturajah", role:"junior", homeBranchId:"b10" },
+    { id:"s65", name:"Abalde, George Constantine Peñaverde", role:"junior", homeBranchId:"b11" },
+    { id:"s66", name:"Catalan, Rino Mark Cartin", role:"senior", homeBranchId:"b11" },
+    { id:"s67", name:"Dedace, Ryan Angelo Formarejo", role:"junior", homeBranchId:"b11" },
+    { id:"s68", name:"Gulla, Joemar Dolatre", role:"junior", homeBranchId:"b11" },
+    { id:"s69", name:"Cabanting, Charlie Dela Cruz", role:"trainee", homeBranchId:"b12" },
+    { id:"s70", name:"Corpuz, Denmark Ramos", role:"senior", homeBranchId:"b12" },
+    { id:"s71", name:"Dreza, Santiago Tagorda", role:"senior", homeBranchId:"b12" },
+    { id:"s72", name:"Letua, Frankleen Rufino", role:"senior", homeBranchId:"b12" },
+    { id:"s73", name:"Agum, Japeth Jay Abuzo", role:"trainee", homeBranchId:"b13" },
+    { id:"s74", name:"Almeida, Sydon Paulo Bacero", role:"senior", homeBranchId:"b13" },
+    { id:"s75", name:"Andaluz, Sherwin Distara", role:"senior", homeBranchId:"b13" },
+    { id:"s76", name:"Atipon, Mark Ranssel Pagaura", role:"senior", homeBranchId:"b13" },
+    { id:"s77", name:"Balberde, Rio Roco", role:"junior", homeBranchId:"b13" },
+    { id:"s78", name:"Banda Jr. Gerardo Pascual", role:"junior", homeBranchId:"b13" },
+    { id:"s79", name:"Banogbanog, Cherry Suson", role:"junior", homeBranchId:"b13" },
+    { id:"s80", name:"Borreros, Jhon Mark Agoja", role:"senior", homeBranchId:"b13" },
+    { id:"s81", name:"Cabiling, Bryan Jeric Dizon", role:"junior", homeBranchId:"b13" },
+    { id:"s82", name:"Cacho, Kenneth Presbitero", role:"junior", homeBranchId:"b13" },
+    { id:"s83", name:"Cacho, Rigel Ojales", role:"senior", homeBranchId:"b13" },
+    { id:"s84", name:"Caraan, Mark Ricjohn Magbalita", role:"trainee", homeBranchId:"b13" },
+    { id:"s85", name:"Carangan, Danilo Arellano", role:"manager", homeBranchId:"b13" },
+    { id:"s86", name:"Cerujano, Mernhad Vic Deinla", role:"junior", homeBranchId:"b13" },
+    { id:"s87", name:"Cervantes, Jomelyn Azuela", role:"junior", homeBranchId:"b13" },
+    { id:"s88", name:"Cosino, Park Johncel De Ungria", role:"junior", homeBranchId:"b13" },
+    { id:"s89", name:"De Chavez, Limwel Claveria", role:"senior", homeBranchId:"b13" },
+    { id:"s90", name:"De Ocampo, Airon Emnil", role:"junior", homeBranchId:"b13" },
+    { id:"s91", name:"Diagbel, Jefrey Pahal", role:"senior", homeBranchId:"b13" },
+    { id:"s92", name:"Diaz, Ralph Dominic De Villa", role:"senior", homeBranchId:"b13" },
+    { id:"s93", name:"Eina, Ricky Benito", role:"manager", homeBranchId:"b13" },
+    { id:"s94", name:"Encinas, Christian Pastrana", role:"junior", homeBranchId:"b13" },
+    { id:"s95", name:"Evangeles, Troy Joshua Flores", role:"junior", homeBranchId:"b13" },
+    { id:"s96", name:"Ibrahim, Al Khabir Taradji", role:"junior", homeBranchId:"b13" },
+    { id:"s97", name:"Lotino, Jerick Brioso", role:"senior", homeBranchId:"b13" },
+    { id:"s98", name:"Mabaquiao, Roy Bontigao", role:"senior", homeBranchId:"b13" },
+    { id:"s99", name:"Macabiog, Jay Mirones", role:"senior", homeBranchId:"b13" },
+    { id:"s100", name:"Maglalang, Jella Garcia", role:"junior", homeBranchId:"b13" },
+    { id:"s101", name:"Montillana, Jerick Evangelista", role:"senior", homeBranchId:"b13" },
+    { id:"s102", name:"Munsayac, Adrian Andrei Buan", role:"junior", homeBranchId:"b13" },
+    { id:"s103", name:"Natan, Dennis Onlagada", role:"senior", homeBranchId:"b13" },
+    { id:"s104", name:"Natcher, Jeremy Valencia", role:"junior", homeBranchId:"b13" },
+    { id:"s105", name:"Phua, Ramilito Dave Gatchalian", role:"senior", homeBranchId:"b13" },
+    { id:"s106", name:"Recentes, Cristian Mike Mejia", role:"senior", homeBranchId:"b13" },
+    { id:"s107", name:"Rejas, Jezreel Frankie", role:"junior", homeBranchId:"b13" },
+    { id:"s108", name:"Reyes, Cyron James Odto", role:"trainee", homeBranchId:"b13" },
+    { id:"s109", name:"Rioja, Arnold Lagura", role:"manager", homeBranchId:"b13" },
+    { id:"s110", name:"Rioja, Mark Kevin Lagura", role:"senior", homeBranchId:"b13" },
+    { id:"s111", name:"Roma, Juan Carlos Ahongon", role:"senior", homeBranchId:"b13" },
+    { id:"s112", name:"Salamanes, Emmanuel Ponsica", role:"senior", homeBranchId:"b13" },
+    { id:"s113", name:"Sioco, John Trent Mendoza", role:"senior", homeBranchId:"b13" },
+    { id:"s114", name:"Suñas, Maria Christina Navarro", role:"junior", homeBranchId:"b13" },
+    { id:"s115", name:"Talabucon, Ronie", role:"junior", homeBranchId:"b13" },
+    { id:"s116", name:"Tan, Christephen Paronne Jr.", role:"trainee", homeBranchId:"b13" },
+    { id:"s117", name:"Tariga, Mark Joseph De Jesus", role:"senior", homeBranchId:"b13" },
+    { id:"s118", name:"Templa, Marvin Jay Cortan", role:"senior", homeBranchId:"b13" },
+    { id:"s119", name:"Velarde, Peter Andrei Jamin", role:"senior", homeBranchId:"b13" },
+    { id:"s120", name:"Vergel De Dios, Jonh Rowel Pelin", role:"junior", homeBranchId:"b13" },
+    { id:"s121", name:"Vicente, Jan Philix Buhay", role:"junior", homeBranchId:"b13" },
+    { id:"s122", name:"Villanueva, Manuel Granados", role:"junior", homeBranchId:"b13" },
+    { id:"s123", name:"Yumang, Don Alexander Resurreccion", role:"senior", homeBranchId:"b13" },
+    { id:"s124", name:"Benoya, Christian John Dequito", role:"junior", homeBranchId:"b14" },
+    { id:"s125", name:"Cobar, Earl Joseph Ganon", role:"trainee", homeBranchId:"b14" },
+    { id:"s126", name:"Contiveros, Larc Larry Ybañez", role:"junior", homeBranchId:"b14" },
+    { id:"s127", name:"Almoite, Michael Blaser", role:"senior", homeBranchId:"b15" },
+    { id:"s128", name:"Coching, Kenn Vincent Mondragon", role:"senior", homeBranchId:"b15" },
+    { id:"s129", name:"Gomez, Michael John", role:"senior", homeBranchId:"b15" },
+    { id:"s130", name:"Rowy, Nikko Paolo Ello", role:"senior", homeBranchId:"b15" },
+    { id:"s131", name:"Ascueta, Leslie John Bolactia", role:"senior", homeBranchId:"b16" },
+    { id:"s132", name:"Carido, Jhon Paul Sajulga", role:"trainee", homeBranchId:"b16" },
+    { id:"s133", name:"Gonzales, Rommel Calulut", role:"senior", homeBranchId:"b16" },
+    { id:"s134", name:"Villena, Rodel De Vera", role:"senior", homeBranchId:"b16" },
+    { id:"s135", name:"Casingal, Teofilo III Licot", role:"trainee", homeBranchId:"b16" },
+    { id:"s136", name:"Aguirre, Mark Anthony Mordeno", role:"trainee", homeBranchId:"b18" },
+    { id:"s137", name:"Alburo, Mark Francis", role:"junior", homeBranchId:"b18" },
+    { id:"s138", name:"Catcharro, Richard Fiel", role:"junior", homeBranchId:"b18" },
+    { id:"s139", name:"Coliflores, Darel John Sulogaol", role:"bsm", homeBranchId:"b18" },
+    { id:"s140", name:"Panao Jr., Julito Palamos", role:"junior", homeBranchId:"b18" },
+    { id:"s141", name:"Urbano, Joven Epres", role:"senior", homeBranchId:"b18" },
+    { id:"s142", name:"Obnimaga, Mark Sialon", role:"senior", homeBranchId:"b19" },
+    { id:"s143", name:"Tandoc, Jesus Macias", role:"junior", homeBranchId:"b19" },
+    { id:"s144", name:"Justo, Raymond", role:"junior", homeBranchId:"b19" },
+    { id:"s145", name:"Alabi, Abdel Varr Esmali", role:"junior", homeBranchId:"b20" },
+    { id:"s146", name:"Esmael, Mujaheed Alabi", role:"trainee", homeBranchId:"b20" },
+    { id:"s147", name:"Mendez, Jestoni Polinar", role:"junior", homeBranchId:"b20" },
+    { id:"s148", name:"Mendez, Kevin Fernandez", role:"senior", homeBranchId:"b20" },
+    { id:"s149", name:"Roferos, Jaypee", role:"senior", homeBranchId:"b20" },
+    { id:"s150", name:"Shia, Nicholson Clifford Samson", role:"senior", homeBranchId:"b20" },
+    { id:"s151", name:"Taruc, Rodel Tizon", role:"junior", homeBranchId:"b20" },
+  ];
+  const jobs = [];
+  const users = [
+    { id: "u1", username: "admin", password: "admin123", name: "Administrator", role: "admin", branchId: null },
+  ];
+  uid = 200;
+  return { branches, staff, jobs, users };
+}
+
+/* ---------- date helpers ---------- */
+function parseYMD(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function mondayOf(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const dow=(x.getDay()+6)%7; x.setDate(x.getDate()-dow); return x; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function sameYMD(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function fmtD(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function monthName(d){ return d.toLocaleDateString("en-US",{month:"long",year:"numeric"}); }
+
+/* ---------- session / permissions ---------- */
+let currentUser = null;
+let perms = { branchIds: null, isAdmin: true }; // branchIds null = all branches
+function getUserBranchIds(u){
+  if (!u || u.role!=="branch") return null;
+  const ids = u.branchIds || (u.branchId ? [u.branchId] : []);
+  return ids.filter(id => branchById(id)); // only existing branches
+}
+function inScope(j){ return !perms.branchIds || perms.branchIds.includes(j.branchId); }
+function scopedBranches(){ return perms.branchIds ? state.branches.filter(b=>perms.branchIds.includes(b.id)) : state.branches; }
+function visibleStaff(){ return perms.branchIds ? state.staff.filter(s=>perms.branchIds.includes(s.homeBranchId)) : state.staff; }
+
+/* ---------- app state ---------- */
+let view = "calendar";
+let currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let reportMonth = new Date(currentMonth);
+let filters = { branch:"", emp:"", type:"", status:"" };
+let rFilters = { branch:"", emp:"" };
+let availMode = "month";
+let availDayKey = ymd(new Date());
+
+/* ---------- lookups ---------- */
+const staffById = (id) => state.staff.find(s=>s.id===id);
+const branchById = (id) => state.branches.find(b=>b.id===id);
+
+/* ---------- render dispatch ---------- */
+function render(){
+  if(!currentUser) return;
+  renderKPIs();
+  if (view==="calendar"){ renderMonthLabel(); renderCalendar(); renderAvailability(); }
+  else { renderReports(); }
+}
+
+/* ---------- KPIs ---------- */
+function renderKPIs(){
+  const el = document.getElementById("kpis");
+  const m = view==="reports"?reportMonth:currentMonth;
+  const monthJobs = jobsInMonth(m);
+  const roster = visibleStaff();
+  const total = roster.length;
+  const rosterIds = new Set(roster.map(s=>s.id));
+
+  const todayKey = ymd(new Date());
+  const todayLbl = fmtD(new Date());
+  const todayJobs = state.jobs.filter(j=>inScope(j) && j.date===todayKey);
+  const todayAssigned = new Set(todayJobs.map(j=>j.staffId));
+  const availToday = total - [...todayAssigned].filter(id=>rosterIds.has(id)).length;
+
+  const success = monthJobs.filter(j=>j.status==="success").length;
+  const open = monthJobs.filter(j=>j.status!=="success").length;
+  const failed = monthJobs.filter(j=>j.status==="fail").length;
+  const ongoing = monthJobs.filter(j=>j.status==="ongoing").length;
+  const pending = monthJobs.filter(j=>j.status==="pending").length;
+  const rate = monthJobs.length ? Math.round(success/monthJobs.length*100) : 0;
+
+  el.innerHTML = "";
+  el.appendChild(kpi("job-today","Job Tickets Today", todayJobs.length, `<span class="arrow">▸</span> ${todayLbl} · per branch`, ""));
+  el.appendChild(kpi("success","Successful (mo.)", success, `<span class="arrow">▸</span> ${rate}% success rate`, "accent-good", '<span class="dot" style="background:var(--st-success)"></span>'));
+  el.appendChild(kpi("open","Not Yet Successful (mo.)", open, `<span class="arrow">▸</span> ${failed} failed · ${ongoing} ongoing · ${pending} pending`, open?"accent-warn":"", '<span class="dot" style="background:var(--st-fail)"></span>'));
+  el.appendChild(kpi("avail-today","Available Today", availToday, `<span class="arrow">▸</span> ${todayLbl} · per branch`, ""));
+  el.appendChild(kpi("staff","Total Staff", total, `<span class="arrow">▸</span> per-branch headcount`, ""));
+}
+function kpi(reportKind,label,value,foot,cls,prefix){
+  const d=document.createElement("div"); d.className="kpi clickable "+(cls||"");
+  d.setAttribute("data-report", reportKind);
+  d.innerHTML=`<div class="label">${label}</div><div class="value">${prefix||""}${value}</div><div class="foot">${foot}</div>`;
+  return d;
+}
+
+/* ---------- KPI drill-down reports (per branch) ---------- */
+function openKpiReport(kind){
+  const branches = scopedBranches();
+  const title = document.getElementById("kpiTitle");
+  const sub = document.getElementById("kpiSub");
+  const t = document.getElementById("kpiTable");
+  const extra = document.getElementById("kpiExtra"); extra.innerHTML = "";
+  const m = view==="reports"?reportMonth:currentMonth;
+  const todayKey = ymd(new Date());
+  const todayLbl = fmtD(new Date());
+  const bn = (id)=>{ const b=branchById(id); return b? `${b.name} · ${b.note||""}` : "—"; };
+
+  if (kind==="job-today"){
+    title.textContent = "Job Tickets Today — per Branch";
+    const jobs = state.jobs.filter(j=>inScope(j) && j.date===todayKey);
+    sub.textContent = `${todayLbl} · ${jobs.length} job ticket(s)`;
+    let head = `<thead><tr><th>Branch</th>${TYPE_KEYS.map(k=>`<th class="num">${TYPES[k].label}</th>`).join("")}<th class="num">Total</th></tr></thead><tbody>`;
+    let body = ""; const tot = {}; TYPE_KEYS.forEach(k=>tot[k]=0);
+    branches.forEach(b=>{
+      const bj = jobs.filter(j=>j.branchId===b.id);
+      if(!bj.length) return;
+      const c = {}; TYPE_KEYS.forEach(k=>{ c[k]=bj.filter(j=>j.type===k).length; tot[k]+=c[k]; });
+      body += `<tr><td>${esc(b.name)} <span style="color:var(--muted)">${esc(b.note||"")}</span></td>${TYPE_KEYS.map(k=>`<td class="num">${c[k]||""}</td>`).join("")}<td class="num"><b>${bj.length}</b></td></tr>`;
+    });
+    if(!body) body = `<tr><td colspan="${TYPE_KEYS.length+2}" class="empty-note">No job tickets scheduled today.</td></tr>`;
+    else body += `<tr class="tot"><td>ALL BRANCHES</td>${TYPE_KEYS.map(k=>`<td class="num">${tot[k]}</td>`).join("")}<td class="num">${jobs.length}</td></tr>`;
+    t.innerHTML = head + body + "</tbody>";
+    if (jobs.length){
+      extra.innerHTML = `<div class="empty-note" style="text-align:left;padding:0 0 6px"><b>Detail</b></div>` +
+        jobs.sort((a,b)=>a.branchId.localeCompare(b.branchId)).map(j=>{
+          const s=staffById(j.staffId);
+          return `<div class="jchip ${TYPES[j.type].cls}" style="margin:3px 0"><span class="st ${STATUS[j.status].dot}"></span><span class="jn">${esc(j.jtNo)}</span> <span class="who">${esc(branchName(j.branchId))} · ${esc(s?s.name:"—")} · ${TYPES[j.type].label} · ${STATUS[j.status].label}</span></div>`;
+        }).join("");
+    }
+  }
+  else if (kind==="avail-today"){
+    title.textContent = "Available Today — per Branch";
+    const assigned = new Set(state.jobs.filter(j=>inScope(j) && j.date===todayKey).map(j=>j.staffId));
+    let freeCount = 0;
+    let head = `<thead><tr><th>Branch</th><th class="num">Free</th><th class="num">Assigned</th><th class="num">Staff</th><th>Available names</th></tr></thead><tbody>`;
+    let body = "";
+    branches.forEach(b=>{
+      const homed = visibleStaff().filter(s=>s.homeBranchId===b.id);
+      if(!homed.length) return;
+      const free = homed.filter(s=>!assigned.has(s.id));
+      freeCount += free.length;
+      body += `<tr><td>${esc(b.name)} <span style="color:var(--muted)">${esc(b.note||"")}</span></td>
+        <td class="num"><b>${free.length}</b></td><td class="num">${homed.length-free.length}</td><td class="num">${homed.length}</td>
+        <td>${free.length? free.map(s=>esc(s.name)+(s.hotline?' ☎':'')).join(", ") : '<span style="color:var(--muted)">— none —</span>'}</td></tr>`;
+    });
+    if(!body) body = `<tr><td colspan="5" class="empty-note">No staff assigned to these branches yet.</td></tr>`;
+    sub.textContent = `${todayLbl} · ${freeCount} staff with no task today`;
+    t.innerHTML = head + body + "</tbody>";
+  }
+  else if (kind==="staff"){
+    title.textContent = "Total Staff — per Branch";
+    let head = `<thead><tr><th>Branch</th>${ROLE_ORDER.map(r=>`<th class="num">${ROLES[r].short}</th>`).join("")}<th class="num">☎ Hotline</th><th class="num">Total</th></tr></thead><tbody>`;
+    let body=""; const tot={}; ROLE_ORDER.forEach(r=>tot[r]=0); let totH=0, totAll=0;
+    branches.forEach(b=>{
+      const homed = visibleStaff().filter(s=>s.homeBranchId===b.id);
+      if(!homed.length) return;
+      const c={}; ROLE_ORDER.forEach(r=>{ c[r]=homed.filter(s=>s.role===r).length; tot[r]+=c[r]; });
+      const h = homed.filter(s=>s.hotline).length; totH+=h; totAll+=homed.length;
+      body += `<tr><td>${esc(b.name)} <span style="color:var(--muted)">${esc(b.note||"")}</span></td>${ROLE_ORDER.map(r=>`<td class="num">${c[r]||""}</td>`).join("")}<td class="num">${h||""}</td><td class="num"><b>${homed.length}</b></td></tr>`;
+    });
+    if(!body) body = `<tr><td colspan="${ROLE_ORDER.length+3}" class="empty-note">No staff yet — add staff in 👥 Staff.</td></tr>`;
+    else body += `<tr class="tot"><td>ALL BRANCHES</td>${ROLE_ORDER.map(r=>`<td class="num">${tot[r]}</td>`).join("")}<td class="num">${totH}</td><td class="num">${totAll}</td></tr>`;
+    sub.textContent = `${totAll} staff across ${branches.length} branch(es)`;
+    t.innerHTML = head + body + "</tbody>";
+  }
+  else { // success or open — month scoped
+    const wantOpen = kind==="open";
+    title.textContent = (wantOpen ? "Not Yet Successful" : "Successful") + " — per Branch";
+    const jobs = jobsInMonth(m).filter(j=> wantOpen ? j.status!=="success" : j.status==="success");
+    sub.textContent = `${monthName(m)} · ${jobs.length} job ticket(s)`;
+    let head, body="", tot;
+    if (wantOpen){
+      head = `<thead><tr><th>Branch</th><th class="num">Pending</th><th class="num">Ongoing</th><th class="num">Not successful</th><th class="num">Total</th></tr></thead><tbody>`;
+      let tp=0,to=0,tf=0;
+      branches.forEach(b=>{
+        const bj=jobs.filter(j=>j.branchId===b.id); if(!bj.length) return;
+        const p=bj.filter(j=>j.status==="pending").length, o=bj.filter(j=>j.status==="ongoing").length, f=bj.filter(j=>j.status==="fail").length; tp+=p; to+=o; tf+=f;
+        body += `<tr><td>${esc(b.name)} <span style="color:var(--muted)">${esc(b.note||"")}</span></td><td class="num">${p||""}</td><td class="num">${o||""}</td><td class="num">${f||""}</td><td class="num"><b>${bj.length}</b></td></tr>`;
+      });
+      if(!body) body=`<tr><td colspan="5" class="empty-note">Nothing open this month. 🎉</td></tr>`;
+      else body += `<tr class="tot"><td>ALL BRANCHES</td><td class="num">${tp}</td><td class="num">${to}</td><td class="num">${tf}</td><td class="num">${jobs.length}</td></tr>`;
+    } else {
+      head = `<thead><tr><th>Branch</th>${TYPE_KEYS.map(k=>`<th class="num">${TYPES[k].label}</th>`).join("")}<th class="num">Total</th></tr></thead><tbody>`;
+      const tt={}; TYPE_KEYS.forEach(k=>tt[k]=0);
+      branches.forEach(b=>{
+        const bj=jobs.filter(j=>j.branchId===b.id); if(!bj.length) return;
+        const c={}; TYPE_KEYS.forEach(k=>{ c[k]=bj.filter(j=>j.type===k).length; tt[k]+=c[k]; });
+        body += `<tr><td>${esc(b.name)} <span style="color:var(--muted)">${esc(b.note||"")}</span></td>${TYPE_KEYS.map(k=>`<td class="num">${c[k]||""}</td>`).join("")}<td class="num"><b>${bj.length}</b></td></tr>`;
+      });
+      if(!body) body=`<tr><td colspan="${TYPE_KEYS.length+2}" class="empty-note">No successful tickets this month yet.</td></tr>`;
+      else body += `<tr class="tot"><td>ALL BRANCHES</td>${TYPE_KEYS.map(k=>`<td class="num">${tt[k]}</td>`).join("")}<td class="num">${jobs.length}</td></tr>`;
+    }
+    t.innerHTML = head + body + "</tbody>";
+  }
+  openModal("kpiModal");
+}
+
+/* ---------- calendar ---------- */
+function renderMonthLabel(){ document.getElementById("monthLabel").textContent = monthName(currentMonth); }
+
+function jobsInMonth(m){
+  return state.jobs.filter(j=>{ if(!inScope(j)) return false; const d=parseYMD(j.date); return d.getMonth()===m.getMonth() && d.getFullYear()===m.getFullYear(); });
+}
+function passesFilters(j){
+  if (!inScope(j)) return false;
+  if (filters.branch && j.branchId!==filters.branch) return false;
+  if (filters.emp && j.staffId!==filters.emp) return false;
+  if (filters.type && j.type!==filters.type) return false;
+  if (filters.status && j.status!==filters.status) return false;
+  return true;
+}
+
+function renderCalendar(){
+  const cal = document.getElementById("cal");
+  const today = new Date();
+  const first = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const start = mondayOf(first);
+  let html = DOW.map(d=>`<div class="dow">${d}</div>`).join("");
+
+  // group jobs by date
+  const byDate = {};
+  state.jobs.filter(passesFilters).forEach(j=>{ (byDate[j.date] = byDate[j.date]||[]).push(j); });
+
+  for (let i=0;i<42;i++){
+    const date = addDays(start,i);
+    const key = ymd(date);
+    const inMonth = date.getMonth()===currentMonth.getMonth();
+    const isToday = sameYMD(date,today);
+    // stop after we've covered the month (avoid trailing empty week)
+    if (i>=35 && date.getMonth()!==currentMonth.getMonth()) continue;
+    const jobs = (byDate[key]||[]).sort((a,b)=>a.jtNo.localeCompare(b.jtNo));
+    let chips = "";
+    jobs.forEach(j=>{
+      const s = staffById(j.staffId); if(!s) return;
+      const cross = s.homeBranchId!==j.branchId;
+      const typeLbl = j.type==="others" && j.typeDesc ? "Others: "+j.typeDesc : TYPES[j.type].label;
+      const noteC = j.statusDesc || j.pendingDesc || "";
+      const remark = (noteC && (j.status==="pending"||j.status==="fail")) ? " · "+STATUS[j.status].label+": "+noteC : "";
+      chips += `<div class="jchip ${TYPES[j.type].cls}" data-job="${j.id}" title="${esc(j.jtNo)} · ${esc(s.name)} · ${esc(typeLbl)} · ${STATUS[j.status].label}${esc(remark)}">
+        <span class="st ${STATUS[j.status].dot}"></span>
+        <span class="jn">${esc(j.jtNo)}</span>
+        <span class="who">${esc(firstName(s.name))}${cross?' <span class="cross" title="Cross-branch (home: '+esc(branchName(s.homeBranchId))+')">↷</span>':''}</span></div>`;
+    });
+    html += `<div class="cell ${inMonth?'':'other'} ${isToday?'today':''}" data-date="${key}">
+      <div class="dnum">${date.getDate()}</div>
+      <div class="jobs">${chips}</div>
+      <div class="addhint">＋</div></div>`;
+  }
+  cal.innerHTML = html;
+}
+function firstName(n){ return n.split(" ")[0]; }
+function branchName(id){ const b=branchById(id); return b?b.name:"—"; }
+
+/* ---------- availability ---------- */
+function renderAvailability(){
+  const body = document.getElementById("availBody");
+  const daySel = document.getElementById("availDay");
+  daySel.style.display = availMode==="day" ? "block" : "none";
+
+  let assignedIds, scopeLabel;
+  if (availMode==="month"){
+    assignedIds = new Set(jobsInMonth(currentMonth).map(j=>j.staffId));
+    scopeLabel = "this month";
+  } else {
+    assignedIds = new Set(state.jobs.filter(j=>inScope(j) && j.date===availDayKey).map(j=>j.staffId));
+    scopeLabel = "on "+fmtD(parseYMD(availDayKey));
+  }
+
+  let roster = visibleStaff();
+  if (filters.branch) roster = roster.filter(s=>s.homeBranchId===filters.branch);
+  let html=""; let anyFree=false;
+  ROLE_ORDER.forEach(r=>{
+    const people = roster.filter(s=>s.role===r);
+    if(!people.length) return;
+    const free = people.filter(s=>!assignedIds.has(s.id));
+    html += `<div class="role-group"><h3><span class="swatch" style="background:${ROLES[r].color}"></span>${ROLES[r].label}<span class="cnt">${free.length}/${people.length} free</span></h3>`;
+    if(!free.length){ html += `<div class="empty-note">All assigned ${scopeLabel}.</div>`; }
+    else free.forEach(s=>{ anyFree=true;
+      html += `<div class="person free"><div><div class="pname">${esc(s.name)} ${s.hotline?'<span class="htag">☎</span>':''}</div><div class="pmeta">🏠 ${esc(branchName(s.homeBranchId))}</div></div><div class="pspacer"></div><span class="badge free">FREE</span></div>`;
+    });
+    html += `</div>`;
+  });
+  if(!anyFree) html = `<div class="empty-note" style="padding:22px">Everyone has a task ${scopeLabel}. 🎉</div>`;
+  body.innerHTML = html;
+}
+
+/* ---------- reports ---------- */
+function renderReports(){
+  document.getElementById("rMonthLabel").textContent = monthName(reportMonth);
+  renderReport1();
+  renderReport2();
+}
+function rPasses(j){
+  if (!inScope(j)) return false;
+  if (rFilters.branch && j.branchId!==rFilters.branch) return false;
+  if (rFilters.emp && j.staffId!==rFilters.emp) return false;
+  return true;
+}
+function weekLabelFor(dateStr){
+  const mon = mondayOf(parseYMD(dateStr));
+  return fmtD(mon)+" – "+fmtD(addDays(mon,6));
+}
+function renderReport1(){
+  const m = reportMonth;
+  const jobs = jobsInMonth(m).filter(rPasses);
+  document.getElementById("r1sub").textContent =
+    `${monthName(m)} · counts of job tickets by service type. ${jobs.length} ticket(s)` +
+    (rFilters.branch?` · branch: ${branchName(rFilters.branch)}`:``) +
+    (rFilters.emp?` · employee: ${staffById(rFilters.emp)?.name||''}`:``);
+
+  // group: employee -> weekKey -> counts by type
+  const zero = ()=>{ const o={label:""}; TYPE_KEYS.forEach(k=>o[k]=0); return o; };
+  const map = {};
+  jobs.forEach(j=>{
+    const wkKey = ymd(mondayOf(parseYMD(j.date)));
+    map[j.staffId] = map[j.staffId] || {};
+    if(!map[j.staffId][wkKey]){ map[j.staffId][wkKey]=zero(); map[j.staffId][wkKey].label=weekLabelFor(j.date); }
+    map[j.staffId][wkKey][j.type]++;
+  });
+  const sumRow = (c)=>TYPE_KEYS.reduce((a,k)=>a+c[k],0);
+
+  const t = document.getElementById("r1table");
+  let html = `<thead><tr><th>Employee</th><th>Role</th><th>Week</th>
+    ${TYPE_KEYS.map(k=>`<th class="num">${TYPES[k].label}</th>`).join("")}<th class="num">Total</th></tr></thead><tbody>`;
+  const gt = {}; TYPE_KEYS.forEach(k=>gt[k]=0);
+  const empIds = Object.keys(map).sort((a,b)=>(staffById(a)?.name||"").localeCompare(staffById(b)?.name||""));
+  if(!empIds.length){ html += `<tr><td colspan="${TYPE_KEYS.length+4}" class="empty-note">No job tickets for this month/filter.</td></tr>`; }
+  empIds.forEach(sid=>{
+    const s = staffById(sid); if(!s) return;
+    const weeks = Object.keys(map[sid]).sort();
+    const et = {}; TYPE_KEYS.forEach(k=>et[k]=0);
+    weeks.forEach((wkKey,idx)=>{
+      const c = map[sid][wkKey];
+      TYPE_KEYS.forEach(k=>et[k]+=c[k]);
+      html += `<tr>
+        <td>${idx===0?esc(s.name):""}</td>
+        <td>${idx===0?ROLES[s.role].label:""}</td>
+        <td>${c.label}</td>
+        ${TYPE_KEYS.map(k=>`<td class="num">${c[k]||""}</td>`).join("")}
+        <td class="num"><b>${sumRow(c)}</b></td></tr>`;
+    });
+    if (weeks.length>1){
+      html += `<tr class="grp"><td></td><td></td><td>Subtotal — ${esc(s.name)}</td>
+        ${TYPE_KEYS.map(k=>`<td class="num">${et[k]}</td>`).join("")}<td class="num">${sumRow(et)}</td></tr>`;
+    }
+    TYPE_KEYS.forEach(k=>gt[k]+=et[k]);
+  });
+  if(empIds.length){
+    html += `<tr class="tot"><td colspan="3">ALL EMPLOYEES</td>
+      ${TYPE_KEYS.map(k=>`<td class="num">${gt[k]}</td>`).join("")}<td class="num">${sumRow(gt)}</td></tr>`;
+  }
+  html += `</tbody>`;
+  t.innerHTML = html;
+}
+function renderReport2(){
+  const jobs = state.jobs.filter(j=>j.status!=="success").filter(rPasses)
+    .sort((a,b)=> a.date.localeCompare(b.date) || a.jtNo.localeCompare(b.jtNo));
+  const t = document.getElementById("r2table");
+  let html = `<thead><tr><th>Date</th><th>JT No.</th><th>Employee</th><th>Branch</th>
+    <th>Customer</th><th>Location</th><th>Type</th><th>Status</th><th>Remarks</th></tr></thead><tbody>`;
+  if(!jobs.length){ html += `<tr><td colspan="9" class="empty-note">Nothing open — all job tickets are successful. 🎉</td></tr>`; }
+  jobs.forEach(j=>{
+    const s = staffById(j.staffId);
+    const noteR = j.statusDesc || j.pendingDesc || "";
+    const remark = [ (j.type==="others"&&j.typeDesc)?("Others: "+j.typeDesc):"", (noteR&&(j.status==="pending"||j.status==="fail"))?noteR:"" ].filter(Boolean).join(" — ");
+    html += `<tr>
+      <td>${fmtD(parseYMD(j.date))}</td>
+      <td><b>${esc(j.jtNo)}</b></td>
+      <td>${esc(s?s.name:"—")}</td>
+      <td>${esc(branchName(j.branchId))}</td>
+      <td>${esc(j.customer)}</td>
+      <td>${esc(j.location||"—")}</td>
+      <td><span class="type-tag ${TYPES[j.type].cls}">${TYPES[j.type].label}</span></td>
+      <td><span class="pill ${STATUS[j.status].cls}">${STATUS[j.status].label}</span></td>
+      <td>${esc(remark||"—")}</td></tr>`;
+  });
+  html += `</tbody>`;
+  t.innerHTML = html;
+}
+
+/* ---------- CSV ---------- */
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(c=>{ c=String(c==null?"":c); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(",")).join("\n");
+  const blob = new Blob([csv],{type:"text/csv"}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url);
+}
+function exportR1(){
+  const m = reportMonth; const jobs = jobsInMonth(m).filter(rPasses);
+  const map = {};
+  jobs.forEach(j=>{ const wkKey=ymd(mondayOf(parseYMD(j.date)));
+    map[j.staffId]=map[j.staffId]||{};
+    if(!map[j.staffId][wkKey]){ const o={label:weekLabelFor(j.date)}; TYPE_KEYS.forEach(k=>o[k]=0); map[j.staffId][wkKey]=o; }
+    map[j.staffId][wkKey][j.type]++; });
+  const rows=[["Employee","Role","Week",...TYPE_KEYS.map(k=>TYPES[k].label),"Total"]];
+  Object.keys(map).sort((a,b)=>(staffById(a)?.name||"").localeCompare(staffById(b)?.name||"")).forEach(sid=>{
+    const s=staffById(sid);
+    Object.keys(map[sid]).sort().forEach(wk=>{ const c=map[sid][wk];
+      rows.push([s?.name||sid, s?ROLES[s.role].label:"", c.label, ...TYPE_KEYS.map(k=>c[k]), TYPE_KEYS.reduce((a,k)=>a+c[k],0)]); });
+  });
+  downloadCSV("service-summary-"+ymd(m).slice(0,7)+".csv", rows);
+}
+function exportR2(){
+  const jobs = state.jobs.filter(j=>j.status!=="success").filter(rPasses).sort((a,b)=>a.date.localeCompare(b.date));
+  const rows=[["Date","JT No.","Employee","Branch","Customer","Location","Type","Status","Remarks"]];
+  jobs.forEach(j=>{ const s=staffById(j.staffId);
+    const noteR = j.statusDesc || j.pendingDesc || "";
+    const remark = [ (j.type==="others"&&j.typeDesc)?("Others: "+j.typeDesc):"", (noteR&&(j.status==="pending"||j.status==="fail"))?noteR:"" ].filter(Boolean).join(" — ");
+    rows.push([j.date, j.jtNo, s?s.name:"", branchName(j.branchId), j.customer, j.location, TYPES[j.type].label, STATUS[j.status].label, remark]); });
+  downloadCSV("not-yet-successful.csv", rows);
+}
+
+/* ---------- Job modal ---------- */
+let editingJobId = null;
+let jForm = { type:"onsite", status:"pending" };
+
+function openJobModal(dateKey, jobId){
+  editingJobId = jobId || null;
+  fillEmpSelect(document.getElementById("jEmp"));
+  const jBranchSel = document.getElementById("jBranch");
+  fillBranchSelect(jBranchSel, false, scopedBranches());
+  const del = document.getElementById("jDelete");
+  if (jobId){
+    const j = state.jobs.find(x=>x.id===jobId);
+    document.getElementById("jobTitle").textContent = "Edit "+j.jtNo;
+    document.getElementById("jDate").value = j.date;
+    document.getElementById("jJT").value = j.jtNo;
+    document.getElementById("jEmp").value = j.staffId;
+    document.getElementById("jBranch").value = j.branchId;
+    document.getElementById("jCustomer").value = j.customer;
+    document.getElementById("jLocation").value = j.location||"";
+    document.getElementById("jTypeOther").value = j.typeDesc||"";
+    document.getElementById("jStatusNote").value = j.statusDesc || j.pendingDesc || "";
+    jForm.type = j.type; jForm.status = j.status;
+    del.style.display = "inline-flex";
+  } else {
+    document.getElementById("jobTitle").textContent = "New Job Ticket";
+    document.getElementById("jDate").value = dateKey || ymd(new Date());
+    document.getElementById("jJT").value = "";
+    document.getElementById("jCustomer").value = "";
+    document.getElementById("jLocation").value = "";
+    document.getElementById("jTypeOther").value = "";
+    document.getElementById("jStatusNote").value = "";
+    jForm.type = "onsite"; jForm.status = "pending";
+    del.style.display = "none";
+    // default branch to selected employee's home
+    syncHomeDefault();
+  }
+  paintSeg("jType", jForm.type); paintSeg("jStatus", jForm.status);
+  updateTypeOther(); updatePendingNote();
+  updateHomeNote();
+  openModal("jobModal");
+}
+function syncHomeDefault(){
+  const sel = document.getElementById("jBranch");
+  const emp = staffById(document.getElementById("jEmp").value);
+  if (emp && [...sel.options].some(o=>o.value===emp.homeBranchId)) sel.value = emp.homeBranchId;
+}
+function updateHomeNote(){
+  const emp = staffById(document.getElementById("jEmp").value);
+  const bId = document.getElementById("jBranch").value;
+  const note = document.getElementById("jHomeNote");
+  if (!emp){ note.textContent=""; return; }
+  if (emp.homeBranchId===bId) note.innerHTML = `🏠 ${esc(emp.name)} is based at ${esc(branchName(emp.homeBranchId))} (home branch).`;
+  else note.innerHTML = `↷ Cross-branch: ${esc(emp.name)} is based at <b>${esc(branchName(emp.homeBranchId))}</b> but will service <b>${esc(branchName(bId))}</b>.`;
+}
+function paintSeg(id, val){
+  document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active", b.getAttribute("data-v")===val));
+}
+function updateTypeOther(){
+  document.getElementById("jTypeOtherWrap").style.display = jForm.type==="others" ? "block" : "none";
+}
+function updatePendingNote(){
+  const wrap = document.getElementById("jStatusNoteWrap");
+  const lbl = document.getElementById("jStatusNoteLabel");
+  const inp = document.getElementById("jStatusNote");
+  if (jForm.status==="pending"){
+    wrap.style.display = "block";
+    lbl.innerHTML = 'Pending reason / next step <span class="req">*</span>';
+    inp.placeholder = "e.g. Waiting for parts, customer reschedule, follow-up on…";
+  } else if (jForm.status==="fail"){
+    wrap.style.display = "block";
+    lbl.innerHTML = 'Reason — not successful <span class="req">*</span>';
+    inp.placeholder = "e.g. Customer not available, wrong part, needs escalation…";
+  } else {
+    wrap.style.display = "none";
+  }
+}
+function saveJob(){
+  const date = document.getElementById("jDate").value;
+  const jtNo = document.getElementById("jJT").value.trim();
+  const staffId = document.getElementById("jEmp").value;
+  const branchId = document.getElementById("jBranch").value;
+  const customer = document.getElementById("jCustomer").value.trim();
+  const location = document.getElementById("jLocation").value.trim();
+  const typeDesc = document.getElementById("jTypeOther").value.trim();
+  const statusDesc = document.getElementById("jStatusNote").value.trim();
+  const needsNote = jForm.status==="pending" || jForm.status==="fail";
+  if (!date || !jtNo || !customer){ alert("Please fill in Date, JT No., and Customer name."); return; }
+  if (perms.branchIds && !perms.branchIds.includes(branchId)){ alert("You can only schedule at your assigned branch(es)."); return; }
+  if (jForm.type==="others" && !typeDesc){ alert("Please describe the service for type “Others.”"); document.getElementById("jTypeOther").focus(); return; }
+  if (jForm.status==="pending" && !statusDesc){ alert("Please enter the pending reason / next step."); document.getElementById("jStatusNote").focus(); return; }
+  if (jForm.status==="fail" && !statusDesc){ alert("Please enter the reason it was not successful."); document.getElementById("jStatusNote").focus(); return; }
+  const fields = { date, jtNo, staffId, branchId, customer, location, type:jForm.type, status:jForm.status,
+    typeDesc: jForm.type==="others" ? typeDesc : "", statusDesc: needsNote ? statusDesc : "", pendingDesc: "" };
+  if (editingJobId){
+    Object.assign(state.jobs.find(x=>x.id===editingJobId), fields);
+  } else {
+    state.jobs.push({ id:nid("j"), ...fields });
+  }
+  closeModal("jobModal"); render();
+}
+function deleteJob(){
+  if (editingJobId && confirm("Delete this job ticket?")){
+    state.jobs = state.jobs.filter(j=>j.id!==editingJobId);
+    closeModal("jobModal"); render();
+  }
+}
+
+/* ---------- selects ---------- */
+function fillBranchSelect(sel, withAll, list){
+  const branches = list || state.branches;
+  let html = withAll ? `<option value="">All branches</option>` : "";
+  html += branches.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("");
+  sel.innerHTML = html;
+}
+function fillEmpSelect(sel, withAll, list){
+  const roster = list || state.staff;
+  let html = withAll ? `<option value="">All employees</option>` : "";
+  ROLE_ORDER.forEach(r=>{
+    const people = roster.filter(s=>s.role===r);
+    if(!people.length) return;
+    html += `<optgroup label="${ROLES[r].label}">` + people.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("") + `</optgroup>`;
+  });
+  sel.innerHTML = html;
+}
+function refreshFilterSelects(){
+  const sb = scopedBranches();
+  const roster = visibleStaff();
+  fillBranchSelect(document.getElementById("fBranch"), true, sb); document.getElementById("fBranch").value = filters.branch;
+  fillEmpSelect(document.getElementById("fEmp"), true, roster); document.getElementById("fEmp").value = filters.emp;
+  fillBranchSelect(document.getElementById("rfBranch"), true, sb); document.getElementById("rfBranch").value = rFilters.branch;
+  fillEmpSelect(document.getElementById("rfEmp"), true, roster); document.getElementById("rfEmp").value = rFilters.emp;
+  fillBranchSelect(document.getElementById("newStaffBranch"), false);
+  // availability day options for current month
+  const sel = document.getElementById("availDay");
+  const first = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const days = new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1, 0).getDate();
+  let opts="";
+  for(let d=1; d<=days; d++){ const dt=new Date(currentMonth.getFullYear(),currentMonth.getMonth(),d); opts+=`<option value="${ymd(dt)}">${DOW[(dt.getDay()+6)%7]} ${fmtD(dt)}</option>`; }
+  sel.innerHTML = opts;
+  if (parseYMD(availDayKey).getMonth()!==currentMonth.getMonth()) availDayKey = ymd(first);
+  sel.value = availDayKey;
+}
+
+/* ---------- staff manager ---------- */
+function renderStaffManager(){
+  const wrap = document.getElementById("staffList");
+  let html="";
+  ROLE_ORDER.forEach(r=>{
+    const people = state.staff.filter(s=>s.role===r); if(!people.length) return;
+    html += `<div class="role-group"><h3><span class="swatch" style="background:${ROLES[r].color}"></span>${ROLES[r].label}<span class="cnt">${people.length}</span></h3>`;
+    people.forEach(s=>{
+      html += `<div class="person"><div>
+          <div class="pname">${esc(s.name)} ${s.hotline?'<span class="htag">☎ HOTLINE</span>':''}</div>
+          <div class="pmeta">🏠 ${esc(branchName(s.homeBranchId))}</div></div>
+        <div class="pspacer"></div>
+        <label class="hrow" title="Mark as Hotline team"><input type="checkbox" data-hotline="${s.id}" ${s.hotline?'checked':''}> Hotline</label>
+        <button class="btn ghost sm" data-rmstaff="${s.id}" title="Remove">✕</button></div>`;
+    });
+    html += `</div>`;
+  });
+  wrap.innerHTML = html || `<div class="empty-note">No staff yet.</div>`;
+}
+
+/* ---------- utils ---------- */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function openModal(id){ document.getElementById(id).classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+
+/* ---------- export / import ---------- */
+function exportData(){
+  const payload = { app:"es-print-support-scheduler", version:2, exportedAt:new Date().toISOString(), data:state };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="es-print-schedule-"+ymd(new Date())+".json"; a.click(); URL.revokeObjectURL(url);
+}
+function importData(file){
+  const reader=new FileReader();
+  reader.onload=()=>{ try{
+    const parsed=JSON.parse(reader.result); const d=parsed.data||parsed;
+    if(!d.staff||!d.branches) throw new Error("bad");
+    const users = (d.users && d.users.length) ? d.users : state.users;
+    state = { branches:d.branches, staff:d.staff, jobs:d.jobs||[], users };
+    applyPerms(); refreshFilterSelects(); render();
+  }catch(e){ alert("Sorry, that file could not be read as a schedule export."); } };
+  reader.readAsText(file);
+}
+
+/* ---------- login / permissions ---------- */
+function doLogin(){
+  const u = document.getElementById("loginUser").value.trim();
+  const p = document.getElementById("loginPass").value;
+  const found = state.users.find(x=>x.username.toLowerCase()===u.toLowerCase() && x.password===p);
+  const err = document.getElementById("loginErr");
+  if (!found){ err.textContent = "Incorrect username or password."; return; }
+  if (found.role==="branch" && getUserBranchIds(found).length===0){
+    err.textContent = "Your account has no valid branch assigned. Ask an admin to fix it."; return;
+  }
+  currentUser = found;
+  err.textContent = "";
+  document.getElementById("loginPass").value = "";
+  document.getElementById("loginScreen").style.display = "none";
+  applyPerms();
+  refreshFilterSelects();
+  render();
+}
+function logout(){
+  currentUser = null;
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("loginUser").value = "";
+  document.getElementById("loginPass").value = "";
+  document.getElementById("loginUser").focus();
+}
+function applyPerms(){
+  if(!currentUser) return;
+  perms.isAdmin = currentUser.role==="admin";
+  perms.branchIds = currentUser.role==="branch" ? getUserBranchIds(currentUser) : null;
+
+  // user chip
+  let roleLbl;
+  if (perms.isAdmin) roleLbl = "All access";
+  else if (perms.branchIds.length===1) roleLbl = "Branch: "+branchName(perms.branchIds[0]);
+  else roleLbl = perms.branchIds.length+" branches";
+  document.getElementById("userChip").innerHTML =
+    `<span class="role-tag ${currentUser.role}">${perms.isAdmin?"ADMIN":"BRANCH"}</span>
+     <span class="uname">${esc(currentUser.name||currentUser.username)}</span>
+     <span class="urole">· ${esc(roleLbl)}</span>`;
+  document.getElementById("userChip").title = perms.isAdmin ? "All access" : perms.branchIds.map(branchName).join(", ");
+
+  // show/hide admin-only controls
+  document.querySelectorAll(".adminOnly").forEach(el=>el.classList.toggle("hidden", !perms.isAdmin));
+
+  // branch managers browse within their assigned branches only (filter shows just those)
+  filters.branch = ""; rFilters.branch = "";
+}
+
+/* ---------- users management ---------- */
+function renderUsers(){
+  const wrap = document.getElementById("usersList");
+  let html = "";
+  state.users.forEach(u=>{
+    const isMe = currentUser && u.id===currentUser.id;
+    const bids = getUserBranchIds(u) || [];
+    const scope = u.role==="admin" ? "All access" : ("Branches — "+(bids.length? bids.map(branchName).join(", ") : "none assigned"));
+    html += `<div class="person"><div>
+        <div class="pname">${esc(u.name||u.username)} <span class="role-tag ${u.role}">${u.role==="admin"?"ADMIN":"BRANCH"}</span></div>
+        <div class="pmeta">@${esc(u.username)} · ${esc(scope)}${isMe?" · you":""}</div></div>
+      <div class="pspacer"></div>
+      <button class="btn ghost sm" data-rmuser="${u.id}" title="Remove"${isMe?" disabled style='opacity:.4'":""}>✕</button></div>`;
+  });
+  wrap.innerHTML = html;
+}
+function toggleNuBranch(){
+  const show = document.getElementById("nuRole").value==="branch";
+  document.getElementById("nuBranchWrap").style.display = show ? "block" : "none";
+  if (show){
+    const box = document.getElementById("nuBranches");
+    box.innerHTML = state.branches.length
+      ? state.branches.map(b=>`<label><input type="checkbox" value="${b.id}"> ${esc(b.name)}${b.note?` <span style="color:var(--muted)">· ${esc(b.note)}</span>`:""}</label>`).join("")
+      : `<div class="empty">No branches yet — add a branch first, then assign it here.</div>`;
+  }
+}
+
+/* ---------- events ---------- */
+document.getElementById("loginBtn").onclick = doLogin;
+document.getElementById("loginPass").addEventListener("keydown",(e)=>{ if(e.key==="Enter") doLogin(); });
+document.getElementById("loginUser").addEventListener("keydown",(e)=>{ if(e.key==="Enter") document.getElementById("loginPass").focus(); });
+document.getElementById("logoutBtn").onclick = logout;
+
+document.getElementById("usersBtn").onclick = ()=>{ if(!perms.isAdmin) return; toggleNuBranch(); renderUsers(); openModal("usersModal"); };
+document.getElementById("nuRole").onchange = toggleNuBranch;
+document.getElementById("addUserConfirm").onclick = ()=>{
+  const name = document.getElementById("nuName").value.trim();
+  const username = document.getElementById("nuUser").value.trim();
+  const password = document.getElementById("nuPass").value;
+  const role = document.getElementById("nuRole").value;
+  const branchIds = role==="branch"
+    ? [...document.querySelectorAll("#nuBranches input:checked")].map(c=>c.value)
+    : null;
+  if (!username || !password){ alert("Username and password are required."); return; }
+  if (state.users.some(u=>u.username.toLowerCase()===username.toLowerCase())){ alert("That username already exists."); return; }
+  if (role==="branch" && (!branchIds || branchIds.length===0)){ alert("Please tick at least one branch for this Branch Service Manager."); return; }
+  state.users.push({ id:nid("u"), username, password, name:name||username, role, branchIds });
+  document.getElementById("nuName").value=""; document.getElementById("nuUser").value=""; document.getElementById("nuPass").value="";
+  document.querySelectorAll("#nuBranches input:checked").forEach(c=>c.checked=false);
+  renderUsers();
+};
+document.getElementById("usersList").addEventListener("click",(e)=>{
+  const rm = e.target.closest("[data-rmuser]"); if(!rm || rm.disabled) return;
+  const id = rm.getAttribute("data-rmuser");
+  if (id===currentUser.id) return;
+  const target = state.users.find(u=>u.id===id);
+  if (target.role==="admin" && state.users.filter(u=>u.role==="admin").length<=1){ alert("You can't remove the last admin account."); return; }
+  if (confirm("Remove user “"+(target.name||target.username)+"”?")){
+    state.users = state.users.filter(u=>u.id!==id);
+    renderUsers();
+  }
+});
+
+document.getElementById("kpis").addEventListener("click",(e)=>{
+  const tile=e.target.closest("[data-report]"); if(!tile) return;
+  openKpiReport(tile.getAttribute("data-report"));
+});
+
+document.getElementById("tabs").addEventListener("click",(e)=>{
+  const b=e.target.closest("button[data-view]"); if(!b) return;
+  view=b.getAttribute("data-view");
+  [...document.querySelectorAll("#tabs button")].forEach(x=>x.classList.toggle("active",x===b));
+  document.getElementById("calendarView").classList.toggle("hidden", view!=="calendar");
+  document.getElementById("reportsView").classList.toggle("hidden", view!=="reports");
+  render();
+});
+
+document.getElementById("prevMonth").onclick=()=>{ currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()-1,1); refreshFilterSelects(); render(); };
+document.getElementById("nextMonth").onclick=()=>{ currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+1,1); refreshFilterSelects(); render(); };
+document.getElementById("todayBtn").onclick=()=>{ currentMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1); refreshFilterSelects(); render(); };
+document.getElementById("rPrevMonth").onclick=()=>{ reportMonth=new Date(reportMonth.getFullYear(),reportMonth.getMonth()-1,1); render(); };
+document.getElementById("rNextMonth").onclick=()=>{ reportMonth=new Date(reportMonth.getFullYear(),reportMonth.getMonth()+1,1); render(); };
+document.getElementById("rTodayBtn").onclick=()=>{ reportMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1); render(); };
+
+document.getElementById("fBranch").onchange=(e)=>{ filters.branch=e.target.value; renderCalendar(); renderAvailability(); };
+document.getElementById("fEmp").onchange=(e)=>{ filters.emp=e.target.value; renderCalendar(); };
+document.getElementById("fType").onchange=(e)=>{ filters.type=e.target.value; renderCalendar(); };
+document.getElementById("fStatus").onchange=(e)=>{ filters.status=e.target.value; renderCalendar(); };
+document.getElementById("rfBranch").onchange=(e)=>{ rFilters.branch=e.target.value; renderReports(); };
+document.getElementById("rfEmp").onchange=(e)=>{ rFilters.emp=e.target.value; renderReports(); };
+
+document.getElementById("cal").addEventListener("click",(e)=>{
+  const chip=e.target.closest("[data-job]");
+  if(chip){ e.stopPropagation(); openJobModal(null, chip.getAttribute("data-job")); return; }
+  const cell=e.target.closest(".cell");
+  if(cell) openJobModal(cell.getAttribute("data-date"), null);
+});
+
+document.getElementById("availSeg").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  availMode=b.getAttribute("data-mode");
+  [...document.querySelectorAll("#availSeg button")].forEach(x=>x.classList.toggle("active",x===b));
+  renderAvailability();
+});
+document.getElementById("availDay").onchange=(e)=>{ availDayKey=e.target.value; renderAvailability(); };
+
+/* job modal seg buttons */
+document.getElementById("jType").addEventListener("click",(e)=>{ const b=e.target.closest("button"); if(!b)return; jForm.type=b.getAttribute("data-v"); paintSeg("jType",jForm.type); updateTypeOther(); if(jForm.type==="others") document.getElementById("jTypeOther").focus(); });
+document.getElementById("jStatus").addEventListener("click",(e)=>{ const b=e.target.closest("button"); if(!b)return; jForm.status=b.getAttribute("data-v"); paintSeg("jStatus",jForm.status); updatePendingNote(); if(jForm.status==="pending"||jForm.status==="fail") document.getElementById("jStatusNote").focus(); });
+document.getElementById("jEmp").addEventListener("change",()=>{ if(!editingJobId) syncHomeDefault(); updateHomeNote(); });
+document.getElementById("jBranch").addEventListener("change", updateHomeNote);
+document.getElementById("jSave").onclick=saveJob;
+document.getElementById("jDelete").onclick=deleteJob;
+
+/* staff */
+document.getElementById("manageStaffBtn").onclick=()=>{ fillBranchSelect(document.getElementById("newStaffBranch"),false); renderStaffManager(); openModal("staffModal"); };
+document.getElementById("addStaffConfirm").onclick=()=>{
+  const name=document.getElementById("newStaffName").value.trim();
+  if(!name){ document.getElementById("newStaffName").focus(); return; }
+  state.staff.push({ id:nid("s"), name, role:document.getElementById("newStaffRole").value, homeBranchId:document.getElementById("newStaffBranch").value, hotline:document.getElementById("newStaffHotline").checked });
+  document.getElementById("newStaffName").value="";
+  document.getElementById("newStaffHotline").checked=false;
+  renderStaffManager(); refreshFilterSelects(); render();
+};
+document.getElementById("newStaffName").addEventListener("keydown",(e)=>{ if(e.key==="Enter") document.getElementById("addStaffConfirm").click(); });
+document.getElementById("staffList").addEventListener("change",(e)=>{
+  const hb=e.target.closest("[data-hotline]"); if(!hb)return;
+  const s=staffById(hb.getAttribute("data-hotline"));
+  if(s){ s.hotline=hb.checked; renderStaffManager(); render(); }
+});
+document.getElementById("staffList").addEventListener("click",(e)=>{
+  const rm=e.target.closest("[data-rmstaff]"); if(!rm)return;
+  const id=rm.getAttribute("data-rmstaff");
+  if(confirm("Remove this staff member? Their job tickets will remain but show as unassigned.")){
+    state.staff=state.staff.filter(s=>s.id!==id);
+    renderStaffManager(); refreshFilterSelects(); render();
+  }
+});
+
+/* branch */
+document.getElementById("addBranchBtn").onclick=()=>{ document.getElementById("newBranchName").value=""; document.getElementById("newBranchNote").value=""; openModal("branchModal"); };
+document.getElementById("addBranchConfirm").onclick=()=>{
+  const name=document.getElementById("newBranchName").value.trim(); if(!name){ document.getElementById("newBranchName").focus(); return; }
+  state.branches.push({ id:nid("b"), name, note:document.getElementById("newBranchNote").value.trim() });
+  closeModal("branchModal"); refreshFilterSelects(); render();
+};
+
+/* csv */
+document.getElementById("r1csv").onclick=exportR1;
+document.getElementById("r2csv").onclick=exportR2;
+
+/* export/import/theme */
+document.getElementById("exportBtn").onclick=exportData;
+document.getElementById("importBtn").onclick=()=>document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange=(e)=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
+document.getElementById("themeBtn").onclick=()=>{ const c=document.documentElement.getAttribute("data-theme"); document.documentElement.setAttribute("data-theme", c==="dark"?"light":"dark"); };
+
+/* modal close */
+document.querySelectorAll(".modal-bg").forEach(m=>m.addEventListener("click",(e)=>{ if(e.target===m||e.target.closest("[data-close]")) m.classList.remove("open"); }));
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") document.querySelectorAll(".modal-bg.open").forEach(m=>m.classList.remove("open")); });
+
+/* boot — show login first */
+document.getElementById("loginUser").focus();
+</script>
+</body>
+</html>
