@@ -10,7 +10,7 @@ export default function LoginPage() {
 
   async function handleLogin(e) {
     e.preventDefault()
-    if (!email || !password) { setErr('Please enter email and password.'); return }
+    if (!email || !password) { setErr('Please enter username and password.'); return }
     setBusy(true); setErr('')
     const error = await signIn(email.trim(), password)
     if (error) setErr(error.message || 'Invalid credentials.')
@@ -26,11 +26,11 @@ export default function LoginPage() {
           <div className="lsub">ES Print Group of Companies — please sign in</div>
         </div>
         <form className="lbody" onSubmit={handleLogin}>
-          <label className="fld">Email</label>
+          <label className="fld">Username</label>
           <input
-            type="email"
+            type="text"
             className="txt"
-            placeholder="you@esprint.com"
+            placeholder="username"
             value={email}
             onChange={e => setEmail(e.target.value)}
             autoComplete="username"
@@ -45,12 +45,19 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
           <div className="login-err">{err}</div>
-          <button className="btn primary" style={{ width:'100%', justifyContent:'center', marginTop:6 }} disabled={busy}>
+          <button
+            className="btn primary"
+            style={{ width: '100%', justifyContent: 'center', marginTop: 6 }}
+            disabled={busy}
+          >
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
         <div className="login-note">
-          🔒 Powered by Supabase Auth — credentials are securely managed server-side.
+          🔒 Access is applied inside this page only — it organizes who sees
+          what, but it is <b>not</b> server-grade security. Don't store this file where
+          untrusted people can open it. Ask your admin for a hosted version if
+          you need real protection.
         </div>
       </div>
     </div>

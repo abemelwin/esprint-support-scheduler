@@ -260,6 +260,7 @@ input.txt, select.sel { width: 100%; }
 .login-card .lbody { padding: 4px 26px 22px; }
 .login-card label.fld { margin-top: 12px; }
 .login-err { color: var(--st-fail); font-size: 12.5px; margin-top: 12px; min-height: 16px; text-align: center; }
+.login-note { font-size: 11px; color: var(--muted); text-align: center; padding: 12px 26px 20px; border-top: 1px solid var(--border); line-height: 1.5; }
 .user-chip { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 5px 10px; border-radius: 20px; background: var(--surface-2); border: 1px solid var(--border); }
 .user-chip .uname { font-weight: 650; }
 .user-chip .urole { color: var(--muted); }
