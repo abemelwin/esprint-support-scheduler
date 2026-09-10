@@ -262,11 +262,13 @@ function RegionSection({ regionName, currentMonth, onOpenJob, scopedBranchIds })
       <div className="ovl-region-head" style={{ borderLeftColor: regionColor }}>
         <div className="ovl-region-label" style={{ color: regionColor }}>{regionName}</div>
         <div className="ovl-region-filter">
-          <BranchPicker
-            branches={regionBranches}
-            selected={selected}
-            onChange={setSelected}
-          />
+          {regionBranches.length > 1
+            ? <BranchPicker branches={regionBranches} selected={selected} onChange={setSelected} />
+            : <span className="bp-trigger" style={{ cursor: 'default' }}>
+                <span className="bp-code">{regionBranches[0]?.name}</span>
+                <span className="bp-note">{regionBranches[0]?.note}</span>
+              </span>
+          }
         </div>
       </div>
 
