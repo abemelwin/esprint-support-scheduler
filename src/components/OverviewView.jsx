@@ -6,13 +6,19 @@ import { TYPES, STATUS, ROLES, ROLE_ORDER, REGIONS, REGION_COLORS } from '../lib
 // ── One staff row: name + their scheduled tasks ──────────────────────────────
 function StaffRow({ person, tasks, onOpenJob }) {
   const sorted = [...tasks].sort((a, b) => a.date.localeCompare(b.date))
+
+  // Unique customer names for this staff member
+  const customers = [...new Set(sorted.map(j => (j.customer || '').trim()).filter(Boolean))]
+
   return (
     <div className="ovl-staff">
       <div className="ovl-staff-head">
-        <span className="ovl-staff-name">{person.name}</span>
-        <span className="ovl-staff-role" style={{ color: ROLES[person.role]?.color }}>
-          {ROLES[person.role]?.short || person.role}
-        </span>
+        <div className="ovl-staff-id">
+          <span className="ovl-staff-name">{person.name}</span>
+          <span className="ovl-staff-cust">
+            {customers.length ? customers.join(', ') : 'No customer'}
+          </span>
+        </div>
         {person.hotline && <span className="htag">☎</span>}
         <div className="ovl-spacer" />
         {sorted.length === 0
