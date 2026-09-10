@@ -24,6 +24,19 @@ export const STATUS = {
 
 export const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
+// Regional grouping by branch short-code (branch.name)
+export const REGIONS = {
+  Luzon:    ['CAB','CAMSUR','CAV','ISA','MAK','PAL','PANG','RIZ'],
+  Visayas:  ['BAC','CEB','ILO','TAC'],
+  Mindanao: ['BUK','BUT','CDO','DAV','GENSAN','PAG','TAG','ZAM'],
+}
+
+export const REGION_COLORS = {
+  Luzon:    '#2a78d6',
+  Visayas:  '#b5179e',
+  Mindanao: '#1baf7a',
+}
+
 export const SEED_BRANCHES = [
   { id:'b1',  name:'BAC',    note:'Bacolod' },
   { id:'b2',  name:'BUK',    note:'Bukidnon' },

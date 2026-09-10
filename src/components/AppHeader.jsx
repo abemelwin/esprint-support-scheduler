@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 
-export default function AppHeader({ view, setView, onStaff, onBranch, onUsers }) {
+export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, isArnold }) {
   const { currentUser, isAdmin, signOut, loadBranches, loadStaff, loadJobs } = useApp()
   const fileRef = useRef()
 
@@ -71,6 +71,13 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers })
           className={view === 'reports' ? 'active' : ''}
           onClick={() => setView('reports')}
         >📊 Reports</button>
+        {isArnold && (
+          <button
+            data-view="overview"
+            className={view === 'overview' ? 'active' : ''}
+            onClick={() => setView('overview')}
+          >🗺 Overview</button>
+        )}
       </div>
 
       <div className="spacer" />
