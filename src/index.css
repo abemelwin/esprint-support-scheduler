@@ -272,7 +272,7 @@ input.txt, select.sel { width: 100%; }
 .role-tag.admin { background: var(--sm-mgr); }
 .role-tag.service_manager { background: #7c3aed; }
 .role-tag.branch { background: var(--junior); }
-.htag { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700; color: #fff; background: var(--t-hotline); }
+.htag { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700; color: #fff; background: var(--t-hotline); flex-shrink: 0; }
 .hrow { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-2); cursor: pointer; }
 .hrow input { width: 15px; height: 15px; cursor: pointer; }
 select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
@@ -372,17 +372,17 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 .ovl-role-empty { padding: 8px 4px; font-size: 12px; color: var(--muted); }
 
 /* Staff row */
-.ovl-staff { border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); margin-bottom: 4px; overflow: hidden; }
-.ovl-staff-head { display: flex; align-items: center; gap: 8px; padding: 5px 10px; min-height: 0; }
-.ovl-staff-id { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex: 1; flex-wrap: wrap; }
-.ovl-staff-name { font-weight: 650; font-size: 12.5px; white-space: normal; word-break: break-word; }
+.ovl-staff { border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); margin-bottom: 4px; }
+.ovl-staff-head { display: flex; align-items: flex-start; gap: 8px; padding: 5px 10px; flex-wrap: nowrap; }
+.ovl-staff-id { display: flex; align-items: baseline; gap: 4px; flex: 1; flex-wrap: wrap; min-width: 0; }
+.ovl-staff-name { font-weight: 650; font-size: 12.5px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; flex: 1; min-width: 0; }
 .ovl-staff-cust { font-size: 11px; color: var(--muted); white-space: normal; flex-shrink: 1; }
 .ovl-staff-cust::before { content: '·'; margin-right: 5px; }
 .ovl-name-type { font-weight: 600; font-size: 12px; color: var(--senior); margin-left: 2px; }
 .ovl-name-type.absent { color: var(--st-fail); }
 .ovl-staff.is-absent { opacity: .85; }
 .ovl-badge.off { background: color-mix(in srgb, var(--st-fail) 15%, transparent); color: var(--st-fail); }
-.ovl-badge { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+.ovl-badge { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
 .ovl-badge.free { background: color-mix(in srgb, var(--st-success) 15%, transparent); color: var(--st-success-ink); }
 .ovl-badge.busy { background: color-mix(in srgb, var(--st-ongoing) 15%, transparent); color: var(--st-ongoing); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .ovl-badge.busy.clickable { cursor: pointer; }
