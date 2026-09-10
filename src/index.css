@@ -374,8 +374,8 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 /* Staff row */
 .ovl-staff { border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); margin-bottom: 4px; overflow: hidden; }
 .ovl-staff-head { display: flex; align-items: center; gap: 8px; padding: 5px 10px; min-height: 0; }
-.ovl-staff-id { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; overflow: hidden; }
-.ovl-staff-name { font-weight: 650; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ovl-staff-id { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex: 1; flex-wrap: wrap; }
+.ovl-staff-name { font-weight: 650; font-size: 12.5px; white-space: normal; word-break: break-word; }
 .ovl-staff-cust { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
 .ovl-staff-cust::before { content: '·'; margin-right: 5px; }.ovl-name-type { font-weight: 600; font-size: 12px; color: var(--senior); margin-left: 2px; }
 .ovl-name-type.absent { color: var(--st-fail); }
