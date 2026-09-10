@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: light;
   --surface-1: #fcfcfb;
   --surface-2: #f4f3f0;
@@ -287,113 +287,73 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
   body { background: #fff; }
 }
 
-/* ── Overview (Arnold's regional view) ───────────────────────────── */
-.ov-root { display: flex; flex-direction: column; gap: 22px; }
-
-.ov-toolbar-hint { font-size: 12px; color: var(--muted); }
+/* ── Overview list (Arnold's regional view) ──────────────────────── */
+.ovl-root { display: flex; flex-direction: column; gap: 18px; }
+.ovl-toolbar-hint { font-size: 12px; color: var(--muted); }
+.ovl-spacer { flex: 1; }
 
 /* Region block */
-.ov-region { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-
-.ov-region-head {
+.ovl-region { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.ovl-region-head {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   padding: 11px 16px; border-bottom: 1px solid var(--border);
   border-left: 4px solid var(--muted); background: var(--surface-2);
 }
-.ov-region-label { font-size: 15px; font-weight: 750; letter-spacing: .3px; min-width: 90px; }
-.ov-region-meta  { font-size: 12px; color: var(--ink-2); display: flex; gap: 12px; align-items: center; }
-.ov-region-rate  { color: var(--muted); }
-.ov-region-filter { display: flex; align-items: center; gap: 6px; margin-left: auto; }
-.ov-region-filter label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-.ov-region-filter .sel { width: auto; min-width: 160px; }
+.ovl-region-label { font-size: 15px; font-weight: 750; letter-spacing: .3px; min-width: 90px; }
+.ovl-region-meta  { font-size: 12px; color: var(--ink-2); display: flex; gap: 12px; align-items: center; }
+.ovl-region-rate  { color: var(--muted); }
+.ovl-region-filter { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.ovl-region-filter label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.ovl-region-filter .sel { width: auto; min-width: 180px; }
 
-.ov-empty { padding: 18px; color: var(--muted); font-size: 13px; text-align: center; }
+.ovl-empty-row { padding: 12px 16px; color: var(--muted); font-size: 13px; }
 
-/* Branch cards grid */
-.ov-branch-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1px;
-  background: var(--grid);
+/* Branch list */
+.ovl-branch-list { display: flex; flex-direction: column; }
+.ovl-branch { border-bottom: 1px solid var(--grid); }
+.ovl-branch:last-child { border-bottom: none; }
+
+.ovl-branch-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 16px; cursor: pointer; user-select: none;
+}
+.ovl-branch-head:hover { background: var(--surface-2); }
+.ovl-caret { color: var(--muted); font-size: 11px; width: 12px; }
+.ovl-branch-code { font-weight: 750; font-size: 14px; }
+.ovl-branch-full { font-size: 12px; color: var(--muted); }
+.ovl-count { font-size: 11px; font-weight: 650; padding: 2px 9px; border-radius: 20px; background: var(--surface-3); color: var(--ink-2); }
+.ovl-count.free { background: color-mix(in srgb, var(--st-success) 15%, transparent); color: var(--st-success-ink); }
+
+.ovl-branch-body { padding: 4px 16px 14px 36px; }
+.ovl-section-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--muted); font-weight: 700; margin: 10px 0 6px;
 }
 
-.ov-branch-card {
-  background: var(--surface-1);
-  display: flex;
-  flex-direction: column;
+/* Task list */
+.ovl-task-list { display: flex; flex-direction: column; gap: 3px; }
+.ovl-task {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 6px 10px; border-radius: 8px; background: var(--surface-2);
+  border: 1px solid transparent; cursor: pointer; font-size: 13px;
 }
+.ovl-task:hover { border-color: var(--senior); background: var(--surface-1); }
+.ovl-date { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; min-width: 42px; }
+.ovl-type { font-size: 10px; font-weight: 700; color: #fff; padding: 2px 7px; border-radius: 5px; }
+.ovl-type.t-install { background: var(--t-install); }
+.ovl-type.t-onsite  { background: var(--t-onsite); }
+.ovl-type.t-hotline { background: var(--t-hotline); }
+.ovl-type.t-others  { background: var(--t-others); }
+.ovl-jn { font-weight: 700; }
+.ovl-who { color: var(--ink-1); }
+.ovl-cust { color: var(--ink-2); font-size: 12px; }
 
-.ov-branch-head {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
-  padding: 7px 10px 5px;
-  border-bottom: 1px solid var(--grid);
-  gap: 6px;
+/* Availability chips */
+.ovl-avail-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.ovl-avail-chip {
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 550; padding: 4px 10px; border-radius: 20px;
+  background: color-mix(in srgb, var(--st-success) 12%, transparent);
+  color: var(--st-success-ink);
+  border: 1px solid color-mix(in srgb, var(--st-success) 35%, transparent);
 }
-.ov-branch-title { display: flex; align-items: baseline; gap: 6px; }
-.ov-branch-code  { font-weight: 750; font-size: 13px; }
-.ov-branch-full  { font-size: 11px; color: var(--muted); }
-
-.ov-branch-stats { display: flex; gap: 5px; flex-wrap: wrap; }
-.ov-stat { font-size: 10px; font-weight: 650; padding: 1px 6px; border-radius: 20px; }
-.ov-stat.success { background: color-mix(in srgb, var(--st-success) 14%, transparent); color: var(--st-success-ink); }
-.ov-stat.ongoing { background: color-mix(in srgb, var(--st-ongoing) 14%, transparent); color: var(--st-ongoing); }
-.ov-stat.pending { background: var(--surface-3); color: var(--ink-2); }
-.ov-stat.fail    { background: color-mix(in srgb, var(--st-fail)    14%, transparent); color: var(--st-fail); }
-.ov-stat.muted   { color: var(--muted); font-weight: 400; font-size: 11px; }
-
-/* Mini calendar inside a branch card */
-.ov-cal {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  flex: 1;
-}
-
-.ov-dow {
-  background: var(--surface-2);
-  font-size: 9px; text-transform: uppercase; letter-spacing: .4px;
-  color: var(--muted); font-weight: 650;
-  padding: 3px 2px; text-align: center;
-  border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid);
-}
-.ov-dow:nth-child(7n) { border-right: none; }
-
-.ov-cell {
-  min-height: 40px; border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid);
-  padding: 2px 3px; cursor: pointer; position: relative;
-  display: flex; flex-direction: column; gap: 1px;
-  transition: background .1s;
-}
-.ov-cell:nth-child(7n) { border-right: none; }
-.ov-cell:hover         { background: var(--surface-2); }
-.ov-cell.other         { background: var(--surface-2); cursor: default; }
-.ov-cell.other .ov-dnum { color: var(--baseline); }
-.ov-cell.today .ov-dnum {
-  background: var(--senior); color: #fff;
-  border-radius: 50%; width: 16px; height: 16px;
-  display: grid; place-items: center;
-}
-.ov-cell.has-jobs { background: color-mix(in srgb, var(--senior) 4%, var(--surface-1)); }
-.ov-cell.has-jobs:hover { background: color-mix(in srgb, var(--senior) 9%, var(--surface-1)); }
-
-.ov-dnum {
-  font-size: 9px; font-weight: 600; color: var(--ink-2);
-  align-self: flex-start; line-height: 1;
-}
-
-.ov-chips { display: flex; flex-direction: column; gap: 1px; margin-top: 1px; }
-
-.ov-chip {
-  font-size: 9px; border-radius: 3px; padding: 1px 3px;
-  border-left: 2px solid var(--muted);
-  display: flex; align-items: center; gap: 2px;
-  line-height: 1.2; white-space: nowrap; overflow: hidden;
-  cursor: pointer;
-}
-.ov-chip.t-install { border-left-color: var(--t-install); background: color-mix(in srgb, var(--t-install) 10%, transparent); }
-.ov-chip.t-onsite  { border-left-color: var(--t-onsite);  background: color-mix(in srgb, var(--t-onsite)  10%, transparent); }
-.ov-chip.t-hotline { border-left-color: var(--t-hotline); background: color-mix(in srgb, var(--t-hotline) 10%, transparent); }
-.ov-chip.t-others  { border-left-color: var(--t-others);  background: color-mix(in srgb, var(--t-others)  10%, transparent); }
-.ov-chip.ov-more   { border-left-color: var(--muted); color: var(--muted); font-size: 8px; cursor: default; }
-
-.ov-chip .st { width: 5px; height: 5px; border-radius: 50%; flex: none; }
-.ov-jn { font-weight: 650; overflow: hidden; text-overflow: ellipsis; }
