@@ -346,6 +346,11 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 .bp-item.active .bp-code { color: var(--senior); }
 .bp-empty { padding: 10px 12px; color: var(--muted); font-size: 12px; }
 
+/* Staff picker (job modal) */
+.sp-trigger { width: 100%; justify-content: space-between; }
+.sp-name { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-dropdown { width: 100%; max-width: 100%; left: 0; right: auto; }
+
 .ovl-empty-row { padding: 12px 14px; color: var(--muted); font-size: 13px; }
 
 /* Branch detail — role groups */

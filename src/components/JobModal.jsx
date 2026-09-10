@@ -1,9 +1,68 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { TYPE_KEYS, ABSENCE_KEYS, TYPES } from '../lib/constants'
 
 const EMPTY = { jt_no:'', staff_id:'', branch_id:'', customer:'', location:'', type:'', type_other:'', status:'pending', status_note:'' }
+
+// ── Searchable staff picker ───────────────────────────────────────────────────
+function StaffPicker({ staffList, value, onChange }) {
+  const [open,   setOpen]   = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef(null)
+
+  const current  = staffList.find(s => s.id === value)
+  const filtered = staffList.filter(s => s.name.toLowerCase().includes(search.toLowerCase()))
+
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function pick(id) { onChange(id); setOpen(false); setSearch('') }
+
+  return (
+    <div className="bp-wrap" ref={ref} style={{ width: '100%' }}>
+      <button type="button" className="bp-trigger sp-trigger" onClick={() => setOpen(o => !o)}>
+        <span className="sp-name">{current ? current.name : 'Select…'}</span>
+        <span className="bp-arrow">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="bp-dropdown sp-dropdown">
+          <div className="bp-search-row">
+            <span className="bp-search-icon">🔍</span>
+            <input
+              className="bp-search"
+              autoFocus
+              placeholder="Search employee…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && <span className="ovl-role-search-clear" onClick={() => setSearch('')}>✕</span>}
+          </div>
+          <div className="bp-list">
+            <div className={`bp-item${!value ? ' active' : ''}`} onClick={() => pick('')}>
+              <span className="sp-name" style={{ color: 'var(--muted)' }}>Select…</span>
+            </div>
+            {filtered.length === 0
+              ? <div className="bp-empty">No results</div>
+              : filtered.map(s => (
+                <div
+                  key={s.id}
+                  className={`bp-item${s.id === value ? ' active' : ''}`}
+                  onClick={() => pick(s.id)}
+                >
+                  <span className="sp-name">{s.name}</span>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function JobModal({ payload, onClose }) {
   const { branches, staff, loadJobs, isAdmin, currentUser, visibleStaff } = useApp()
@@ -119,10 +178,11 @@ export default function JobModal({ payload, onClose }) {
             </div>
             <div>
               <label className="fld">Employee <span className="req">*</span></label>
-              <select className="sel" value={form.staff_id} onChange={e => set('staff_id', e.target.value)}>
-                <option value="">Select…</option>
-                {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <StaffPicker
+                staffList={staffList}
+                value={form.staff_id}
+                onChange={v => set('staff_id', v)}
+              />
             </div>
             <div>
               <label className="fld">Branch serviced <span className="req">*</span></label>
