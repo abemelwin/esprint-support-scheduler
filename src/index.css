@@ -322,14 +322,17 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 
 /* Branch detail — role groups */
 .ovl-branch-detail { padding: 10px 14px 14px; }
-.ovl-role-block { margin-bottom: 14px; }
+.ovl-role-block { margin-bottom: 8px; }
 .ovl-role-block:last-child { margin-bottom: 0; }
 .ovl-role-label {
   display: flex; align-items: center; gap: 6px;
   font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
-  color: var(--ink-2); font-weight: 700; margin-bottom: 6px;
+  color: var(--ink-2); font-weight: 700; margin-bottom: 4px;
+  padding: 3px 4px; border-radius: 5px;
 }
-.ovl-role-cnt { margin-left: auto; color: var(--muted); }
+.ovl-role-label:hover { background: var(--surface-1); }
+.ovl-role-cnt { color: var(--muted); }
+.ovl-role-busy { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: color-mix(in srgb, var(--st-ongoing) 15%, transparent); color: var(--st-ongoing); }
 
 /* Staff row */
 .ovl-staff { border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); margin-bottom: 4px; overflow: hidden; }

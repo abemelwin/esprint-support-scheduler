@@ -111,6 +111,32 @@ function StaffRow({ person, tasks, onOpenJob }) {
 }
 
 // ── Branch detail: list all its staff grouped by role ────────────────────────
+function RoleGroup({ role, group, tasksFor, onOpenJob }) {
+  const busy  = group.filter(p => tasksFor(p.id).filter(j => j.type !== 'leave' && j.type !== 'absent').length > 0)
+  const [open, setOpen] = useState(busy.length > 0)  // expand if anyone has tasks
+
+  return (
+    <div className="ovl-role-block">
+      <div className="ovl-role-label" onClick={() => setOpen(o => !o)} style={{ cursor: 'pointer', userSelect: 'none' }}>
+        <span className="swatch" style={{ background: ROLES[role]?.color }} />
+        {ROLES[role]?.label}
+        <span className="ovl-role-cnt">{group.length}</span>
+        <div style={{ flex: 1 }} />
+        {busy.length > 0 && <span className="ovl-role-busy">{busy.length} busy</span>}
+        <span className="ovl-chevron" style={{ fontSize: 10, marginLeft: 6 }}>{open ? '▲' : '▼'}</span>
+      </div>
+      {open && group.map(person => (
+        <StaffRow
+          key={person.id}
+          person={person}
+          tasks={tasksFor(person.id)}
+          onOpenJob={onOpenJob}
+        />
+      ))}
+    </div>
+  )
+}
+
 function BranchDetail({ branch, monthPrefix, jobs, staff, onOpenJob }) {
   // Staff whose home branch is this branch
   const branchStaff = staff.filter(s => s.home_branch_id === branch.id)
@@ -128,21 +154,13 @@ function BranchDetail({ branch, monthPrefix, jobs, staff, onOpenJob }) {
         const group = branchStaff.filter(s => s.role === role)
         if (!group.length) return null
         return (
-          <div key={role} className="ovl-role-block">
-            <div className="ovl-role-label">
-              <span className="swatch" style={{ background: ROLES[role]?.color }} />
-              {ROLES[role]?.label}
-              <span className="ovl-role-cnt">{group.length}</span>
-            </div>
-            {group.map(person => (
-              <StaffRow
-                key={person.id}
-                person={person}
-                tasks={tasksFor(person.id)}
-                onOpenJob={onOpenJob}
-              />
-            ))}
-          </div>
+          <RoleGroup
+            key={role}
+            role={role}
+            group={group}
+            tasksFor={tasksFor}
+            onOpenJob={onOpenJob}
+          />
         )
       })}
     </div>
