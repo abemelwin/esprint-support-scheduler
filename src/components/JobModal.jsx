@@ -32,11 +32,14 @@ export default function JobModal({ payload, onClose }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  // Customer name is only required for onsite & installation jobs
+  const customerRequired = form.type === 'onsite' || form.type === 'installation'
+
   function validate() {
     if (!form.jt_no.trim())    return 'JT No. is required.'
     if (!form.staff_id)        return 'Employee is required.'
     if (!form.branch_id)       return 'Branch is required.'
-    if (!form.customer.trim()) return 'Customer name is required.'
+    if (customerRequired && !form.customer.trim()) return 'Customer name is required.'
     if (!form.type)            return 'Type is required.'
     if (form.type === 'others' && !form.type_other.trim()) return 'Describe the service.'
     if ((form.status === 'fail' || form.status === 'ongoing') && !form.status_note.trim())
@@ -114,7 +117,7 @@ export default function JobModal({ payload, onClose }) {
               </select>
             </div>
             <div className="full">
-              <label className="fld">Customer name <span className="req">*</span></label>
+              <label className="fld">Customer name {customerRequired && <span className="req">*</span>}</label>
               <input type="text" className="txt" placeholder="e.g. National Bookstore"
                 value={form.customer} onChange={e => set('customer', e.target.value)} />
             </div>
