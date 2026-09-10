@@ -332,11 +332,12 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 .ovl-role-cnt { margin-left: auto; color: var(--muted); }
 
 /* Staff row */
-.ovl-staff { border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2); margin-bottom: 6px; overflow: hidden; }
-.ovl-staff-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; }
-.ovl-staff-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.ovl-staff-name { font-weight: 650; font-size: 13px; }
-.ovl-name-type { font-weight: 600; font-size: 12px; color: var(--senior); margin-left: 2px; }
+.ovl-staff { border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); margin-bottom: 4px; overflow: hidden; }
+.ovl-staff-head { display: flex; align-items: center; gap: 8px; padding: 5px 10px; min-height: 0; }
+.ovl-staff-id { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; overflow: hidden; }
+.ovl-staff-name { font-weight: 650; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ovl-staff-cust { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+.ovl-staff-cust::before { content: '·'; margin-right: 5px; }.ovl-name-type { font-weight: 600; font-size: 12px; color: var(--senior); margin-left: 2px; }
 .ovl-name-type.absent { color: var(--st-fail); }
 .ovl-staff.is-absent { opacity: .85; }
 .ovl-badge.off { background: color-mix(in srgb, var(--st-fail) 15%, transparent); color: var(--st-fail); }

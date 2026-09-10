@@ -55,7 +55,7 @@ function StaffRow({ person, tasks, onOpenJob }) {
           </span>
           {!absences.length && (
             <span className="ovl-staff-cust">
-              {customers.length ? customers.join(', ') : 'No customer'}
+              {customers.length ? customers.join(', ') : ''}
             </span>
           )}
         </div>
