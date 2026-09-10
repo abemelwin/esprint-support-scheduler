@@ -76,7 +76,16 @@ export default function UsersModal({ onClose }) {
 
   async function handleDelete(id, authId) {
     if (!confirm('Remove this user?')) return
-    await supabase.from('app_users').delete().eq('id', id)
+    // Delete from auth.users via secure function (cascades to app_users automatically)
+    if (authId) {
+      const { error } = await supabase.rpc('delete_auth_user', { user_auth_id: authId })
+      if (error) {
+        // Fallback: delete from app_users only
+        await supabase.from('app_users').delete().eq('id', id)
+      }
+    } else {
+      await supabase.from('app_users').delete().eq('id', id)
+    }
     await loadAppUsers()
   }
 
