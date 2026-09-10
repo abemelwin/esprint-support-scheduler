@@ -288,72 +288,66 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 }
 
 /* ── Overview list (Arnold's regional view) ──────────────────────── */
-.ovl-root { display: flex; flex-direction: column; gap: 18px; }
+.ovl-root { display: flex; flex-direction: column; gap: 16px; }
 .ovl-toolbar-hint { font-size: 12px; color: var(--muted); }
 .ovl-spacer { flex: 1; }
+
+/* Landscape: 3 regions side by side */
+.ovl-region-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  align-items: start;
+}
+@media (max-width: 1200px) { .ovl-region-cols { grid-template-columns: 1fr; } }
 
 /* Region block */
 .ovl-region { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
 .ovl-region-head {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
   border-left: 4px solid var(--muted); background: var(--surface-2);
 }
-.ovl-region-label { font-size: 15px; font-weight: 750; letter-spacing: .3px; min-width: 90px; }
-.ovl-region-meta  { font-size: 12px; color: var(--ink-2); display: flex; gap: 12px; align-items: center; }
-.ovl-region-rate  { color: var(--muted); }
+.ovl-region-label { font-size: 15px; font-weight: 750; letter-spacing: .3px; }
 .ovl-region-filter { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .ovl-region-filter label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-.ovl-region-filter .sel { width: auto; min-width: 180px; }
+.ovl-region-filter .sel { width: auto; min-width: 150px; }
 
-.ovl-empty-row { padding: 12px 16px; color: var(--muted); font-size: 13px; }
+.ovl-empty-row { padding: 12px 14px; color: var(--muted); font-size: 13px; }
 
-/* Branch list */
-.ovl-branch-list { display: flex; flex-direction: column; }
-.ovl-branch { border-bottom: 1px solid var(--grid); }
-.ovl-branch:last-child { border-bottom: none; }
-
-.ovl-branch-head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 16px; cursor: pointer; user-select: none;
-}
-.ovl-branch-head:hover { background: var(--surface-2); }
-.ovl-caret { color: var(--muted); font-size: 11px; width: 12px; }
-.ovl-branch-code { font-weight: 750; font-size: 14px; }
-.ovl-branch-full { font-size: 12px; color: var(--muted); }
-.ovl-count { font-size: 11px; font-weight: 650; padding: 2px 9px; border-radius: 20px; background: var(--surface-3); color: var(--ink-2); }
-.ovl-count.free { background: color-mix(in srgb, var(--st-success) 15%, transparent); color: var(--st-success-ink); }
-
-.ovl-branch-body { padding: 4px 16px 14px 36px; }
-.ovl-section-label {
+/* Branch detail — role groups */
+.ovl-branch-detail { padding: 10px 14px 14px; }
+.ovl-role-block { margin-bottom: 14px; }
+.ovl-role-block:last-child { margin-bottom: 0; }
+.ovl-role-label {
+  display: flex; align-items: center; gap: 6px;
   font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
-  color: var(--muted); font-weight: 700; margin: 10px 0 6px;
+  color: var(--ink-2); font-weight: 700; margin-bottom: 6px;
 }
+.ovl-role-cnt { margin-left: auto; color: var(--muted); }
 
-/* Task list */
-.ovl-task-list { display: flex; flex-direction: column; gap: 3px; }
+/* Staff row */
+.ovl-staff { border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2); margin-bottom: 6px; overflow: hidden; }
+.ovl-staff-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; }
+.ovl-staff-name { font-weight: 650; font-size: 13px; }
+.ovl-staff-role { font-size: 11px; font-weight: 600; }
+.ovl-badge { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+.ovl-badge.free { background: color-mix(in srgb, var(--st-success) 15%, transparent); color: var(--st-success-ink); }
+.ovl-badge.busy { background: color-mix(in srgb, var(--st-ongoing) 15%, transparent); color: var(--st-ongoing); }
+
+.ovl-staff-tasks { display: flex; flex-direction: column; gap: 3px; padding: 0 8px 8px; }
 .ovl-task {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 6px 10px; border-radius: 8px; background: var(--surface-2);
-  border: 1px solid transparent; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  padding: 6px 9px; border-radius: 7px; background: var(--surface-1);
+  border: 1px solid var(--border); cursor: pointer; font-size: 12.5px;
 }
-.ovl-task:hover { border-color: var(--senior); background: var(--surface-1); }
-.ovl-date { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; min-width: 42px; }
-.ovl-type { font-size: 10px; font-weight: 700; color: #fff; padding: 2px 7px; border-radius: 5px; }
+.ovl-task:hover { border-color: var(--senior); }
+.ovl-date { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; min-width: 38px; }
+.ovl-type { font-size: 9.5px; font-weight: 700; color: #fff; padding: 2px 6px; border-radius: 5px; }
 .ovl-type.t-install { background: var(--t-install); }
 .ovl-type.t-onsite  { background: var(--t-onsite); }
 .ovl-type.t-hotline { background: var(--t-hotline); }
 .ovl-type.t-others  { background: var(--t-others); }
 .ovl-jn { font-weight: 700; }
-.ovl-who { color: var(--ink-1); }
-.ovl-cust { color: var(--ink-2); font-size: 12px; }
-
-/* Availability chips */
-.ovl-avail-list { display: flex; flex-wrap: wrap; gap: 5px; }
-.ovl-avail-chip {
-  display: inline-flex; align-items: center;
-  font-size: 12px; font-weight: 550; padding: 4px 10px; border-radius: 20px;
-  background: color-mix(in srgb, var(--st-success) 12%, transparent);
-  color: var(--st-success-ink);
-  border: 1px solid color-mix(in srgb, var(--st-success) 35%, transparent);
-}
+.ovl-cust { color: var(--ink-2); }
+.ovl-loc { color: var(--muted); font-size: 11.5px; }
