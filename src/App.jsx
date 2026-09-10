@@ -39,10 +39,12 @@ export default function App() {
 
   // Arnold check — matches if the user's name contains 'Arnold'
   const isArnold = !!(currentUser?.name?.includes(ARNOLD_NAME))
+  const isServiceManager = currentUser?.role === 'service_manager'
+  const canViewOverview = isArnold || isServiceManager
 
-  // Reset to calendar whenever a non-Arnold user logs in
+  // Reset to calendar whenever a non-overview user logs in
   useEffect(() => {
-    if (currentUser && !currentUser.name?.includes(ARNOLD_NAME)) {
+    if (currentUser && !canViewOverview) {
       setView('calendar')
     }
   }, [currentUser?.id])
@@ -63,6 +65,7 @@ export default function App() {
         onBranch={() => setBranchOpen(true)}
         onUsers={() => setUsersOpen(true)}
         isArnold={isArnold}
+        currentUser={currentUser}
       />
       <main>
         <KpiRow
@@ -72,7 +75,7 @@ export default function App() {
           onDrill={kind => setKpiDrill({ kind })}
         />
 
-        {view === 'calendar' || (view === 'overview' && !isArnold) ? (
+        {view === 'calendar' || (view === 'overview' && !canViewOverview) ? (
           <CalendarView
             currentMonth={currentMonth}
             setCurrentMonth={setCurrentMonth}
@@ -92,6 +95,7 @@ export default function App() {
             currentMonth={currentMonth}
             setCurrentMonth={setCurrentMonth}
             onOpenJob={payload => setJobModal(payload)}
+            scopedBranchIds={isServiceManager ? (currentUser?.branch_ids || []) : null}
           />
         )}
 

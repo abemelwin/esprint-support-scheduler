@@ -120,11 +120,15 @@ function BranchDetail({ branch, monthPrefix, jobs, staff, onOpenJob }) {
 }
 
 // ── Region section: dropdown of branches ─────────────────────────────────────
-function RegionSection({ regionName, currentMonth, onOpenJob }) {
+function RegionSection({ regionName, currentMonth, onOpenJob, scopedBranchIds }) {
   const { branches, jobs, staff } = useApp()
 
   const regionCodes    = REGIONS[regionName] || []
-  const regionBranches = branches.filter(b => regionCodes.includes(b.name))
+  const allRegionBranches = branches.filter(b => regionCodes.includes(b.name))
+  // If scoped, only show branches the user is assigned to
+  const regionBranches = scopedBranchIds
+    ? allRegionBranches.filter(b => scopedBranchIds.includes(b.id))
+    : allRegionBranches
   const regionColor    = REGION_COLORS[regionName]
   const monthPrefix    = ymd(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)).slice(0, 7)
 
@@ -162,10 +166,20 @@ function RegionSection({ regionName, currentMonth, onOpenJob }) {
 }
 
 // ── Main OverviewView ─────────────────────────────────────────────────────────
-export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob }) {
+export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob, scopedBranchIds }) {
+  const { branches } = useApp()
+
   function prevMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
   function nextMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)) }
   function goToday()   { setCurrentMonth(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1) }) }
+
+  // For scoped users (service_manager), only show regions containing their assigned branches
+  const visibleRegions = Object.keys(REGIONS).filter(regionName => {
+    if (!scopedBranchIds) return true
+    const regionCodes    = REGIONS[regionName] || []
+    const regionBranches = branches.filter(b => regionCodes.includes(b.name))
+    return regionBranches.some(b => scopedBranchIds.includes(b.id))
+  })
 
   return (
     <div className="ovl-root">
@@ -181,12 +195,13 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob 
       </div>
 
       <div className="ovl-region-cols">
-        {Object.keys(REGIONS).map(regionName => (
+        {visibleRegions.map(regionName => (
           <RegionSection
             key={regionName}
             regionName={regionName}
             currentMonth={currentMonth}
             onOpenJob={onOpenJob}
+            scopedBranchIds={scopedBranchIds}
           />
         ))}
       </div>
