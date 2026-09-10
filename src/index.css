@@ -270,6 +270,7 @@ input.txt, select.sel { width: 100%; }
 .user-chip .urole { color: var(--muted); }
 .role-tag { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700; color: #fff; }
 .role-tag.admin { background: var(--sm-mgr); }
+.role-tag.service_manager { background: #7c3aed; }
 .role-tag.branch { background: var(--junior); }
 .htag { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700; color: #fff; background: var(--t-hotline); }
 .hrow { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-2); cursor: pointer; }

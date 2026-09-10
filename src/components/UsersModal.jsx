@@ -28,6 +28,13 @@ export default function UsersModal({ onClose }) {
     if (needsBranch && form.branch_ids.length === 0) {
       setErr('Please assign at least one branch.'); return
     }
+
+    // Check if email already exists in app_users
+    const already = appUsers.find(u => u.email.toLowerCase() === form.email.trim().toLowerCase())
+    if (already) {
+      setErr('This email is already in the user list.'); return
+    }
+
     setBusy(true); setErr('')
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -41,9 +48,16 @@ export default function UsersModal({ onClose }) {
 
     if (authError) { setErr(authError.message); setBusy(false); return }
 
+    // Supabase returns user.id even for "already registered" emails (fake response).
+    // The identities array being empty means the email already exists in auth.
     const uid = authData?.user?.id
+    const isAlreadyInAuth = authData?.user?.identities?.length === 0
+
     if (!uid) {
-      setErr('Could not create auth user. Check Supabase email confirmation settings.'); setBusy(false); return
+      setErr('Could not create auth user. Make sure "Confirm email" is OFF in Supabase Auth settings.'); setBusy(false); return
+    }
+    if (isAlreadyInAuth) {
+      setErr('This email is already registered in auth but not in the user list. Delete the auth user from Supabase Dashboard first, then re-add.'); setBusy(false); return
     }
 
     const { error } = await supabase.from('app_users').insert({
