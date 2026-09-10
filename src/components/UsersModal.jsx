@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 
 export default function UsersModal({ onClose }) {
   const { appUsers, branches, loadAppUsers } = useApp()
-  const [form, setForm] = useState({ name:'', email:'', password:'', role:'branch', branch_ids:[] })
+  const [form, setForm] = useState({ name:'', email:'', password:'', role:'service_manager', branch_ids:[] })
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState('')
 
@@ -56,7 +56,7 @@ export default function UsersModal({ onClose }) {
     if (error) { setErr(error.message); setBusy(false); return }
 
     await loadAppUsers()
-    setForm({ name:'', email:'', password:'', role:'branch', branch_ids:[] })
+    setForm({ name:'', email:'', password:'', role:'service_manager', branch_ids:[] })
     setBusy(false)
   }
 
