@@ -48,12 +48,7 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill }) {
         cls={open ? 'accent-warn' : ''}
         prefix={<span className="dot" style={{background:'var(--st-fail)'}} />}
         onDrill={onDrill} />
-      <KpiCard reportKind="avail-today" label="Available Today" value={availToday}
-        foot={<>▸ {todayLbl} · per branch</>}
-        onDrill={onDrill} />
-      <KpiCard reportKind="staff" label="Total Staff" value={total}
-        foot={<>▸ per-branch headcount</>}
-        onDrill={onDrill} />
+
     </div>
   )
 }

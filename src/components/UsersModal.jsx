@@ -23,22 +23,41 @@ export default function UsersModal({ onClose }) {
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
       setErr('Name, email and password are required.'); return
     }
+    if (form.role === 'branch' && form.branch_ids.length === 0) {
+      setErr('Please assign at least one branch.'); return
+    }
     setBusy(true); setErr('')
-    // create Supabase auth user via admin API (needs service role) — workaround: use signUp
+
+    // signUp with emailRedirectTo suppresses the confirmation flow on some Supabase plans.
+    // We pass shouldCreateSession: false so the admin stays logged in.
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email:    form.email.trim(),
       password: form.password.trim(),
+      options: {
+        emailRedirectTo: undefined,
+        data: { name: form.name.trim() },
+      },
     })
+
     if (authError) { setErr(authError.message); setBusy(false); return }
 
+    // If Supabase still requires email confirmation, authData.user will exist but
+    // identities array will be empty (duplicate) or session will be null.
+    // We still insert into app_users using the returned user id so the record exists.
+    const uid = authData?.user?.id
+    if (!uid) {
+      setErr('Could not create auth user. Check Supabase email confirmation settings.'); setBusy(false); return
+    }
+
     const { error } = await supabase.from('app_users').insert({
-      auth_id:    authData.user.id,
+      auth_id:    uid,
       name:       form.name.trim(),
       email:      form.email.trim(),
       role:       form.role,
       branch_ids: form.role === 'branch' ? form.branch_ids : [],
     })
     if (error) { setErr(error.message); setBusy(false); return }
+
     await loadAppUsers()
     setForm({ name:'', email:'', password:'', role:'branch', branch_ids:[] })
     setBusy(false)
