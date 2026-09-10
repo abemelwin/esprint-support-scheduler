@@ -27,7 +27,8 @@ export default function JobModal({ payload, onClose }) {
         status_note: j.status_note || '',
       })
     } else {
-      setForm({ ...EMPTY, branch_id: currentUser?.branch_ids?.[0] || '' })
+      const defaultBranch = currentUser?.branch_ids?.[0] || ''
+      setForm({ ...EMPTY, branch_id: defaultBranch })
     }
   }, [])
 
@@ -85,7 +86,17 @@ export default function JobModal({ payload, onClose }) {
     onClose()
   }
 
-  const staffList = visibleStaff()
+  const isServiceManager = currentUser?.role === 'service_manager'
+
+  // For service_manager: limit branches to their assigned ones only
+  const availableBranches = isServiceManager
+    ? branches.filter(b => (currentUser?.branch_ids || []).includes(b.id))
+    : branches
+
+  // For service_manager: limit staff to those in their assigned branches
+  const staffList = isServiceManager
+    ? visibleStaff().filter(s => (currentUser?.branch_ids || []).includes(s.home_branch_id))
+    : visibleStaff()
   const showStatusNote = form.status === 'fail' || form.status === 'ongoing'
 
   return (
@@ -117,7 +128,7 @@ export default function JobModal({ payload, onClose }) {
               <label className="fld">Branch serviced <span className="req">*</span></label>
               <select className="sel" value={form.branch_id} onChange={e => set('branch_id', e.target.value)}>
                 <option value="">Select…</option>
-                {branches.map(b => <option key={b.id} value={b.id}>{b.name} · {b.note}</option>)}
+                {availableBranches.map(b => <option key={b.id} value={b.id}>{b.name} · {b.note}</option>)}
               </select>
             </div>
             {!isAbsence && <>
