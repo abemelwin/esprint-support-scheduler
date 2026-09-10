@@ -77,8 +77,9 @@ export function AppProvider({ children }) {
   }, [currentUser])
 
   // ── Permissions helpers ───────────────────────────────────────
-  const isAdmin = currentUser?.role === 'admin'
-  const scopedBranchIds = isAdmin ? null : (currentUser?.branch_ids || [])
+  const isAdmin          = currentUser?.role === 'admin'
+  const isServiceManager = currentUser?.role === 'service_manager'
+  const scopedBranchIds  = isAdmin ? null : (currentUser?.branch_ids || [])
 
   function inScope(job) {
     if (!scopedBranchIds) return true
@@ -104,7 +105,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, loading, isAdmin,
+      currentUser, loading, isAdmin, isServiceManager,
       branches, staff, jobs, appUsers,
       inScope, scopedBranches, visibleStaff,
       loadBranches, loadStaff, loadJobs, loadAppUsers,

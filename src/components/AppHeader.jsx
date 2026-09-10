@@ -48,7 +48,9 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, i
     e.target.value = ''
   }
 
-  const roleLabel = currentUser?.role === 'admin' ? 'Admin' : 'Branch'
+  const roleLabel = currentUser?.role === 'admin' ? 'Admin'
+    : currentUser?.role === 'service_manager' ? 'Svc Mgr'
+    : 'Branch'
 
   return (
     <header className="app">

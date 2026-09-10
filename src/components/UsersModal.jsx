@@ -19,17 +19,17 @@ export default function UsersModal({ onClose }) {
     }))
   }
 
+  const needsBranch = form.role === 'branch' || form.role === 'service_manager'
+
   async function handleAdd() {
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
       setErr('Name, email and password are required.'); return
     }
-    if (form.role === 'branch' && form.branch_ids.length === 0) {
+    if (needsBranch && form.branch_ids.length === 0) {
       setErr('Please assign at least one branch.'); return
     }
     setBusy(true); setErr('')
 
-    // signUp with emailRedirectTo suppresses the confirmation flow on some Supabase plans.
-    // We pass shouldCreateSession: false so the admin stays logged in.
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email:    form.email.trim(),
       password: form.password.trim(),
@@ -41,9 +41,6 @@ export default function UsersModal({ onClose }) {
 
     if (authError) { setErr(authError.message); setBusy(false); return }
 
-    // If Supabase still requires email confirmation, authData.user will exist but
-    // identities array will be empty (duplicate) or session will be null.
-    // We still insert into app_users using the returned user id so the record exists.
     const uid = authData?.user?.id
     if (!uid) {
       setErr('Could not create auth user. Check Supabase email confirmation settings.'); setBusy(false); return
@@ -54,7 +51,7 @@ export default function UsersModal({ onClose }) {
       name:       form.name.trim(),
       email:      form.email.trim(),
       role:       form.role,
-      branch_ids: form.role === 'branch' ? form.branch_ids : [],
+      branch_ids: needsBranch ? form.branch_ids : [],
     })
     if (error) { setErr(error.message); setBusy(false); return }
 
@@ -68,6 +65,9 @@ export default function UsersModal({ onClose }) {
     await supabase.from('app_users').delete().eq('id', id)
     await loadAppUsers()
   }
+
+  const roleLabel = r =>
+    r === 'admin' ? 'Admin' : r === 'service_manager' ? 'Svc Mgr' : 'Branch'
 
   return (
     <div className="modal-bg open">
@@ -93,11 +93,12 @@ export default function UsersModal({ onClose }) {
             <div>
               <label className="fld">Access level</label>
               <select className="sel" value={form.role} onChange={e => set('role', e.target.value)}>
-                <option value="admin">All access (Service Mgr / Manila hotline)</option>
+                <option value="admin">All access (Manila hotline)</option>
+                <option value="service_manager">Service Manager (scoped branches, full KPIs)</option>
                 <option value="branch">Branch only (Branch Service Mgr)</option>
               </select>
             </div>
-            {form.role === 'branch' && (
+            {needsBranch && (
               <div className="full">
                 <label className="fld">Assigned branches (tick all that apply)</label>
                 <div className="branch-check">
@@ -124,8 +125,8 @@ export default function UsersModal({ onClose }) {
                 <div>
                   <div className="pname">{u.name}</div>
                   <div className="pmeta">
-                    {u.email} · <span className={`role-tag ${u.role}`}>{u.role === 'admin' ? 'Admin' : 'Branch'}</span>
-                    {u.role === 'branch' && u.branch_ids?.length > 0 && (
+                    {u.email} · <span className={`role-tag ${u.role}`}>{roleLabel(u.role)}</span>
+                    {(u.role === 'branch' || u.role === 'service_manager') && u.branch_ids?.length > 0 && (
                       <span> · {u.branch_ids.map(id => branches.find(b=>b.id===id)?.name||id).join(', ')}</span>
                     )}
                   </div>
