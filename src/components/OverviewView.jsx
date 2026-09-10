@@ -1,13 +1,19 @@
 import { useState } from 'react'
+import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, monthName } from '../lib/dates'
 import { TYPES, STATUS, ROLES, ROLE_ORDER, REGIONS, REGION_COLORS } from '../lib/constants'
+
+const COLLAPSE_THRESHOLD = 4  // collapse task list when >= this many tasks
 
 // ── One staff row: name + their scheduled tasks ──────────────────────────────
 function StaffRow({ person, tasks, onOpenJob }) {
   // Separate absence markers (leave / absent) from real work tasks
   const absences   = tasks.filter(j => j.type === 'leave' || j.type === 'absent')
   const workTasks  = tasks.filter(j => j.type !== 'leave' && j.type !== 'absent')
+
+  // Collapse by default when there are many tasks
+  const [expanded, setExpanded] = useState(workTasks.length < COLLAPSE_THRESHOLD)
 
   // Unique customer names from real work
   const customers = [...new Set(workTasks.map(j => (j.customer || '').trim()).filter(Boolean))]
@@ -22,12 +28,20 @@ function StaffRow({ person, tasks, onOpenJob }) {
   const statusOrder = s => s === 'ongoing' ? 0 : s === 'pending' ? 1 : s === 'success' ? 2 : 3
   workTasks.sort((a, b) => statusOrder(a.status) - statusOrder(b.status) || a.date.localeCompare(b.date))
 
+  // Status summary counts for collapsed view
+  const ongoingCount  = workTasks.filter(j => j.status === 'ongoing').length
+  const pendingCount  = workTasks.filter(j => j.status === 'pending').length
+  const successCount  = workTasks.filter(j => j.status === 'success').length
+  const failCount     = workTasks.filter(j => j.status === 'fail').length
+
   // Absence takes priority in the name suffix
   const absenceLabel = absences.length ? [...new Set(absences.map(a => TYPES[a.type]?.label))].join(', ') : ''
   const workTypes    = [...new Set(workTasks.map(typeLabel))]
   const nameSuffix   = absenceLabel
     ? ` — ${absenceLabel}`
     : (workTypes.length ? ` — ${workTypes.join(', ')}` : '')
+
+  const isCollapsible = workTasks.length >= COLLAPSE_THRESHOLD
 
   return (
     <div className={`ovl-staff${absences.length ? ' is-absent' : ''}`}>
@@ -51,10 +65,28 @@ function StaffRow({ person, tasks, onOpenJob }) {
           ? <span className="ovl-badge off">{absenceLabel}</span>
           : workTasks.length === 0
             ? <span className="ovl-badge free">Available</span>
-            : <span className="ovl-badge busy">{workTasks.length} task{workTasks.length !== 1 ? 's' : ''}</span>}
+            : (
+              <span
+                className={`ovl-badge busy${isCollapsible ? ' clickable' : ''}`}
+                onClick={isCollapsible ? () => setExpanded(e => !e) : undefined}
+                title={isCollapsible ? (expanded ? 'Collapse' : 'Expand') : undefined}
+              >
+                {workTasks.length} task{workTasks.length !== 1 ? 's' : ''}
+                {isCollapsible && !expanded && (
+                  <span className="ovl-status-pills">
+                    {ongoingCount  > 0 && <span className="pill ongoing">{ongoingCount} ongoing</span>}
+                    {pendingCount  > 0 && <span className="pill pending">{pendingCount} pending</span>}
+                    {successCount  > 0 && <span className="pill success">{successCount} done</span>}
+                    {failCount     > 0 && <span className="pill fail">{failCount} failed</span>}
+                  </span>
+                )}
+                {isCollapsible && <span className="ovl-chevron">{expanded ? '▲' : '▼'}</span>}
+              </span>
+            )
+        }
       </div>
 
-      {workTasks.length > 0 && (
+      {workTasks.length > 0 && expanded && (
         <div className="ovl-staff-tasks">
           {workTasks.map(j => (
             <div
@@ -67,7 +99,6 @@ function StaffRow({ person, tasks, onOpenJob }) {
                 {TYPES[j.type]?.label || j.type}
               </span>
               <span className="ovl-cust">{j.customer || '—'}</span>
-              {j.location && <span className="ovl-loc">📍 {j.location}</span>}
               <div className="ovl-spacer" />
               <span className={`pill ${STATUS[j.status]?.cls || ''}`}>
                 {STATUS[j.status]?.label || j.status}
