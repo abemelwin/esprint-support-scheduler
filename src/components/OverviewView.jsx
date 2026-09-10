@@ -7,39 +7,54 @@ import { TYPES, STATUS, ROLES, ROLE_ORDER, REGIONS, REGION_COLORS } from '../lib
 function StaffRow({ person, tasks, onOpenJob }) {
   const sorted = [...tasks].sort((a, b) => a.date.localeCompare(b.date))
 
-  // Unique customer names for this staff member
-  const customers = [...new Set(sorted.map(j => (j.customer || '').trim()).filter(Boolean))]
+  // Separate absence markers (leave / absent) from real work tasks
+  const absences   = sorted.filter(j => j.type === 'leave' || j.type === 'absent')
+  const workTasks  = sorted.filter(j => j.type !== 'leave' && j.type !== 'absent')
+
+  // Unique customer names from real work
+  const customers = [...new Set(workTasks.map(j => (j.customer || '').trim()).filter(Boolean))]
 
   // Type label(s) shown beside the name (uses "Others: <desc>" when applicable)
   const typeLabel = j => {
     if (j.type === 'others') return j.type_other?.trim() ? `Others: ${j.type_other.trim()}` : 'Others'
     return TYPES[j.type]?.label || j.type
   }
-  const types = [...new Set(sorted.map(typeLabel))]
-  const nameSuffix = types.length ? ` — ${types.join(', ')}` : ''
+
+  // Absence takes priority in the name suffix
+  const absenceLabel = absences.length ? [...new Set(absences.map(a => TYPES[a.type]?.label))].join(', ') : ''
+  const workTypes    = [...new Set(workTasks.map(typeLabel))]
+  const nameSuffix   = absenceLabel
+    ? ` — ${absenceLabel}`
+    : (workTypes.length ? ` — ${workTypes.join(', ')}` : '')
 
   return (
-    <div className="ovl-staff">
+    <div className={`ovl-staff${absences.length ? ' is-absent' : ''}`}>
       <div className="ovl-staff-head">
         <div className="ovl-staff-id">
           <span className="ovl-staff-name">
             {person.name}
-            {nameSuffix && <span className="ovl-name-type">{nameSuffix}</span>}
+            {nameSuffix && (
+              <span className={`ovl-name-type${absences.length ? ' absent' : ''}`}>{nameSuffix}</span>
+            )}
           </span>
-          <span className="ovl-staff-cust">
-            {customers.length ? customers.join(', ') : 'No customer'}
-          </span>
+          {!absences.length && (
+            <span className="ovl-staff-cust">
+              {customers.length ? customers.join(', ') : 'No customer'}
+            </span>
+          )}
         </div>
         {person.hotline && <span className="htag">☎</span>}
         <div className="ovl-spacer" />
-        {sorted.length === 0
-          ? <span className="ovl-badge free">Available</span>
-          : <span className="ovl-badge busy">{sorted.length} task{sorted.length !== 1 ? 's' : ''}</span>}
+        {absences.length
+          ? <span className="ovl-badge off">{absenceLabel}</span>
+          : workTasks.length === 0
+            ? <span className="ovl-badge free">Available</span>
+            : <span className="ovl-badge busy">{workTasks.length} task{workTasks.length !== 1 ? 's' : ''}</span>}
       </div>
 
-      {sorted.length > 0 && (
+      {workTasks.length > 0 && (
         <div className="ovl-staff-tasks">
-          {sorted.map(j => (
+          {workTasks.map(j => (
             <div
               key={j.id}
               className="ovl-task"

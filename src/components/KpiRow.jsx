@@ -4,9 +4,12 @@ import { ymd, fmtD } from '../lib/dates'
 export default function KpiRow({ view, currentMonth, reportMonth, onDrill }) {
   const { jobs, staff, inScope, visibleStaff } = useApp()
 
+  const isAbsence = j => j.type === 'leave' || j.type === 'absent'
+
   const m = view === 'reports' ? reportMonth : currentMonth
   const monthJobs = jobs.filter(j => {
     if (!inScope(j)) return false
+    if (isAbsence(j)) return false   // absences are not job tickets
     const d = new Date(j.date + 'T00:00:00')
     return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear()
   })
@@ -17,8 +20,11 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill }) {
 
   const todayKey  = ymd(new Date())
   const todayLbl  = fmtD(new Date())
-  const todayJobs = jobs.filter(j => inScope(j) && j.date === todayKey)
-  const todayAssigned = new Set(todayJobs.map(j => j.staff_id))
+  // Job tickets today (excludes absences)
+  const todayJobs = jobs.filter(j => inScope(j) && !isAbsence(j) && j.date === todayKey)
+  // Anyone with a job OR marked absent/on-leave today is unavailable
+  const todayBusy = jobs.filter(j => inScope(j) && j.date === todayKey)
+  const todayAssigned = new Set(todayBusy.map(j => j.staff_id))
   const availToday = total - [...todayAssigned].filter(id => rosterIds.has(id)).length
 
   const success = monthJobs.filter(j => j.status === 'success').length

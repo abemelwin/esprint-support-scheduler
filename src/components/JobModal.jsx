@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
+import { TYPE_KEYS, ABSENCE_KEYS, TYPES } from '../lib/constants'
 
 const EMPTY = { jt_no:'', staff_id:'', branch_id:'', customer:'', location:'', type:'', type_other:'', status:'pending', status_note:'' }
 
@@ -32,11 +33,14 @@ export default function JobModal({ payload, onClose }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  // Customer name is only required for onsite & installation jobs
+  // Leave / Absent are "absence" markers, not real work
+  const isAbsence        = form.type === 'leave' || form.type === 'absent'
+  // JT No. and Customer name are only required for onsite & installation jobs
   const customerRequired = form.type === 'onsite' || form.type === 'installation'
+  const jtRequired       = form.type === 'onsite' || form.type === 'installation'
 
   function validate() {
-    if (!form.jt_no.trim())    return 'JT No. is required.'
+    if (jtRequired && !form.jt_no.trim())    return 'JT No. is required.'
     if (!form.staff_id)        return 'Employee is required.'
     if (!form.branch_id)       return 'Branch is required.'
     if (customerRequired && !form.customer.trim()) return 'Customer name is required.'
@@ -52,15 +56,15 @@ export default function JobModal({ payload, onClose }) {
     setBusy(true); setErr('')
     const row = {
       date:        payload.job?.date || payload.date,
-      jt_no:       form.jt_no.trim(),
+      jt_no:       isAbsence ? '' : form.jt_no.trim(),
       staff_id:    form.staff_id,
       branch_id:   form.branch_id,
-      customer:    form.customer.trim(),
-      location:    form.location.trim(),
+      customer:    isAbsence ? '' : form.customer.trim(),
+      location:    isAbsence ? '' : form.location.trim(),
       type:        form.type,
       type_other:  form.type === 'others' ? form.type_other.trim() : '',
-      status:      form.status,
-      status_note: (form.status === 'fail' || form.status === 'ongoing') ? form.status_note.trim() : '',
+      status:      isAbsence ? 'pending' : form.status,
+      status_note: (!isAbsence && (form.status === 'fail' || form.status === 'ongoing')) ? form.status_note.trim() : '',
     }
     let error
     if (isEdit) {
@@ -88,7 +92,7 @@ export default function JobModal({ payload, onClose }) {
     <div className="modal-bg open">
       <div className="modal">
         <div className="modal-head">
-          <h3>{isEdit ? 'Edit Job Ticket' : 'New Job Ticket'}</h3>
+          <h3>{isAbsence ? (isEdit ? 'Edit Absence' : 'Mark Absence') : (isEdit ? 'Edit Job Ticket' : 'New Job Ticket')}</h3>
           <div className="spacer" />
         </div>
         <div className="modal-body">
@@ -98,7 +102,7 @@ export default function JobModal({ payload, onClose }) {
               <input type="text" className="txt" value={payload.job?.date || payload.date} disabled />
             </div>
             <div>
-              <label className="fld">JT No. <span className="req">*</span></label>
+              <label className="fld">JT No. {jtRequired && <span className="req">*</span>}</label>
               <input type="text" className="txt" placeholder="e.g. JT-1050"
                 value={form.jt_no} onChange={e => set('jt_no', e.target.value)} />
             </div>
@@ -116,27 +120,40 @@ export default function JobModal({ payload, onClose }) {
                 {branches.map(b => <option key={b.id} value={b.id}>{b.name} · {b.note}</option>)}
               </select>
             </div>
-            <div className="full">
-              <label className="fld">Customer name {customerRequired && <span className="req">*</span>}</label>
-              <input type="text" className="txt" placeholder="e.g. National Bookstore"
-                value={form.customer} onChange={e => set('customer', e.target.value)} />
-            </div>
-            <div className="full">
-              <label className="fld">Location</label>
-              <input type="text" className="txt" placeholder="e.g. 2F, near foodcourt"
-                value={form.location} onChange={e => set('location', e.target.value)} />
-            </div>
+            {!isAbsence && <>
+              <div className="full">
+                <label className="fld">Customer name {customerRequired && <span className="req">*</span>}</label>
+                <input type="text" className="txt" placeholder="e.g. National Bookstore"
+                  value={form.customer} onChange={e => set('customer', e.target.value)} />
+              </div>
+              <div className="full">
+                <label className="fld">Location</label>
+                <input type="text" className="txt" placeholder="e.g. 2F, near foodcourt"
+                  value={form.location} onChange={e => set('location', e.target.value)} />
+              </div>
+            </>}
             <div className="full">
               <label className="fld">Type <span className="req">*</span></label>
               <div className="seg-radio">
-                {['installation','onsite','hotline','others'].map(t => (
+                {TYPE_KEYS.map(t => (
                   <button key={t} type="button" data-v={t}
                     className={form.type === t ? 'active' : ''}
                     onClick={() => set('type', t)}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                    {TYPES[t].label}
                   </button>
                 ))}
               </div>
+              {isAdmin && (
+                <div className="seg-radio absence" style={{ marginTop: 6 }}>
+                  {ABSENCE_KEYS.map(t => (
+                    <button key={t} type="button" data-v={t}
+                      className={form.type === t ? 'active' : ''}
+                      onClick={() => set('type', t)}>
+                      {t === 'leave' ? '🌴 Leave' : '🚫 Absent'}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             {form.type === 'others' && (
               <div className="full">
@@ -145,19 +162,21 @@ export default function JobModal({ payload, onClose }) {
                   value={form.type_other} onChange={e => set('type_other', e.target.value)} />
               </div>
             )}
-            <div className="full">
-              <label className="fld">Status</label>
-              <div className="seg-radio status" style={{ flexWrap:'wrap' }}>
-                {['pending','ongoing','success','fail'].map(s => (
-                  <button key={s} type="button" data-v={s}
-                    className={form.status === s ? 'active' : ''}
-                    onClick={() => set('status', s)}>
-                    {s === 'pending' ? '⏳ Pending' : s === 'ongoing' ? '◐ Ongoing' : s === 'success' ? '✓ Successful' : '✕ Not successful'}
-                  </button>
-                ))}
+            {!isAbsence && (
+              <div className="full">
+                <label className="fld">Status</label>
+                <div className="seg-radio status" style={{ flexWrap:'wrap' }}>
+                  {['pending','ongoing','success','fail'].map(s => (
+                    <button key={s} type="button" data-v={s}
+                      className={form.status === s ? 'active' : ''}
+                      onClick={() => set('status', s)}>
+                      {s === 'pending' ? '⏳ Pending' : s === 'ongoing' ? '◐ Ongoing' : s === 'success' ? '✓ Successful' : '✕ Not successful'}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            {showStatusNote && (
+            )}
+            {!isAbsence && showStatusNote && (
               <div className="full">
                 <label className="fld">{form.status === 'fail' ? 'Reason for failure' : 'Ongoing note'} <span className="req">*</span></label>
                 <input type="text" className="txt" placeholder="Enter note…"
@@ -171,7 +190,7 @@ export default function JobModal({ payload, onClose }) {
           {isEdit && <button className="btn danger" style={{ marginRight:'auto' }} onClick={handleDelete} disabled={busy}>Delete</button>}
           <button className="btn ghost" onClick={onClose}>Cancel</button>
           <button className="btn primary" onClick={handleSave} disabled={busy}>
-            {busy ? 'Saving…' : 'Save Job Ticket'}
+            {busy ? 'Saving…' : isAbsence ? 'Save Absence' : 'Save Job Ticket'}
           </button>
         </div>
       </div>

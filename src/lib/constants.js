@@ -12,8 +12,13 @@ export const TYPES = {
   onsite:       { label: 'Onsite',       cls: 't-onsite' },
   hotline:      { label: 'Hotline',      cls: 't-hotline' },
   others:       { label: 'Others',       cls: 't-others' },
+  leave:        { label: 'Leave',        cls: 't-leave' },
+  absent:       { label: 'Absent',       cls: 't-absent' },
 }
+// Work types shown for regular job tickets
 export const TYPE_KEYS = ['installation','onsite','hotline','others']
+// Absence types (admin only) — not real work, used to mark staff unavailable
+export const ABSENCE_KEYS = ['leave','absent']
 
 export const STATUS = {
   pending: { label: 'Pending',        cls: 'pending', dot: 'pending' },

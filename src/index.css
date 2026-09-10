@@ -158,6 +158,8 @@ select.sel { cursor: pointer; }
 .jchip.t-onsite  { border-left-color: var(--t-onsite); }
 .jchip.t-hotline { border-left-color: var(--t-hotline); }
 .jchip.t-others  { border-left-color: var(--t-others); }
+.jchip.t-leave   { border-left-color: var(--trainee); }
+.jchip.t-absent  { border-left-color: var(--st-fail); }
 .jchip .st { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .jchip .st.success { background: var(--st-success); }
 .jchip .st.pending { background: var(--st-pending); }
@@ -238,6 +240,8 @@ input.txt, select.sel { width: 100%; }
 .seg-radio button.active[data-v="onsite"] { background: var(--t-onsite); border-color: var(--t-onsite); }
 .seg-radio button.active[data-v="hotline"] { background: var(--t-hotline); border-color: var(--t-hotline); }
 .seg-radio button.active[data-v="others"] { background: var(--t-others); border-color: var(--t-others); }
+.seg-radio button.active[data-v="leave"]  { background: var(--trainee); border-color: var(--trainee); }
+.seg-radio button.active[data-v="absent"] { background: var(--st-fail); border-color: var(--st-fail); }
 .seg-radio.status button.active[data-v="pending"] { background: var(--st-pending); border-color: var(--st-pending); }
 .seg-radio.status button.active[data-v="ongoing"] { background: var(--st-ongoing); border-color: var(--st-ongoing); }
 .seg-radio.status button.active[data-v="success"] { background: var(--st-success); border-color: var(--st-success); }
@@ -332,6 +336,9 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 .ovl-staff-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .ovl-staff-name { font-weight: 650; font-size: 13px; }
 .ovl-name-type { font-weight: 600; font-size: 12px; color: var(--senior); margin-left: 2px; }
+.ovl-name-type.absent { color: var(--st-fail); }
+.ovl-staff.is-absent { opacity: .85; }
+.ovl-badge.off { background: color-mix(in srgb, var(--st-fail) 15%, transparent); color: var(--st-fail); }
 .ovl-staff-cust { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ovl-badge { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
 .ovl-badge.free { background: color-mix(in srgb, var(--st-success) 15%, transparent); color: var(--st-success-ink); }

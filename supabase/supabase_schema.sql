@@ -28,7 +28,7 @@ create table if not exists public.jobs (
   branch_id   text references public.branches(id) on delete set null,
   customer    text not null default '',
   location    text default '',
-  type        text not null check (type in ('installation','onsite','hotline','others')),
+  type        text not null check (type in ('installation','onsite','hotline','others','leave','absent')),
   type_other  text default '',
   status      text not null default 'pending' check (status in ('pending','ongoing','success','fail')),
   status_note text default '',

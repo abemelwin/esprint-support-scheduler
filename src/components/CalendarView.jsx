@@ -131,7 +131,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                           onClick={e => { e.stopPropagation(); onOpenJob({ date: dateKey, job: j }) }}
                         >
                           <span className={`st ${STATUS[j.status]?.dot || ''}`} />
-                          <span className="jn">{j.jt_no}</span>
+                          <span className="jn">{(j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : j.jt_no}</span>
                           <span className="who">{s?.name?.split(',')[0] || '—'}</span>
                         </div>
                       )
