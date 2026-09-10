@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from './lib/AppContext'
 import LoginPage from './components/LoginPage'
 import AppHeader from './components/AppHeader'
@@ -39,6 +39,13 @@ export default function App() {
 
   // Arnold check — matches if the user's name contains 'Arnold'
   const isArnold = !!(currentUser?.name?.includes(ARNOLD_NAME))
+
+  // Reset to calendar whenever a non-Arnold user logs in
+  useEffect(() => {
+    if (currentUser && !currentUser.name?.includes(ARNOLD_NAME)) {
+      setView('calendar')
+    }
+  }, [currentUser?.id])
 
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', color:'var(--muted)' }}>
