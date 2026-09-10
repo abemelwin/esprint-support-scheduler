@@ -46,12 +46,7 @@ function StaffRow({ person, tasks, onOpenJob }) {
     <div className={`ovl-staff${absences.length ? ' is-absent' : ''}`}>
       <div className="ovl-staff-head">
         <div className="ovl-staff-id">
-          <span className="ovl-staff-name">
-            {person.name}
-            {nameSuffix && (
-              <span className={`ovl-name-type${absences.length ? ' absent' : ''}`}>{nameSuffix}</span>
-            )}
-          </span>
+          <span className="ovl-staff-name">{person.name}</span>
         </div>
         {person.hotline && <span className="htag">☎</span>}
         <div className="ovl-spacer" />
