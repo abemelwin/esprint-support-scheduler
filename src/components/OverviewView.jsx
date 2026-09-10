@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, monthName } from '../lib/dates'
 import { TYPES, STATUS, ROLES, ROLE_ORDER, REGIONS, REGION_COLORS } from '../lib/constants'
@@ -167,6 +167,68 @@ function BranchDetail({ branch, monthPrefix, jobs, staff, onOpenJob }) {
   )
 }
 
+// ── Custom branch picker with search ─────────────────────────────────────────
+function BranchPicker({ branches, selected, onChange }) {
+  const [open,   setOpen]   = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = React.useRef(null)
+
+  const current = branches.find(b => b.id === selected) || branches[0]
+  const filtered = branches.filter(b =>
+    `${b.name} ${b.note}`.toLowerCase().includes(search.toLowerCase())
+  )
+
+  // Close on outside click
+  React.useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function pick(id) { onChange(id); setOpen(false); setSearch('') }
+
+  return (
+    <div className="bp-wrap" ref={ref}>
+      <button className="bp-trigger" onClick={() => setOpen(o => !o)}>
+        {current
+          ? <><span className="bp-code">{current.name}</span><span className="bp-note">{current.note}</span></>
+          : <span className="bp-note">Select branch</span>
+        }
+        <span className="bp-arrow">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="bp-dropdown">
+          <div className="bp-search-row">
+            <span className="bp-search-icon">🔍</span>
+            <input
+              className="bp-search"
+              autoFocus
+              placeholder="Search branch…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="bp-list">
+            {filtered.length === 0
+              ? <div className="bp-empty">No results</div>
+              : filtered.map(b => (
+                <div
+                  key={b.id}
+                  className={`bp-item${b.id === selected ? ' active' : ''}`}
+                  onClick={() => pick(b.id)}
+                >
+                  <span className="bp-code">{b.name}</span>
+                  <span className="bp-note">{b.note}</span>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Region section: dropdown of branches ─────────────────────────────────────
 function RegionSection({ regionName, currentMonth, onOpenJob, scopedBranchIds }) {
   const { branches, jobs, staff } = useApp()
@@ -189,12 +251,11 @@ function RegionSection({ regionName, currentMonth, onOpenJob, scopedBranchIds })
       <div className="ovl-region-head" style={{ borderLeftColor: regionColor }}>
         <div className="ovl-region-label" style={{ color: regionColor }}>{regionName}</div>
         <div className="ovl-region-filter">
-          <label>Branch</label>
-          <select className="sel" value={selected} onChange={e => setSelected(e.target.value)}>
-            {regionBranches.map(b => (
-              <option key={b.id} value={b.id}>{b.name} — {b.note}</option>
-            ))}
-          </select>
+          <BranchPicker
+            branches={regionBranches}
+            selected={selected}
+            onChange={setSelected}
+          />
         </div>
       </div>
 

@@ -316,7 +316,35 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 .ovl-region-label { font-size: 15px; font-weight: 750; letter-spacing: .3px; }
 .ovl-region-filter { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .ovl-region-filter label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-.ovl-region-filter .sel { width: auto; min-width: 150px; }
+
+/* Branch picker */
+.bp-wrap { position: relative; }
+.bp-trigger {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 7px; padding: 5px 10px; cursor: pointer;
+  font-size: 12.5px; color: var(--ink); min-width: 160px;
+  transition: border-color .15s;
+}
+.bp-trigger:hover { border-color: var(--senior); }
+.bp-code { font-weight: 700; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: 11px; color: var(--senior); }
+.bp-note { color: var(--ink-2); flex: 1; }
+.bp-arrow { font-size: 9px; color: var(--muted); margin-left: auto; }
+.bp-dropdown {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 200;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 9px; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  width: 220px; overflow: hidden;
+}
+.bp-search-row { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.bp-search-icon { font-size: 13px; }
+.bp-search { flex: 1; background: transparent; border: none; outline: none; font-size: 12.5px; color: var(--ink); }
+.bp-list { max-height: 220px; overflow-y: auto; }
+.bp-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 12.5px; }
+.bp-item:hover { background: var(--surface-2); }
+.bp-item.active { background: color-mix(in srgb, var(--senior) 12%, transparent); }
+.bp-item.active .bp-code { color: var(--senior); }
+.bp-empty { padding: 10px 12px; color: var(--muted); font-size: 12px; }
 
 .ovl-empty-row { padding: 12px 14px; color: var(--muted); font-size: 13px; }
 
