@@ -65,7 +65,7 @@ export default function App() {
           onDrill={kind => setKpiDrill({ kind })}
         />
 
-        {view === 'calendar' ? (
+        {view === 'calendar' || (view === 'overview' && !isArnold) ? (
           <CalendarView
             currentMonth={currentMonth}
             setCurrentMonth={setCurrentMonth}
