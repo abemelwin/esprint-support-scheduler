@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, monthName } from '../lib/dates'
 import { TYPES, STATUS, ROLES, ROLE_ORDER, REGIONS, REGION_COLORS } from '../lib/constants'
