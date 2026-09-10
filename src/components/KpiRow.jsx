@@ -2,7 +2,7 @@ import { useApp } from '../lib/AppContext'
 import { ymd, fmtD } from '../lib/dates'
 
 export default function KpiRow({ view, currentMonth, reportMonth, onDrill }) {
-  const { jobs, staff, inScope, visibleStaff } = useApp()
+  const { jobs, staff, inScope, visibleStaff, isAdmin } = useApp()
 
   const isAbsence = j => j.type === 'leave' || j.type === 'absent'
 
@@ -48,7 +48,16 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill }) {
         cls={open ? 'accent-warn' : ''}
         prefix={<span className="dot" style={{background:'var(--st-fail)'}} />}
         onDrill={onDrill} />
-
+      {isAdmin && (
+        <>
+          <KpiCard reportKind="avail-today" label="Available Today" value={availToday}
+            foot={<>▸ {todayLbl} · per branch</>}
+            onDrill={onDrill} />
+          <KpiCard reportKind="staff" label="Total Staff" value={total}
+            foot={<>▸ per-branch headcount</>}
+            onDrill={onDrill} />
+        </>
+      )}
     </div>
   )
 }
