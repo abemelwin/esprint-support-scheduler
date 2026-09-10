@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseSignup } from '../lib/supabase'
 
 export default function UsersModal({ onClose }) {
   const { appUsers, branches, loadAppUsers } = useApp()
@@ -37,7 +37,7 @@ export default function UsersModal({ onClose }) {
 
     setBusy(true); setErr('')
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabaseSignup.auth.signUp({
       email:    form.email.trim(),
       password: form.password.trim(),
       options: {
