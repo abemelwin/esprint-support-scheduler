@@ -5,11 +5,9 @@ import { TYPES, STATUS, ROLES, ROLE_ORDER, REGIONS, REGION_COLORS } from '../lib
 
 // ── One staff row: name + their scheduled tasks ──────────────────────────────
 function StaffRow({ person, tasks, onOpenJob }) {
-  const sorted = [...tasks].sort((a, b) => a.date.localeCompare(b.date))
-
   // Separate absence markers (leave / absent) from real work tasks
-  const absences   = sorted.filter(j => j.type === 'leave' || j.type === 'absent')
-  const workTasks  = sorted.filter(j => j.type !== 'leave' && j.type !== 'absent')
+  const absences   = tasks.filter(j => j.type === 'leave' || j.type === 'absent')
+  const workTasks  = tasks.filter(j => j.type !== 'leave' && j.type !== 'absent')
 
   // Unique customer names from real work
   const customers = [...new Set(workTasks.map(j => (j.customer || '').trim()).filter(Boolean))]
@@ -19,6 +17,10 @@ function StaffRow({ person, tasks, onOpenJob }) {
     if (j.type === 'others') return j.type_other?.trim() ? `Others: ${j.type_other.trim()}` : 'Others'
     return TYPES[j.type]?.label || j.type
   }
+
+  // Sort work tasks: ongoing first, then by date
+  const statusOrder = s => s === 'ongoing' ? 0 : s === 'pending' ? 1 : s === 'success' ? 2 : 3
+  workTasks.sort((a, b) => statusOrder(a.status) - statusOrder(b.status) || a.date.localeCompare(b.date))
 
   // Absence takes priority in the name suffix
   const absenceLabel = absences.length ? [...new Set(absences.map(a => TYPES[a.type]?.label))].join(', ') : ''
@@ -64,7 +66,6 @@ function StaffRow({ person, tasks, onOpenJob }) {
               <span className={`ovl-type ${TYPES[j.type]?.cls || ''}`}>
                 {TYPES[j.type]?.label || j.type}
               </span>
-              <span className="ovl-jn">{j.jt_no}</span>
               <span className="ovl-cust">{j.customer || '—'}</span>
               {j.location && <span className="ovl-loc">📍 {j.location}</span>}
               <div className="ovl-spacer" />
