@@ -111,68 +111,44 @@ function StaffRow({ person, tasks, onOpenJob }) {
 }
 
 // ── Branch detail: list all its staff grouped by role ────────────────────────
-function RoleGroup({ role, group, tasksFor, onOpenJob }) {
+function RoleGroup({ role, group, tasksFor, onOpenJob, searchTerm }) {
   const busy    = group.filter(p => tasksFor(p.id).filter(j => j.type !== 'leave' && j.type !== 'absent').length > 0)
-  const [open,   setOpen]   = useState(busy.length > 0)
-  const [search, setSearch] = useState('')
+  const filtered = searchTerm
+    ? group.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : group
+  // Auto-expand if search matches someone in this group
+  const [open, setOpen] = useState(busy.length > 0)
+  const isOpen = searchTerm ? filtered.length > 0 : open
 
-  const filtered = group.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  )
+  if (searchTerm && filtered.length === 0) return null  // hide whole group if no match
 
   return (
     <div className="ovl-role-block">
-      {/* Role header — click to toggle */}
-      <div className="ovl-role-label" onClick={() => setOpen(o => !o)}>
+      <div className="ovl-role-label" onClick={() => !searchTerm && setOpen(o => !o)}>
         <span className="swatch" style={{ background: ROLES[role]?.color }} />
         {ROLES[role]?.label}
         <span className="ovl-role-cnt">{group.length}</span>
         <div style={{ flex: 1 }} />
         {busy.length > 0 && <span className="ovl-role-busy">{busy.length} busy</span>}
-        <span className="ovl-chevron" style={{ fontSize: 10, marginLeft: 6 }}>{open ? '▲' : '▼'}</span>
+        {!searchTerm && <span className="ovl-chevron" style={{ fontSize: 10, marginLeft: 6 }}>{open ? '▲' : '▼'}</span>}
       </div>
-
-      {open && (
-        <>
-          {/* Search bar — only show if more than 5 staff */}
-          {group.length > 5 && (
-            <div className="ovl-role-search" onClick={e => e.stopPropagation()}>
-              <span className="ovl-role-search-icon">🔍</span>
-              <input
-                className="ovl-role-search-input"
-                placeholder={`Search ${ROLES[role]?.label || role}…`}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              {search && (
-                <span className="ovl-role-search-clear" onClick={() => setSearch('')}>✕</span>
-              )}
-            </div>
-          )}
-
-          {filtered.length === 0
-            ? <div className="ovl-role-empty">No match for "{search}"</div>
-            : filtered.map(person => (
-              <StaffRow
-                key={person.id}
-                person={person}
-                tasks={tasksFor(person.id)}
-                onOpenJob={onOpenJob}
-              />
-            ))
-          }
-        </>
-      )}
+      {isOpen && filtered.map(person => (
+        <StaffRow
+          key={person.id}
+          person={person}
+          tasks={tasksFor(person.id)}
+          onOpenJob={onOpenJob}
+        />
+      ))}
     </div>
   )
 }
 
 function BranchDetail({ branch, monthPrefix, jobs, staff, onOpenJob }) {
-  // Staff whose home branch is this branch
   const branchStaff = staff.filter(s => s.home_branch_id === branch.id)
-  // Tasks per staff for the month (for this branch)
   const tasksFor = id =>
     jobs.filter(j => j.staff_id === id && j.branch_id === branch.id && j.date.startsWith(monthPrefix))
+  const [search, setSearch] = useState('')
 
   if (branchStaff.length === 0) {
     return <div className="ovl-empty-row">No staff assigned to {branch.name}.</div>
@@ -180,6 +156,20 @@ function BranchDetail({ branch, monthPrefix, jobs, staff, onOpenJob }) {
 
   return (
     <div className="ovl-branch-detail">
+      {/* Global search across all role groups */}
+      <div className="ovl-role-search" style={{ marginBottom: 6 }}>
+        <span className="ovl-role-search-icon">🔍</span>
+        <input
+          className="ovl-role-search-input"
+          placeholder="Search staff…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && (
+          <span className="ovl-role-search-clear" onClick={() => setSearch('')}>✕</span>
+        )}
+      </div>
+
       {ROLE_ORDER.map(role => {
         const group = branchStaff.filter(s => s.role === role)
         if (!group.length) return null
@@ -190,6 +180,7 @@ function BranchDetail({ branch, monthPrefix, jobs, staff, onOpenJob }) {
             group={group}
             tasksFor={tasksFor}
             onOpenJob={onOpenJob}
+            searchTerm={search}
           />
         )
       })}

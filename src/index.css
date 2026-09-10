@@ -307,7 +307,7 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 @media (max-width: 1200px) { .ovl-region-cols { grid-template-columns: 1fr; } }
 
 /* Region block */
-.ovl-region { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.ovl-region { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: visible; }
 .ovl-region-head {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 11px 14px; border-bottom: 1px solid var(--border);
