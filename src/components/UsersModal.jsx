@@ -93,8 +93,8 @@ export default function UsersModal({ onClose }) {
             <div>
               <label className="fld">Access level</label>
               <select className="sel" value={form.role} onChange={e => set('role', e.target.value)}>
-                <option value="admin">All access (Manila hotline)</option>
-                <option value="service_manager">Service Manager (scoped branches, full KPIs)</option>
+                
+                <option value="service_manager">Admin-Service Manager (scoped branches, full KPIs)</option>
                 <option value="branch">Branch only (Branch Service Mgr)</option>
               </select>
             </div>
