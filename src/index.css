@@ -180,6 +180,83 @@ select.sel { cursor: pointer; }
 .seg-toggle button { border: none; background: transparent; color: var(--ink-2); font-family: var(--font);
   font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 550; white-space: nowrap; }
 .seg-toggle button.active { background: var(--surface-1); color: var(--ink-1); box-shadow: var(--shadow); }
+
+/* ── Date picker popup (dcp) ─────────────────────────────────────────────── */
+.dcp-wrap { position: relative; flex-shrink: 0; }
+
+.dcp-trigger {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--ink-1); font-family: var(--font); font-size: 13px;
+  font-weight: 550; white-space: nowrap; transition: background .15s;
+}
+.dcp-trigger:hover { background: var(--surface-3); }
+.dcp-icon  { font-size: 14px; line-height: 1; }
+.dcp-label { font-size: 13px; }
+.dcp-arrow { font-size: 9px; color: var(--muted); margin-left: 2px; }
+
+.dcp-popup {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 200;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,.13);
+  width: 264px; padding: 12px; user-select: none;
+}
+
+.dcp-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.dcp-month-label { font-size: 13px; font-weight: 700; color: var(--ink-1); }
+.dcp-nav {
+  width: 28px; height: 28px; border-radius: 7px; border: none;
+  background: var(--surface-2); color: var(--ink-1); cursor: pointer;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  line-height: 1; transition: background .12s;
+}
+.dcp-nav:hover { background: var(--surface-3); }
+
+.dcp-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+}
+.dcp-dow {
+  text-align: center; font-size: 10px; font-weight: 700;
+  color: var(--muted); padding: 3px 0 5px; text-transform: uppercase;
+}
+.dcp-day {
+  aspect-ratio: 1; border: none; background: transparent;
+  border-radius: 7px; cursor: pointer; font-family: var(--font);
+  font-size: 12.5px; font-weight: 550; color: var(--ink-1);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .1s, color .1s;
+}
+.dcp-day:hover   { background: var(--surface-3); }
+.dcp-day.today   { color: var(--st-ongoing); font-weight: 750; }
+.dcp-day.today::after {
+  content: ''; position: absolute; bottom: 3px; left: 50%;
+  transform: translateX(-50%); width: 4px; height: 4px;
+  border-radius: 50%; background: var(--st-ongoing);
+}
+/* today needs relative for dot */
+.dcp-day.today   { position: relative; }
+
+.dcp-day.selected {
+  background: var(--st-ongoing); color: #fff; font-weight: 700;
+}
+.dcp-day.selected:hover { background: var(--st-ongoing); opacity: .88; }
+.dcp-day.selected.today::after { background: #fff; }
+
+.dcp-footer {
+  margin-top: 10px; border-top: 1px solid var(--border);
+  padding-top: 8px; display: flex; justify-content: center;
+}
+.dcp-today-btn {
+  border: none; background: transparent; cursor: pointer;
+  font-family: var(--font); font-size: 12px; font-weight: 650;
+  color: var(--st-ongoing); padding: 3px 10px; border-radius: 6px;
+  transition: background .12s;
+}
+.dcp-today-btn:hover { background: color-mix(in srgb, var(--st-ongoing) 10%, transparent); }
 .avail-body { padding: 11px 13px; max-height: 560px; overflow-y: auto; }
 .role-group { margin-bottom: 13px; }
 .role-group h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 6px;
