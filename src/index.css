@@ -184,6 +184,7 @@ select.sel { cursor: pointer; }
 .person .pmeta { font-size: 11px; color: var(--muted); }
 .person .pspacer { flex: 1; }
 .person.free { border-color: color-mix(in srgb, var(--st-success) 40%, transparent); }
+.person.busy-row { border-color: color-mix(in srgb, var(--st-ongoing) 30%, transparent); }
 .badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 650; }
 .badge.free { background: color-mix(in srgb, var(--st-success) 16%, transparent); color: var(--st-success-ink); }
 .empty-note { color: var(--muted); font-size: 12px; padding: 8px 4px; text-align: center; }
