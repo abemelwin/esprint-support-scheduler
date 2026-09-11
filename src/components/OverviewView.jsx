@@ -33,6 +33,9 @@ function StaffRow({ person, tasks, onOpenJob }) {
   const successCount  = workTasks.filter(j => j.status === 'success').length
   const failCount     = workTasks.filter(j => j.status === 'fail').length
 
+  // When a staff member has multiple tasks, pending ones are queued — label them "Next"
+  const hasMultipleTasks = workTasks.length > 1
+
   // Absence takes priority in the name suffix
   const absenceLabel = absences.length ? [...new Set(absences.map(a => TYPES[a.type]?.label))].join(', ') : ''
   const workTypes    = [...new Set(workTasks.map(typeLabel))]
@@ -64,7 +67,7 @@ function StaffRow({ person, tasks, onOpenJob }) {
                 {isCollapsible && !expanded && (
                   <span className="ovl-status-pills">
                     {ongoingCount  > 0 && <span className="pill ongoing">{ongoingCount} ongoing</span>}
-                    {pendingCount  > 0 && <span className="pill pending">{pendingCount} pending</span>}
+                    {pendingCount  > 0 && <span className="pill pending">{pendingCount} {hasMultipleTasks ? 'next' : 'pending'}</span>}
                     {successCount  > 0 && <span className="pill success">{successCount} done</span>}
                     {failCount     > 0 && <span className="pill fail">{failCount} failed</span>}
                   </span>
@@ -90,7 +93,9 @@ function StaffRow({ person, tasks, onOpenJob }) {
               <span className="ovl-cust">{j.customer || '—'}</span>
               <div className="ovl-spacer" />
               <span className={`pill ${STATUS[j.status]?.cls || ''}`}>
-                {STATUS[j.status]?.label || j.status}
+                {j.status === 'pending' && hasMultipleTasks
+                  ? 'Next'
+                  : STATUS[j.status]?.label || j.status}
               </span>
             </div>
           ))}
