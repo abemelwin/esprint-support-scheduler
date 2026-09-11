@@ -175,6 +175,7 @@ select.sel { cursor: pointer; }
 .avail .seg button.active { background: var(--surface-1); color: var(--ink-1); box-shadow: var(--shadow); }
 
 /* generic seg toggle (usable in toolbar) */
+.toolbar select.sel { width: auto; max-width: 160px; }
 .seg-toggle { display: flex; gap: 4px; background: var(--surface-2); border-radius: 8px; padding: 3px; flex-shrink: 0; }
 .seg-toggle button { border: none; background: transparent; color: var(--ink-2); font-family: var(--font);
   font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 550; white-space: nowrap; }

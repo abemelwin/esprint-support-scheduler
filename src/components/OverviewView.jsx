@@ -362,7 +362,7 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
         {viewMode === 'day' && (
           <select
             className="sel"
-            style={{ marginLeft: 6, flexShrink: 0 }}
+            style={{ marginLeft: 6, flexShrink: 0, width: 'auto', maxWidth: 160 }}
             value={specificDay}
             onChange={e => setSpecificDay(e.target.value)}
           >
