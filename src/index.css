@@ -173,6 +173,12 @@ select.sel { cursor: pointer; }
 .avail .seg button { flex: 1; border: none; background: transparent; color: var(--ink-2); font-family: var(--font);
   font-size: 12px; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-weight: 550; }
 .avail .seg button.active { background: var(--surface-1); color: var(--ink-1); box-shadow: var(--shadow); }
+
+/* generic seg toggle (usable in toolbar) */
+.seg-toggle { display: flex; gap: 4px; background: var(--surface-2); border-radius: 8px; padding: 3px; flex-shrink: 0; }
+.seg-toggle button { border: none; background: transparent; color: var(--ink-2); font-family: var(--font);
+  font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 550; white-space: nowrap; }
+.seg-toggle button.active { background: var(--surface-1); color: var(--ink-1); box-shadow: var(--shadow); }
 .avail-body { padding: 11px 13px; max-height: 560px; overflow-y: auto; }
 .role-group { margin-bottom: 13px; }
 .role-group h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 6px;

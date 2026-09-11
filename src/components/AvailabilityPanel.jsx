@@ -57,7 +57,7 @@ export default function AvailabilityPanel({ currentMonth }) {
     <div className="panel avail">
       <div className="panel-head"><h2>Staff Schedule</h2></div>
       <div style={{ padding: '11px 13px 0' }}>
-        <div className="seg">
+        <div className="seg-toggle">
           <button className={mode === 'month' ? 'active' : ''} onClick={() => setMode('month')}>This month</button>
           <button className={mode === 'day'   ? 'active' : ''} onClick={() => setMode('day')}>Specific day</button>
         </div>
