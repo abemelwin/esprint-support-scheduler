@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, monthName } from '../lib/dates'
 import { TYPES, STATUS, ROLES, ROLE_ORDER, REGIONS, REGION_COLORS } from '../lib/constants'
@@ -306,21 +306,6 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
     setSpecificDay(ymd(n))
   }
 
-  // Day options for the current month
-  const dayOptions = useMemo(() => {
-    const opts = []
-    const y = currentMonth.getFullYear(), m = currentMonth.getMonth()
-    const last = new Date(y, m + 1, 0).getDate()
-    for (let d = 1; d <= last; d++) {
-      const dt = new Date(y, m, d)
-      opts.push({
-        key: ymd(dt),
-        label: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-      })
-    }
-    return opts
-  }, [currentMonth])
-
   // When month changes, reset specificDay to the 1st of the new month if current day is out of range
   React.useEffect(() => {
     const y = currentMonth.getFullYear(), m = currentMonth.getMonth()
@@ -360,14 +345,15 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
           <button className={viewMode === 'day'   ? 'active' : ''} onClick={() => setViewMode('day')}>Specific day</button>
         </div>
         {viewMode === 'day' && (
-          <select
+          <input
+            type="date"
             className="sel"
-            style={{ marginLeft: 6, flexShrink: 0, width: 'auto', maxWidth: 160 }}
+            style={{ marginLeft: 6, flexShrink: 0, width: 'auto', cursor: 'pointer' }}
             value={specificDay}
-            onChange={e => setSpecificDay(e.target.value)}
-          >
-            {dayOptions.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-          </select>
+            min={ymd(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1))}
+            max={ymd(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0))}
+            onChange={e => e.target.value && setSpecificDay(e.target.value)}
+          />
         )}
       </div>
 
