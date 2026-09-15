@@ -4,13 +4,12 @@ import { supabase } from '../lib/supabase'
 const ACCESS_LEVELS = [
   { value: 'service_manager', label: 'Service Manager', desc: 'Full KPI access, scoped to assigned branches' },
   { value: 'employee',        label: 'Employee',        desc: 'View-only overview for assigned branches' },
-  { value: 'branch',          label: 'Branch User',     desc: 'View and log jobs for assigned branch only' },
 ]
 
 export default function RegisterPage({ onBack }) {
   const [step, setStep] = useState('form') // 'form' | 'done'
   const [form, setForm] = useState({
-    name: '', email: '', password: '', confirm: '', role: 'branch',
+    name: '', email: '', password: '', confirm: '', role: 'service_manager',
   })
   const [err,  setErr]  = useState('')
   const [busy, setBusy] = useState(false)
