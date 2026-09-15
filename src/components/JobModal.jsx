@@ -3,7 +3,7 @@ import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { TYPE_KEYS, ABSENCE_KEYS, TYPES } from '../lib/constants'
 
-const EMPTY = { jt_no:'', staff_id:'', branch_id:'', customer:'', location:'', type:'', type_other:'', status:'pending', status_note:'' }
+const EMPTY = { jt_no:'', staff_id:'', branch_id:'', customer:'', location:'', machine:'', serial_no:'', type:'', type_other:'', status:'pending', status_note:'' }
 
 // ── Searchable staff picker ───────────────────────────────────────────────────
 function StaffPicker({ staffList, value, onChange }) {
@@ -80,6 +80,8 @@ export default function JobModal({ payload, onClose }) {
         branch_id:   j.branch_id   || '',
         customer:    j.customer    || '',
         location:    j.location    || '',
+        machine:     j.machine     || '',
+        serial_no:   j.serial_no   || '',
         type:        j.type        || '',
         type_other:  j.type_other  || '',
         status:      j.status      || 'pending',
@@ -121,6 +123,8 @@ export default function JobModal({ payload, onClose }) {
       branch_id:   form.branch_id,
       customer:    isAbsence ? '' : form.customer.trim(),
       location:    isAbsence ? '' : form.location.trim(),
+      machine:     isAbsence ? '' : form.machine.trim(),
+      serial_no:   isAbsence ? '' : form.serial_no.trim(),
       type:        form.type,
       type_other:  form.type === 'others' ? form.type_other.trim() : '',
       status:      isAbsence ? 'pending' : form.status,
@@ -201,6 +205,16 @@ export default function JobModal({ payload, onClose }) {
                 <label className="fld">Location</label>
                 <input type="text" className="txt" placeholder="e.g. 2F, near foodcourt"
                   value={form.location} onChange={e => set('location', e.target.value)} />
+              </div>
+              <div>
+                <label className="fld">Machine</label>
+                <input type="text" className="txt" placeholder="e.g. Epson L3210"
+                  value={form.machine} onChange={e => set('machine', e.target.value)} />
+              </div>
+              <div>
+                <label className="fld">Serial No.</label>
+                <input type="text" className="txt" placeholder="e.g. X4Y123456"
+                  value={form.serial_no} onChange={e => set('serial_no', e.target.value)} />
               </div>
             </>}
             <div className="full">
