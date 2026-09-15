@@ -496,3 +496,80 @@ select.sel:disabled, input.txt:disabled { opacity: .6; cursor: not-allowed; }
 .ovl-jn { font-weight: 700; }
 .ovl-cust { color: var(--ink-2); }
 .ovl-loc { color: var(--muted); font-size: 11.5px; }
+
+/* ── Registration & Account Management ──────────────────────────── */
+
+/* "Request access" text button on login page */
+.btn-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--senior); font-size: 13px; font-weight: 600;
+  text-decoration: underline; font-family: var(--font);
+}
+.btn-link:hover { opacity: .8; }
+
+/* Access level radio cards on RegisterPage */
+.reg-level-option {
+  display: block; padding: 10px 12px; border-radius: 9px; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--surface-2);
+  transition: border-color .15s, background .15s;
+  user-select: none;
+}
+.reg-level-option:hover   { border-color: var(--senior); background: var(--surface-1); }
+.reg-level-option.selected { border-color: var(--senior); background: var(--surface-1); }
+
+.reg-radio-dot {
+  width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--baseline);
+  flex-shrink: 0; background: var(--surface-1); display: inline-block;
+  transition: border-color .15s, background .15s;
+}
+.reg-radio-dot.active {
+  border-color: var(--senior); background: var(--senior);
+  box-shadow: 0 0 0 3px rgba(42,120,214,.18);
+}
+
+/* Pending badge (header button + modal heading) */
+.reg-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--st-fail); color: #fff; font-size: 10px; font-weight: 700;
+  margin-left: 5px; vertical-align: middle;
+}
+.reg-approval-btn { position: relative; }
+
+/* Registration request card */
+.reg-card {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 10px;
+  background: var(--surface-2);
+}
+.reg-card.resolved { opacity: .75; }
+.reg-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.reg-name  { font-weight: 650; font-size: 14px; }
+.reg-meta  { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+
+/* Approval status badge */
+.reg-status-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; color: #fff;
+}
+.reg-status-badge.approved { background: var(--st-success); }
+.reg-status-badge.rejected { background: var(--st-fail); }
+
+/* User management cards in UsersModal */
+.user-mgmt-card {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 8px;
+  background: var(--surface-2);
+  transition: opacity .2s;
+}
+.user-mgmt-card.inactive { opacity: .6; }
+
+/* Inline edit panel inside user card */
+.user-edit-panel {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Smaller button variant */
+.btn.sm {
+  font-size: 11.5px; padding: 4px 10px; border-radius: 7px;
+}

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 
-export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, isArnold }) {
+export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, onRegApproval, isArnold, pendingRegCount }) {
   const { currentUser, isAdmin, signOut, loadBranches, loadStaff, loadJobs } = useApp()
   const fileRef = useRef()
 
@@ -93,6 +93,12 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, i
 
       {isAdmin && <>
         <button className="btn" onClick={onUsers}>🔑 Users</button>
+        <button className="btn reg-approval-btn" onClick={onRegApproval}>
+          📋 Approvals
+          {pendingRegCount > 0 && (
+            <span className="reg-badge">{pendingRegCount}</span>
+          )}
+        </button>
         <button className="btn" onClick={onStaff}>👥 Staff</button>
         <button className="btn" onClick={onBranch}>＋ Branch</button>
         <button className="btn" onClick={() => fileRef.current.click()}>⤓ Import</button>

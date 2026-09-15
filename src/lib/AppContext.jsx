@@ -7,10 +7,11 @@ export function AppProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null)   // app_users row
   const [loading, setLoading]         = useState(true)
 
-  const [branches, setBranches] = useState([])
-  const [staff,    setStaff]    = useState([])
-  const [jobs,     setJobs]     = useState([])
-  const [appUsers, setAppUsers] = useState([])
+  const [branches,     setBranches]     = useState([])
+  const [staff,        setStaff]        = useState([])
+  const [jobs,         setJobs]         = useState([])
+  const [appUsers,     setAppUsers]     = useState([])
+  const [pendingRegs,  setPendingRegs]  = useState([])   // pending_registrations
 
   // ── Auth session ──────────────────────────────────────────────
   useEffect(() => {
@@ -56,12 +57,23 @@ export function AppProvider({ children }) {
     setAppUsers(data || [])
   }, [])
 
+  const loadPendingRegs = useCallback(async () => {
+    const { data } = await supabase
+      .from('pending_registrations')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setPendingRegs(data || [])
+  }, [])
+
   useEffect(() => {
     if (!currentUser) return
     loadBranches()
     loadStaff()
     loadJobs()
-    if (currentUser.role === 'admin') loadAppUsers()
+    if (currentUser.role === 'admin') {
+      loadAppUsers()
+      loadPendingRegs()
+    }
   }, [currentUser])
 
   // ── Realtime subscriptions ────────────────────────────────────
@@ -69,12 +81,43 @@ export function AppProvider({ children }) {
     if (!currentUser) return
     const ch = supabase
       .channel('db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' },    () => loadJobs())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' },   () => loadStaff())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'branches' },() => loadBranches())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' },                   () => loadJobs())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' },                  () => loadStaff())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'branches' },               () => loadBranches())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_registrations' },  () => {
+        if (currentUser.role === 'admin') loadPendingRegs()
+      })
       .subscribe()
     return () => supabase.removeChannel(ch)
   }, [currentUser])
+
+  // ── Account management helpers (admin only) ───────────────────
+  async function updateUserRole(userId, newRole) {
+    const { error } = await supabase
+      .from('app_users')
+      .update({ role: newRole })
+      .eq('id', userId)
+    if (!error) await loadAppUsers()
+    return error
+  }
+
+  async function updateUserBranches(userId, branchIds) {
+    const { error } = await supabase
+      .from('app_users')
+      .update({ branch_ids: branchIds })
+      .eq('id', userId)
+    if (!error) await loadAppUsers()
+    return error
+  }
+
+  async function toggleUserActive(userId, isActive) {
+    const { error } = await supabase
+      .from('app_users')
+      .update({ is_active: isActive })
+      .eq('id', userId)
+    if (!error) await loadAppUsers()
+    return error
+  }
 
   // ── Permissions helpers ───────────────────────────────────────
   const isAdmin          = currentUser?.role === 'admin'
@@ -103,14 +146,18 @@ export function AppProvider({ children }) {
     await supabase.auth.signOut()
   }
 
+  // Count of pending registration requests (for badge)
+  const pendingRegCount = pendingRegs.filter(r => r.status === 'pending').length
+
   return (
     <AppContext.Provider value={{
       currentUser, loading, isAdmin, isServiceManager,
-      branches, staff, jobs, appUsers,
+      branches, staff, jobs, appUsers, pendingRegs, pendingRegCount,
       inScope, scopedBranches, visibleStaff,
-      loadBranches, loadStaff, loadJobs, loadAppUsers,
+      loadBranches, loadStaff, loadJobs, loadAppUsers, loadPendingRegs,
       signIn, signOut,
       setBranches, setStaff, setJobs, setAppUsers,
+      updateUserRole, updateUserBranches, toggleUserActive,
     }}>
       {children}
     </AppContext.Provider>

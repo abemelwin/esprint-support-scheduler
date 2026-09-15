@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 
-export default function LoginPage() {
+export default function LoginPage({ onRegister }) {
   const { signIn } = useApp()
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -53,6 +53,19 @@ export default function LoginPage() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+
+        {/* Register link */}
+        <div style={{ textAlign: 'center', padding: '10px 24px 4px', borderTop: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Don't have an account? </span>
+          <button
+            type="button"
+            className="btn-link"
+            onClick={onRegister}
+          >
+            Request access
+          </button>
+        </div>
+
         <div className="login-note">
           🔒 Access is applied inside this page only — it organizes who sees
           what, but it is <b>not</b> server-grade security. Don't store this file where
