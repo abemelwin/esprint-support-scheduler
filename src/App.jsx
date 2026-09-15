@@ -49,7 +49,7 @@ export default function App() {
   const isServiceManager = currentUser?.role === 'service_manager'
   const isEmployee       = currentUser?.role === 'employee'
   const isBranch         = currentUser?.role === 'branch'
-  const isReadOnlyUser   = isEmployee || isBranch   // view-only access to overview
+  const isReadOnlyUser   = isEmployee || isBranch || currentUser?.can_edit === false
   const canViewOverview  = isArnold || isServiceManager || isReadOnlyUser
 
   // Reset to calendar whenever a non-overview user logs in
@@ -100,7 +100,7 @@ export default function App() {
             setCurrentMonth={setCurrentMonth}
             filters={filters}
             setFilters={setFilters}
-            onOpenJob={payload => setJobModal(payload)}
+            onOpenJob={isReadOnlyUser ? null : payload => setJobModal(payload)}
           />
         ) : view === 'reports' ? (
           <ReportsView

@@ -14,16 +14,53 @@ const ROLE_OPTIONS = [
   { value: 'branch',          label: 'Branch User' },
 ]
 
+// ── View Only / Can Edit toggle ───────────────────────────────────────────────
+function AccessToggle({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 0, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border)', width: 'fit-content', marginTop: 2 }}>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        style={{
+          padding: '5px 14px',
+          fontSize: 12,
+          fontWeight: 600,
+          border: 'none',
+          cursor: 'pointer',
+          background: !value ? 'var(--accent, #2a78d6)' : 'var(--surface)',
+          color:      !value ? '#fff' : 'var(--muted)',
+          transition: 'background .15s, color .15s',
+        }}
+      >
+        👁 View Only
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        style={{
+          padding: '5px 14px',
+          fontSize: 12,
+          fontWeight: 600,
+          border: 'none',
+          borderLeft: '1px solid var(--border)',
+          cursor: 'pointer',
+          background: value ? 'var(--accent, #2a78d6)' : 'var(--surface)',
+          color:      value ? '#fff' : 'var(--muted)',
+          transition: 'background .15s, color .15s',
+        }}
+      >
+        ✏️ Can Edit
+      </button>
+    </div>
+  )
+}
+
 // ── Branch checklist with Select All ─────────────────────────────────────────
 function BranchChecklist({ regId, branches, branchMap, toggleBranch, setAllBranches }) {
-  const selected  = branchMap[regId] || []
-  const allIds    = branches.map(b => b.id)
+  const selected   = branchMap[regId] || []
+  const allIds     = branches.map(b => b.id)
   const allChecked = allIds.length > 0 && allIds.every(id => selected.includes(id))
   const someChecked = !allChecked && selected.length > 0
-
-  function handleSelectAll(e) {
-    setAllBranches(regId, e.target.checked ? allIds : [])
-  }
 
   return (
     <div style={{ marginTop: 10 }}>
@@ -31,13 +68,12 @@ function BranchChecklist({ regId, branches, branchMap, toggleBranch, setAllBranc
         Assign branches <span className="req">*</span>
       </div>
       <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-        {/* Select All row */}
         <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
           <input
             type="checkbox"
             checked={allChecked}
             ref={el => { if (el) el.indeterminate = someChecked }}
-            onChange={handleSelectAll}
+            onChange={e => setAllBranches(regId, e.target.checked ? allIds : [])}
           />
           Select All
         </label>
@@ -58,39 +94,38 @@ function BranchChecklist({ regId, branches, branchMap, toggleBranch, setAllBranc
 
 // ── Resolved card with Edit / View mode ──────────────────────────────────────
 function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
-  const [mode,       setMode]       = useState('view')   // 'view' | 'edit'
-  const [editRole,   setEditRole]   = useState(reg.role)
+  const [mode,         setMode]         = useState('view')
+  const [editRole,     setEditRole]     = useState(reg.role)
+  const [editCanEdit,  setEditCanEdit]  = useState(reg.can_edit !== false)  // default true
   const [editBranches, setEditBranches] = useState(reg.branch_ids || [])
-  const [saving,     setSaving]     = useState(false)
-  const [saveErr,    setSaveErr]    = useState('')
+  const [saving,       setSaving]       = useState(false)
+  const [saveErr,      setSaveErr]      = useState('')
 
   const allIds     = branches.map(b => b.id)
   const allChecked = allIds.length > 0 && allIds.every(id => editBranches.includes(id))
   const someChecked = !allChecked && editBranches.length > 0
 
   function toggleB(id) {
-    setEditBranches(cur =>
-      cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]
-    )
-  }
-  function handleSelectAll(e) {
-    setEditBranches(e.target.checked ? allIds : [])
+    setEditBranches(cur => cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id])
   }
 
   async function handleSave() {
     if (editBranches.length === 0) { setSaveErr('Assign at least one branch.'); return }
     setSaving(true); setSaveErr('')
-    await onSaveEdit(reg, editRole, editBranches)
+    await onSaveEdit(reg, editRole, editBranches, editCanEdit)
     setSaving(false)
     setMode('view')
   }
 
   function cancelEdit() {
     setEditRole(reg.role)
+    setEditCanEdit(reg.can_edit !== false)
     setEditBranches(reg.branch_ids || [])
     setSaveErr('')
     setMode('view')
   }
+
+  const canEdit = reg.can_edit !== false  // resolved card shows current value
 
   return (
     <div className="reg-card resolved">
@@ -100,10 +135,16 @@ function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
           <div className="reg-meta">{reg.email}</div>
           {reg.note && <div className="reg-meta" style={{ color: 'var(--st-fail)' }}>Note: {reg.note}</div>}
 
-          {/* View mode: show assigned role + branches */}
           {mode === 'view' && (
-            <div className="reg-meta" style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            <div className="reg-meta" style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
               <span className={`role-tag ${reg.role}`}>{ROLE_LABEL[reg.role] || reg.role}</span>
+              <span style={{
+                fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 10,
+                background: canEdit ? '#e8f5e9' : '#fff3e0',
+                color:      canEdit ? '#2e7d32' : '#e65100',
+              }}>
+                {canEdit ? '✏️ Can Edit' : '👁 View Only'}
+              </span>
               {(reg.branch_ids || []).length > 0 && (
                 <span style={{ fontSize: 11, color: 'var(--muted)' }}>
                   {(reg.branch_ids || []).map(id => {
@@ -122,11 +163,7 @@ function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
               <span className={`reg-status-badge ${reg.status}`}>
                 {reg.status === 'approved' ? '✓ Approved' : '✕ Rejected'}
               </span>
-              <button
-                className="btn sm"
-                title="Edit role & branches"
-                onClick={() => setMode('edit')}
-              >✏️ Edit</button>
+              <button className="btn sm" title="Edit" onClick={() => setMode('edit')}>✏️ Edit</button>
               <button className="btn sm ghost" onClick={() => onDelete(reg.id)}>✕</button>
             </>
           )}
@@ -141,10 +178,9 @@ function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
         </div>
       </div>
 
-      {/* Edit mode fields */}
       {mode === 'edit' && (
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* Role selector */}
+          {/* Role */}
           <div>
             <div className="fld" style={{ marginBottom: 4 }}>Role</div>
             <select
@@ -159,18 +195,27 @@ function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
             </select>
           </div>
 
-          {/* Branch checklist with Select All */}
+          {/* Access level toggle */}
           <div>
-            <div className="fld" style={{ marginBottom: 4 }}>
-              Branches <span className="req">*</span>
+            <div className="fld" style={{ marginBottom: 4 }}>Access type</div>
+            <AccessToggle value={editCanEdit} onChange={setEditCanEdit} />
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+              {editCanEdit
+                ? 'User can create, edit, and update job tickets.'
+                : 'User can only view the schedule. No editing allowed.'}
             </div>
+          </div>
+
+          {/* Branches */}
+          <div>
+            <div className="fld" style={{ marginBottom: 4 }}>Branches <span className="req">*</span></div>
             <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
               <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
                 <input
                   type="checkbox"
                   checked={allChecked}
                   ref={el => { if (el) el.indeterminate = someChecked }}
-                  onChange={handleSelectAll}
+                  onChange={e => setEditBranches(e.target.checked ? allIds : [])}
                 />
                 Select All
               </label>
@@ -202,38 +247,31 @@ export default function RegistrationApprovalModal({ onClose }) {
   const [rejectNote, setRejectNote] = useState('')
   const [err,        setErr]        = useState('')
 
-  // branch assignment state per pending reg
-  const [branchMap, setBranchMap] = useState({})   // { [regId]: string[] }
-  // role override per pending reg (in case admin wants to change before approving)
-  const [roleMap,   setRoleMap]   = useState({})   // { [regId]: string }
+  const [branchMap,  setBranchMap]  = useState({})    // { [regId]: string[] }
+  const [roleMap,    setRoleMap]    = useState({})    // { [regId]: string }
+  const [canEditMap, setCanEditMap] = useState({})    // { [regId]: boolean }
 
   function getBranchIds(regId) { return branchMap[regId] || [] }
-
   function toggleBranch(regId, branchId) {
     setBranchMap(m => {
       const cur = m[regId] || []
-      return {
-        ...m,
-        [regId]: cur.includes(branchId)
-          ? cur.filter(b => b !== branchId)
-          : [...cur, branchId],
-      }
+      return { ...m, [regId]: cur.includes(branchId) ? cur.filter(b => b !== branchId) : [...cur, branchId] }
     })
   }
+  function setAllBranches(regId, ids) { setBranchMap(m => ({ ...m, [regId]: ids })) }
 
-  function setAllBranches(regId, ids) {
-    setBranchMap(m => ({ ...m, [regId]: ids }))
-  }
-
-  function getRole(reg) { return roleMap[reg.id] || reg.role }
-  function setRole(regId, role) { setRoleMap(m => ({ ...m, [regId]: role })) }
+  function getRole(reg)    { return roleMap[reg.id]    ?? reg.role }
+  function getCanEdit(reg) { return canEditMap[reg.id] ?? true }   // default: Can Edit
+  function setRole(id, v)    { setRoleMap(m => ({ ...m, [id]: v })) }
+  function setCanEdit(id, v) { setCanEditMap(m => ({ ...m, [id]: v })) }
 
   async function handleApprove(reg) {
     const assignedBranches = getBranchIds(reg.id)
-    const finalRole = getRole(reg)
     if (assignedBranches.length === 0) {
       setErr(`Please assign at least one branch for ${reg.name} before approving.`); return
     }
+    const finalRole    = getRole(reg)
+    const finalCanEdit = getCanEdit(reg)
     setBusy(reg.id); setErr('')
 
     // 1. Create auth user
@@ -257,13 +295,14 @@ export default function RegistrationApprovalModal({ onClose }) {
       email:       reg.email,
       role:        finalRole,
       branch_ids:  assignedBranches,
+      can_edit:    finalCanEdit,
       is_active:   true,
       is_approved: true,
     })
     if (insertErr) { setErr(insertErr.message); setBusy(null); return }
 
     // 3. Mark as approved
-    await supabase.from('pending_registrations').update({ status: 'approved' }).eq('id', reg.id)
+    await supabase.from('pending_registrations').update({ status: 'approved', can_edit: finalCanEdit }).eq('id', reg.id)
     await loadPendingRegs()
     await loadAppUsers()
     setBusy(null)
@@ -285,12 +324,10 @@ export default function RegistrationApprovalModal({ onClose }) {
     await loadPendingRegs()
   }
 
-  // Save edits for a resolved registration (updates app_users record)
-  async function handleSaveEdit(reg, newRole, newBranchIds) {
-    // find the app_user by email and update role + branch_ids
+  async function handleSaveEdit(reg, newRole, newBranchIds, newCanEdit) {
     const { error } = await supabase
       .from('app_users')
-      .update({ role: newRole, branch_ids: newBranchIds })
+      .update({ role: newRole, branch_ids: newBranchIds, can_edit: newCanEdit })
       .eq('email', reg.email)
     if (error) { console.error(error); return }
     await loadAppUsers()
@@ -304,9 +341,7 @@ export default function RegistrationApprovalModal({ onClose }) {
       <div className="modal" style={{ maxWidth: 640, width: '100%' }}>
         <div className="modal-head">
           <h3>Registration Requests</h3>
-          {pending.length > 0 && (
-            <span className="reg-badge">{pending.length} pending</span>
-          )}
+          {pending.length > 0 && <span className="reg-badge">{pending.length} pending</span>}
           <div className="spacer" />
         </div>
 
@@ -314,18 +349,14 @@ export default function RegistrationApprovalModal({ onClose }) {
           {err && <div className="login-err" style={{ textAlign: 'left', marginBottom: 10 }}>{err}</div>}
 
           {/* ── Pending ── */}
-          {pending.length === 0 && (
-            <div className="empty-note">No pending registration requests.</div>
-          )}
+          {pending.length === 0 && <div className="empty-note">No pending registration requests.</div>}
 
           {pending.map(reg => (
             <div key={reg.id} className="reg-card">
               <div className="reg-card-top">
                 <div style={{ flex: 1 }}>
                   <div className="reg-name">{reg.name}</div>
-                  <div className="reg-meta">
-                    {reg.email}
-                  </div>
+                  <div className="reg-meta">{reg.email}</div>
                   <div className="reg-meta" style={{ color: 'var(--muted)', fontSize: 11, marginTop: 2 }}>
                     Requested: {new Date(reg.created_at).toLocaleDateString()}
                   </div>
@@ -344,7 +375,7 @@ export default function RegistrationApprovalModal({ onClose }) {
                 </div>
               </div>
 
-              {/* Role selector for this pending reg */}
+              {/* Role */}
               <div style={{ marginTop: 10 }}>
                 <div className="fld" style={{ marginBottom: 4 }}>Role</div>
                 <select
@@ -359,7 +390,18 @@ export default function RegistrationApprovalModal({ onClose }) {
                 </select>
               </div>
 
-              {/* Branch assignment with Select All */}
+              {/* Access type toggle */}
+              <div style={{ marginTop: 10 }}>
+                <div className="fld" style={{ marginBottom: 4 }}>Access type</div>
+                <AccessToggle value={getCanEdit(reg)} onChange={v => setCanEdit(reg.id, v)} />
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                  {getCanEdit(reg)
+                    ? 'User can create, edit, and update job tickets.'
+                    : 'User can only view the schedule. No editing allowed.'}
+                </div>
+              </div>
+
+              {/* Branch assignment */}
               <BranchChecklist
                 regId={reg.id}
                 branches={branches}
@@ -368,7 +410,7 @@ export default function RegistrationApprovalModal({ onClose }) {
                 setAllBranches={setAllBranches}
               />
 
-              {/* Rejection note inline */}
+              {/* Rejection note */}
               {rejectId === reg.id && (
                 <div style={{ marginTop: 10, display: 'flex', gap: 6 }}>
                   <input
