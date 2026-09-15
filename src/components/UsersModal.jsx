@@ -129,8 +129,12 @@ export default function UsersModal({ onClose }) {
     await toggleUserActive(u.id, next)
   }
 
-  async function handleDelete(id, authId) {
+  async function handleDelete(id, authId, email) {
     if (!confirm('Remove this user permanently?')) return
+    // Also delete the pending_registrations record so the email can re-register
+    if (email) {
+      await supabase.from('pending_registrations').delete().eq('email', email)
+    }
     if (authId) {
       const { error } = await supabase.rpc('delete_auth_user', { user_auth_id: authId })
       if (error) await supabase.from('app_users').delete().eq('id', id)
@@ -233,7 +237,7 @@ export default function UsersModal({ onClose }) {
                       >
                         {isActive ? '⏸ Deactivate' : '▶ Activate'}
                       </button>
-                      <button className="btn sm danger" onClick={() => handleDelete(u.id, u.auth_id)} title="Delete user">✕</button>
+                      <button className="btn sm danger" onClick={() => handleDelete(u.id, u.auth_id, u.email)} title="Delete user">✕</button>
                     </div>
                   )}
                 </div>
