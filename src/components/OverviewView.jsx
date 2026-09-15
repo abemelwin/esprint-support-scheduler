@@ -113,7 +113,7 @@ function DatePickerPopup({ value, onChange }) {
 const COLLAPSE_THRESHOLD = 4  // collapse task list when >= this many tasks
 
 // ── One staff row: name + their scheduled tasks ──────────────────────────────
-function StaffRow({ person, tasks, onOpenJob }) {
+function StaffRow({ person, tasks, onOpenJob, readOnly }) {
   // Separate absence markers (leave / absent) from real work tasks
   const absences   = tasks.filter(j => j.type === 'leave' || j.type === 'absent')
   const workTasks  = tasks.filter(j => j.type !== 'leave' && j.type !== 'absent')
@@ -183,8 +183,9 @@ function StaffRow({ person, tasks, onOpenJob }) {
           {workTasks.map(j => (
             <div
               key={j.id}
-              className="ovl-task"
-              onClick={() => onOpenJob && onOpenJob({ date: j.date, job: j })}
+              className={`ovl-task${readOnly ? '' : ' clickable-task'}`}
+              style={readOnly ? { cursor: 'default' } : {}}
+              onClick={readOnly ? undefined : () => onOpenJob && onOpenJob({ date: j.date, job: j })}
             >
               <span className="ovl-date">{j.date.slice(5)}</span>
               <span className={`ovl-type ${TYPES[j.type]?.cls || ''}`}>
@@ -206,7 +207,7 @@ function StaffRow({ person, tasks, onOpenJob }) {
 }
 
 // ── Branch detail: list all its staff grouped by role ────────────────────────
-function RoleGroup({ role, group, tasksFor, onOpenJob, searchTerm }) {
+function RoleGroup({ role, group, tasksFor, onOpenJob, searchTerm, readOnly }) {
   const busy    = group.filter(p => tasksFor(p.id).filter(j => j.type !== 'leave' && j.type !== 'absent').length > 0)
   const filtered = searchTerm
     ? group.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -233,13 +234,14 @@ function RoleGroup({ role, group, tasksFor, onOpenJob, searchTerm }) {
           person={person}
           tasks={tasksFor(person.id)}
           onOpenJob={onOpenJob}
+          readOnly={readOnly}
         />
       ))}
     </div>
   )
 }
 
-function BranchDetail({ branch, dateFilter, jobs, staff, onOpenJob }) {
+function BranchDetail({ branch, dateFilter, jobs, staff, onOpenJob, readOnly }) {
   const branchStaff = staff.filter(s => s.home_branch_id === branch.id)
 
   // dateFilter: { mode: 'month', prefix: 'YYYY-MM' } | { mode: 'day', date: 'YYYY-MM-DD' }
@@ -283,6 +285,7 @@ function BranchDetail({ branch, dateFilter, jobs, staff, onOpenJob }) {
             tasksFor={tasksFor}
             onOpenJob={onOpenJob}
             searchTerm={search}
+            readOnly={readOnly}
           />
         )
       })}
@@ -353,7 +356,7 @@ function BranchPicker({ branches, selected, onChange }) {
 }
 
 // ── Region section: dropdown of branches ─────────────────────────────────────
-function RegionSection({ regionName, dateFilter, onOpenJob, scopedBranchIds }) {
+function RegionSection({ regionName, dateFilter, onOpenJob, scopedBranchIds, readOnly }) {
   const { branches, jobs, staff } = useApp()
 
   const regionCodes       = REGIONS[regionName] || []
@@ -390,6 +393,7 @@ function RegionSection({ regionName, dateFilter, onOpenJob, scopedBranchIds }) {
           jobs={jobs}
           staff={staff}
           onOpenJob={onOpenJob}
+          readOnly={readOnly}
         />
       ) : (
         <div className="ovl-empty-row">No branches configured for {regionName}.</div>
@@ -399,7 +403,7 @@ function RegionSection({ regionName, dateFilter, onOpenJob, scopedBranchIds }) {
 }
 
 // ── Main OverviewView ─────────────────────────────────────────────────────────
-export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob, scopedBranchIds }) {
+export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob, scopedBranchIds, readOnly }) {
   const { branches } = useApp()
 
   const [viewMode,    setViewMode]    = useState('month')  // 'month' | 'day'
@@ -453,6 +457,20 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
             }}
           />
         )}
+        {readOnly && (
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 11,
+            color: 'var(--muted)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            padding: '2px 8px',
+            whiteSpace: 'nowrap',
+          }}>
+            👁 View only
+          </span>
+        )}
       </div>
 
       <div className="ovl-region-cols">
@@ -463,6 +481,7 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
             dateFilter={dateFilter}
             onOpenJob={onOpenJob}
             scopedBranchIds={scopedBranchIds}
+            readOnly={readOnly}
           />
         ))}
       </div>

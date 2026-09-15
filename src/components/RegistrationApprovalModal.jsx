@@ -4,6 +4,7 @@ import { supabase, supabaseSignup } from '../lib/supabase'
 
 const ROLE_LABEL = {
   service_manager: 'Service Manager',
+  employee:        'Employee',
   branch:          'Branch User',
 }
 
@@ -31,7 +32,7 @@ export default function RegistrationApprovalModal({ onClose }) {
 
   async function handleApprove(reg) {
     const assignedBranches = getBranchIds(reg.id)
-    if ((reg.role === 'service_manager' || reg.role === 'branch') && assignedBranches.length === 0) {
+    if ((reg.role === 'service_manager' || reg.role === 'branch' || reg.role === 'employee') && assignedBranches.length === 0) {
       setErr(`Please assign at least one branch for ${reg.name} before approving.`); return
     }
     setBusy(reg.id); setErr('')

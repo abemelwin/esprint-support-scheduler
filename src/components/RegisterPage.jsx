@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const ACCESS_LEVELS = [
   { value: 'service_manager', label: 'Service Manager', desc: 'Full KPI access, scoped to assigned branches' },
+  { value: 'employee',        label: 'Employee',        desc: 'View-only overview for assigned branches' },
   { value: 'branch',          label: 'Branch User',     desc: 'View and log jobs for assigned branch only' },
 ]
 

@@ -15,7 +15,7 @@ create table if not exists public.pending_registrations (
   email       text not null unique,
   password    text not null,           -- plain-text stored temporarily until approval
   role        text not null default 'branch'
-                check (role in ('service_manager','branch')),
+                check (role in ('service_manager','branch','employee')),
   branch_ids  text[] default '{}',
   status      text not null default 'pending'
                 check (status in ('pending','approved','rejected')),

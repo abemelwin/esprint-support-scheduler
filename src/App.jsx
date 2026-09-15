@@ -47,7 +47,8 @@ export default function App() {
   // Arnold check — matches if the user's name contains 'Arnold'
   const isArnold         = !!(currentUser?.name?.includes(ARNOLD_NAME))
   const isServiceManager = currentUser?.role === 'service_manager'
-  const canViewOverview  = isArnold || isServiceManager
+  const isEmployee       = currentUser?.role === 'employee'
+  const canViewOverview  = isArnold || isServiceManager || isEmployee
 
   // Reset to calendar whenever a non-overview user logs in
   useEffect(() => {
@@ -110,8 +111,9 @@ export default function App() {
           <OverviewView
             currentMonth={currentMonth}
             setCurrentMonth={setCurrentMonth}
-            onOpenJob={payload => setJobModal(payload)}
-            scopedBranchIds={isServiceManager ? (currentUser?.branch_ids || []) : null}
+            onOpenJob={isEmployee ? null : payload => setJobModal(payload)}
+            scopedBranchIds={(isServiceManager || isEmployee) ? (currentUser?.branch_ids || []) : null}
+            readOnly={isEmployee}
           />
         )}
 
