@@ -39,12 +39,20 @@ export default function RegisterPage({ onBack }) {
       .maybeSingle()
 
     if (existing) {
-      const msg = existing.status === 'pending'
-        ? 'A registration request for this email is already pending approval.'
-        : existing.status === 'rejected'
-          ? 'This email was previously rejected. Please contact the admin.'
-          : 'This email is already registered.'
-      setErr(msg); setBusy(false); return
+      if (existing.status === 'pending') {
+        setErr('A registration request for this email is already pending approval.')
+        setBusy(false); return
+      }
+      if (existing.status === 'rejected') {
+        setErr('This email was previously rejected. Please contact the admin.')
+        setBusy(false); return
+      }
+      // status === 'approved' but user was deleted — clean up the old record so they can re-register
+      const { error: delErr } = await supabase
+        .from('pending_registrations')
+        .delete()
+        .eq('id', existing.id)
+      if (delErr) { setErr(delErr.message); setBusy(false); return }
     }
 
     const { error } = await supabase.from('pending_registrations').insert({
