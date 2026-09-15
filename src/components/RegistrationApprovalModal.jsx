@@ -10,7 +10,6 @@ const ROLE_LABEL = {
 
 const ROLE_OPTIONS = [
   { value: 'service_manager', label: 'Service Manager' },
-  { value: 'employee',        label: 'Employee' },
   { value: 'branch',          label: 'Branch User' },
 ]
 
