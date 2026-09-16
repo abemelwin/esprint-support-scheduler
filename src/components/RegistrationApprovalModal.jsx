@@ -344,7 +344,7 @@ function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
 
 // ── Main modal ────────────────────────────────────────────────────────────────
 export default function RegistrationApprovalModal({ onClose }) {
-  const { pendingRegs, branches, loadPendingRegs, loadAppUsers } = useApp()
+  const { pendingRegs, branches, appUsers, loadPendingRegs, loadAppUsers } = useApp()
   const [busy,       setBusy]       = useState(null)
   const [rejectId,   setRejectId]   = useState(null)
   const [rejectNote, setRejectNote] = useState('')
@@ -355,7 +355,7 @@ export default function RegistrationApprovalModal({ onClose }) {
   const [editBranchesMap, setEditBranchesMap] = useState({}) // { [regId]: string[] }
   const [viewBranchesMap, setViewBranchesMap] = useState({}) // { [regId]: string[] }
 
-  function getRole(reg)         { return roleMap[reg.id] || 'branch' }
+  function getRole(reg)         { return roleMap[reg.id] || reg.role || 'branch' }
   function getEditBranches(reg) { return editBranchesMap[reg.id] || [] }
   function getViewBranches(reg) { return viewBranchesMap[reg.id] || [] }
 
@@ -399,6 +399,17 @@ export default function RegistrationApprovalModal({ onClose }) {
     }
   }
 
+  async function handleMarkApprovedOnly(regId) {
+    setBusy(regId); setErr('')
+    const { error } = await supabase
+      .from('pending_registrations')
+      .update({ status: 'approved' })
+      .eq('id', regId)
+    if (error) setErr(error.message)
+    await Promise.all([loadPendingRegs(), loadAppUsers()])
+    setBusy(null)
+  }
+
   async function handleApprove(reg) {
     const finalRole    = getRole(reg)
     const editBranches = getEditBranches(reg)
@@ -414,64 +425,121 @@ export default function RegistrationApprovalModal({ onClose }) {
 
     setBusy(reg.id); setErr('')
 
-    // 1. Create auth user
-    const { data: authData, error: authErr } = await supabaseSignup.auth.signUp({
-      email:    reg.email,
-      password: reg.password,
-      options:  { emailRedirectTo: undefined },
-    })
-    if (authErr) { setErr(authErr.message); setBusy(null); return }
+    // Check if user already exists in app_users
+    const existingAppUser = (appUsers || []).find(
+      u => u.email?.trim().toLowerCase() === reg.email?.trim().toLowerCase()
+    )
 
-    const uid = authData?.user?.id
-    if (!uid) {
-      setErr('Could not create auth account. Make sure "Confirm email" is OFF in Supabase Auth settings.')
-      setBusy(null); return
-    }
+    if (existingAppUser) {
+      // 1. User is already in app_users — update their permissions and activate
+      const updatePayload = {
+        name:            reg.name.trim(),
+        role:            finalRole,
+        main_branch_id:  finalRole !== 'admin' ? mainBranch : null,
+        view_branch_ids: finalRole !== 'admin' ? viewBranches : [],
+        branch_ids:      finalRole !== 'admin' ? combinedBranches : [],
+        can_edit:        finalCanEdit,
+        is_active:       true,
+        is_approved:     true,
+      }
+      const { error: updErr } = await supabase
+        .from('app_users')
+        .update(updatePayload)
+        .eq('id', existingAppUser.id)
 
-    // 2. Insert into app_users with fallback
-    const fullPayload = {
-      auth_id:         uid,
-      name:            reg.name,
-      email:           reg.email,
-      role:            finalRole,
-      main_branch_id:  finalRole !== 'admin' ? mainBranch : null,
-      view_branch_ids: finalRole !== 'admin' ? viewBranches : [],
-      branch_ids:      finalRole !== 'admin' ? combinedBranches : [],
-      can_edit:        finalCanEdit,
-      is_active:       true,
-      is_approved:     true,
-    }
-
-    let insertError = null
-    const { error: insertErr1 } = await supabase.from('app_users').insert(fullPayload)
-    if (insertErr1) {
-      if (insertErr1.message?.includes('main_branch_id') || insertErr1.message?.includes('view_branch_ids')) {
-        const fallbackPayload = {
-          auth_id:     uid,
-          name:        reg.name,
-          email:       reg.email,
+      if (updErr && (updErr.message?.includes('main_branch_id') || updErr.message?.includes('view_branch_ids'))) {
+        await supabase.from('app_users').update({
+          name:        reg.name.trim(),
           role:        finalRole,
           branch_ids:  finalRole !== 'admin' ? combinedBranches : [],
           can_edit:    finalCanEdit,
           is_active:   true,
           is_approved: true,
+        }).eq('id', existingAppUser.id)
+      }
+    } else {
+      // 2. User not in app_users yet — create auth account and insert
+      let uid = null
+      const { data: authData, error: authErr } = await supabaseSignup.auth.signUp({
+        email:    reg.email.trim(),
+        password: reg.password,
+        options:  { emailRedirectTo: undefined, data: { name: reg.name.trim() } },
+      })
+
+      if (authErr && !authErr.message?.toLowerCase().includes('already')) {
+        setErr(authErr.message)
+        setBusy(null)
+        return
+      }
+
+      uid = authData?.user?.id
+
+      const fullPayload = {
+        auth_id:         uid,
+        name:            reg.name.trim(),
+        email:           reg.email.trim().toLowerCase(),
+        role:            finalRole,
+        main_branch_id:  finalRole !== 'admin' ? mainBranch : null,
+        view_branch_ids: finalRole !== 'admin' ? viewBranches : [],
+        branch_ids:      finalRole !== 'admin' ? combinedBranches : [],
+        can_edit:        finalCanEdit,
+        is_active:       true,
+        is_approved:     true,
+      }
+
+      let insertError = null
+      const { error: insertErr1 } = await supabase.from('app_users').insert(fullPayload)
+      if (insertErr1) {
+        if (insertErr1.message?.includes('main_branch_id') || insertErr1.message?.includes('view_branch_ids')) {
+          const fallbackPayload = {
+            auth_id:     uid,
+            name:        reg.name.trim(),
+            email:       reg.email.trim().toLowerCase(),
+            role:        finalRole,
+            branch_ids:  finalRole !== 'admin' ? combinedBranches : [],
+            can_edit:    finalCanEdit,
+            is_active:   true,
+            is_approved: true,
+          }
+          const { error: insertErr2 } = await supabase.from('app_users').insert(fallbackPayload)
+          if (insertErr2) insertError = insertErr2
+        } else if (insertErr1.message?.toLowerCase().includes('duplicate') || insertErr1.message?.toLowerCase().includes('unique')) {
+          // If already existing by email, update it
+          await supabase.from('app_users').update({
+            name:            reg.name.trim(),
+            role:            finalRole,
+            main_branch_id:  finalRole !== 'admin' ? mainBranch : null,
+            view_branch_ids: finalRole !== 'admin' ? viewBranches : [],
+            branch_ids:      finalRole !== 'admin' ? combinedBranches : [],
+            can_edit:        finalCanEdit,
+            is_active:       true,
+            is_approved:     true,
+          }).eq('email', reg.email.trim().toLowerCase())
+        } else {
+          insertError = insertErr1
         }
-        const { error: insertErr2 } = await supabase.from('app_users').insert(fallbackPayload)
-        if (insertErr2) insertError = insertErr2
-      } else {
-        insertError = insertErr1
+      }
+
+      if (insertError && !insertError.message?.toLowerCase().includes('duplicate') && !insertError.message?.toLowerCase().includes('unique')) {
+        setErr(insertError.message)
+        setBusy(null)
+        return
       }
     }
 
-    if (insertError) { setErr(insertError.message); setBusy(null); return }
-
     // 3. Mark as approved in pending_registrations
-    await supabase.from('pending_registrations').update({
+    const { error: regUpdateErr } = await supabase.from('pending_registrations').update({
       status:     'approved',
       role:       finalRole,
       branch_ids: combinedBranches,
       can_edit:   finalCanEdit,
     }).eq('id', reg.id)
+
+    if (regUpdateErr && (regUpdateErr.message?.includes('can_edit') || regUpdateErr.message?.includes('branch_ids'))) {
+      await supabase.from('pending_registrations').update({
+        status: 'approved',
+      }).eq('id', reg.id)
+    }
 
     await Promise.all([loadPendingRegs(), loadAppUsers()])
     setBusy(null)
@@ -559,18 +627,39 @@ export default function RegistrationApprovalModal({ onClose }) {
             const currentRole = getRole(reg)
             const editBranches = getEditBranches(reg)
             const viewBranches = getViewBranches(reg)
+            const alreadyInUsers = (appUsers || []).some(
+              u => u.email?.trim().toLowerCase() === reg.email?.trim().toLowerCase()
+            )
 
             return (
               <div key={reg.id} className="reg-card">
                 <div className="reg-card-top">
                   <div style={{ flex: 1 }}>
-                    <div className="reg-name" style={{ fontSize: 15 }}>{reg.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span className="reg-name" style={{ fontSize: 15 }}>{reg.name}</span>
+                      {alreadyInUsers && (
+                        <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
+                          ✓ In Directory
+                        </span>
+                      )}
+                    </div>
                     <div className="reg-meta">{reg.email}</div>
                     <div className="reg-meta" style={{ color: 'var(--muted)', fontSize: 11, marginTop: 2 }}>
                       Requested: {new Date(reg.created_at).toLocaleDateString()}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                    {alreadyInUsers ? (
+                      <button
+                        className="btn sm"
+                        style={{ background: '#e8f5e9', color: '#2e7d32', borderColor: '#a5d6a7', fontWeight: 650 }}
+                        onClick={() => handleMarkApprovedOnly(reg.id)}
+                        disabled={busy === reg.id}
+                        title="User is already registered in directory. Move to resolved."
+                      >
+                        {busy === reg.id ? '…' : '✓ Mark Approved'}
+                      </button>
+                    ) : null}
                     <button
                       className="btn sm danger"
                       onClick={() => { setRejectId(reg.id); setRejectNote(''); setErr('') }}
@@ -581,6 +670,12 @@ export default function RegistrationApprovalModal({ onClose }) {
                       onClick={() => handleApprove(reg)}
                       disabled={busy === reg.id}
                     >{busy === reg.id ? 'Approving…' : '✓ Approve & Activate'}</button>
+                    <button
+                      className="btn sm ghost"
+                      onClick={() => handleDelete(reg.id)}
+                      disabled={busy === reg.id}
+                      title="Delete request"
+                    >✕</button>
                   </div>
                 </div>
 
