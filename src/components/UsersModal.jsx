@@ -14,6 +14,47 @@ const ROLE_LABEL = {
   branch:          'Branch',
 }
 
+// ── View Only / Can Edit toggle ───────────────────────────────────────────────
+function AccessToggle({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 0, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border)', width: 'fit-content', marginTop: 2 }}>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        style={{
+          padding: '5px 14px',
+          fontSize: 12,
+          fontWeight: 600,
+          border: 'none',
+          cursor: 'pointer',
+          background: !value ? 'var(--accent, #2a78d6)' : 'var(--surface)',
+          color:      !value ? '#fff' : 'var(--muted)',
+          transition: 'background .15s, color .15s',
+        }}
+      >
+        👁 View Only
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        style={{
+          padding: '5px 14px',
+          fontSize: 12,
+          fontWeight: 600,
+          border: 'none',
+          borderLeft: '1px solid var(--border)',
+          cursor: 'pointer',
+          background: value ? 'var(--accent, #2a78d6)' : 'var(--surface)',
+          color:      value ? '#fff' : 'var(--muted)',
+          transition: 'background .15s, color .15s',
+        }}
+      >
+        ✏️ Can Edit
+      </button>
+    </div>
+  )
+}
+
 export default function UsersModal({ onClose }) {
   const {
     appUsers, branches, loadAppUsers,
@@ -21,13 +62,14 @@ export default function UsersModal({ onClose }) {
   } = useApp()
 
   // ── Add user form ─────────────────────────────────────────────
-  const [form, setForm] = useState({ name:'', email:'', password:'', role:'service_manager', branch_ids:[] })
+  const [form, setForm] = useState({ name:'', email:'', password:'', role:'service_manager', branch_ids:[], can_edit: true })
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState('')
 
   // ── Edit state ────────────────────────────────────────────────
   const [editId,       setEditId]       = useState(null)   // user id being edited
   const [editRole,     setEditRole]     = useState('')
+  const [editCanEdit,  setEditCanEdit]  = useState(true)
   const [editBranches, setEditBranches] = useState([])
   const [editBusy,     setEditBusy]     = useState(false)
   const [editErr,      setEditErr]      = useState('')
@@ -52,6 +94,7 @@ export default function UsersModal({ onClose }) {
   function startEdit(u) {
     setEditId(u.id)
     setEditRole(u.role)
+    setEditCanEdit(u.can_edit !== false)
     setEditBranches(u.branch_ids || [])
     setEditErr('')
   }
@@ -66,9 +109,36 @@ export default function UsersModal({ onClose }) {
       setEditErr('Assign at least one branch.'); return
     }
     setEditBusy(true); setEditErr('')
-    const e1 = await updateUserRole(u.id, editRole)
-    const e2 = await updateUserBranches(u.id, needsBranch ? editBranches : [])
-    if (e1 || e2) { setEditErr((e1 || e2).message); setEditBusy(false); return }
+
+    const finalCanEdit = editRole === 'admin' ? true : editCanEdit
+
+    const { error } = await supabase
+      .from('app_users')
+      .update({
+        role:       editRole,
+        branch_ids: needsBranch ? editBranches : [],
+        can_edit:   finalCanEdit,
+      })
+      .eq('id', u.id)
+
+    if (error) {
+      setEditErr(error.message)
+      setEditBusy(false)
+      return
+    }
+
+    if (u.email) {
+      await supabase
+        .from('pending_registrations')
+        .update({
+          role:       editRole,
+          branch_ids: needsBranch ? editBranches : [],
+          can_edit:   finalCanEdit,
+        })
+        .eq('email', u.email)
+    }
+
+    await loadAppUsers()
     setEditBusy(false)
     setEditId(null)
   }
@@ -114,13 +184,14 @@ export default function UsersModal({ onClose }) {
       email:       form.email.trim(),
       role:        form.role,
       branch_ids:  needsBranch ? form.branch_ids : [],
+      can_edit:    form.can_edit,
       is_active:   true,
       is_approved: true,
     })
     if (error) { setErr(error.message); setBusy(false); return }
 
     await loadAppUsers()
-    setForm({ name:'', email:'', password:'', role:'service_manager', branch_ids:[] })
+    setForm({ name:'', email:'', password:'', role:'service_manager', branch_ids:[], can_edit: true })
     setBusy(false)
   }
 
@@ -178,10 +249,33 @@ export default function UsersModal({ onClose }) {
                 ))}
               </select>
             </div>
+            <div className="full">
+              <label className="fld">Access permission</label>
+              <AccessToggle value={form.can_edit} onChange={v => set('can_edit', v)} />
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                {form.can_edit
+                  ? 'User can create, edit, and update job tickets.'
+                  : 'User can only view the schedule (View Only). No editing allowed.'}
+              </div>
+            </div>
             {needsBranch && (
               <div className="full">
                 <label className="fld">Assigned branches</label>
-                <div className="branch-check">
+                <div className="branch-check" style={{ maxHeight: 120, overflowY: 'auto' }}>
+                  <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
+                    <input
+                      type="checkbox"
+                      checked={branches.length > 0 && branches.every(b => form.branch_ids.includes(b.id))}
+                      ref={el => {
+                        if (el) {
+                          const all = branches.length > 0 && branches.every(b => form.branch_ids.includes(b.id))
+                          el.indeterminate = !all && form.branch_ids.length > 0
+                        }
+                      }}
+                      onChange={e => set('branch_ids', e.target.checked ? branches.map(b => b.id) : [])}
+                    />
+                    Select All
+                  </label>
                   {branches.map(b => (
                     <label key={b.id}>
                       <input type="checkbox" checked={form.branch_ids.includes(b.id)}
@@ -208,6 +302,7 @@ export default function UsersModal({ onClose }) {
           {appUsers.map(u => {
             const isEditing  = editId === u.id
             const isActive   = u.is_active ?? true
+            const canEdit    = u.can_edit !== false
             const branchNames = (u.branch_ids || [])
               .map(id => branches.find(b => b.id === id)?.name || id)
               .join(', ')
@@ -220,6 +315,15 @@ export default function UsersModal({ onClose }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span className="pname">{u.name}</span>
                       <span className={`role-tag ${u.role}`}>{ROLE_LABEL[u.role] || u.role}</span>
+                      {u.role !== 'admin' && (
+                        <span style={{
+                          fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 10,
+                          background: canEdit ? '#e8f5e9' : '#fff3e0',
+                          color:      canEdit ? '#2e7d32' : '#e65100',
+                        }}>
+                          {canEdit ? '✏️ Can Edit' : '👁 View Only'}
+                        </span>
+                      )}
                       {!isActive && <span className="role-tag" style={{ background: 'var(--st-fail)', color: '#fff' }}>Inactive</span>}
                     </div>
                     <div className="pmeta">{u.email}</div>
@@ -229,7 +333,7 @@ export default function UsersModal({ onClose }) {
                   {/* Action buttons */}
                   {!isEditing && (
                     <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
-                      <button className="btn sm" onClick={() => startEdit(u)} title="Edit role / branches">✎ Edit</button>
+                      <button className="btn sm" onClick={() => startEdit(u)} title="Edit role / access / branches">✎ Edit</button>
                       <button
                         className={`btn sm ${isActive ? 'ghost' : 'primary'}`}
                         onClick={() => handleToggleActive(u)}
@@ -254,11 +358,35 @@ export default function UsersModal({ onClose }) {
                           ))}
                         </select>
                       </div>
-                      <div /> {/* spacer */}
+                      {editRole !== 'admin' ? (
+                        <div>
+                          <label className="fld">Access permission</label>
+                          <AccessToggle value={editCanEdit} onChange={setEditCanEdit} />
+                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                            {editCanEdit
+                              ? 'Can create, edit, & update jobs'
+                              : 'View Only (no editing allowed)'}
+                          </div>
+                        </div>
+                      ) : <div />}
                       {(editRole === 'service_manager' || editRole === 'branch') && (
                         <div className="full">
                           <label className="fld">Assigned branches</label>
-                          <div className="branch-check" style={{ maxHeight: 110, overflowY: 'auto' }}>
+                          <div className="branch-check" style={{ maxHeight: 120, overflowY: 'auto' }}>
+                            <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
+                              <input
+                                type="checkbox"
+                                checked={branches.length > 0 && branches.every(b => editBranches.includes(b.id))}
+                                ref={el => {
+                                  if (el) {
+                                    const all = branches.length > 0 && branches.every(b => editBranches.includes(b.id))
+                                    el.indeterminate = !all && editBranches.length > 0
+                                  }
+                                }}
+                                onChange={e => setEditBranches(e.target.checked ? branches.map(b => b.id) : [])}
+                              />
+                              Select All
+                            </label>
                             {branches.map(b => (
                               <label key={b.id}>
                                 <input type="checkbox"

@@ -119,6 +119,15 @@ export function AppProvider({ children }) {
     return error
   }
 
+  async function updateUserCanEdit(userId, canEdit) {
+    const { error } = await supabase
+      .from('app_users')
+      .update({ can_edit: canEdit })
+      .eq('id', userId)
+    if (!error) await loadAppUsers()
+    return error
+  }
+
   // ── Permissions helpers ───────────────────────────────────────
   const isAdmin          = currentUser?.role === 'admin'
   const isServiceManager = currentUser?.role === 'service_manager'
@@ -157,7 +166,7 @@ export function AppProvider({ children }) {
       loadBranches, loadStaff, loadJobs, loadAppUsers, loadPendingRegs,
       signIn, signOut,
       setBranches, setStaff, setJobs, setAppUsers,
-      updateUserRole, updateUserBranches, toggleUserActive,
+      updateUserRole, updateUserBranches, toggleUserActive, updateUserCanEdit,
     }}>
       {children}
     </AppContext.Provider>
