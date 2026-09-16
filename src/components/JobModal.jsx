@@ -119,7 +119,7 @@ export default function JobModal({ payload, onClose }) {
   const jtRequired       = form.type === 'onsite' || form.type === 'installation'
 
   function validate() {
-    if (jtRequired && !form.jt_no.trim())    return 'JT No. is required.'
+    if (jtRequired && !form.jt_no.trim())    return 'Netsuite# is required.'
     if (!form.staff_id)        return 'Employee is required.'
     if (!form.branch_id)       return 'Branch is required.'
     if (customerRequired && !form.customer.trim()) return 'Customer name is required.'
@@ -204,11 +204,11 @@ export default function JobModal({ payload, onClose }) {
               <input type="text" className="txt" value={payload.job?.date || payload.date} disabled />
             </div>
             <div>
-              <label className="fld">JT No. {jtRequired && <span className="req">*</span>}</label>
+              <label className="fld">Netsuite# {jtRequired && <span className="req">*</span>}</label>
               <input
                 type="text"
                 className="txt"
-                placeholder="e.g. JT-1050"
+                placeholder="e.g. NS-1050"
                 value={form.jt_no}
                 disabled={!canEditJob}
                 onChange={e => set('jt_no', e.target.value)}

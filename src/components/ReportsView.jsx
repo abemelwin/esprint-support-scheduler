@@ -56,7 +56,7 @@ export default function ReportsView({ reportMonth, setReportMonth, rFilters, set
     dl([header,...rows], `report1-${monthName(reportMonth).replace(' ','_')}.csv`)
   }
   function csvR2() {
-    const header = ['Date','JT No','Employee','Branch','Customer','Type','Status','Note']
+    const header = ['Date','Netsuite#','Employee','Branch','Customer','Type','Status','Note']
     const rows = r2Rows.map(j => {
       const s = staffById(j.staff_id); const b = branchById(j.branch_id)
       return [j.date, j.jt_no, s?.name||'—', b?.name||'—', j.customer, j.type, j.status, j.status_note||'']
@@ -152,7 +152,7 @@ export default function ReportsView({ reportMonth, setReportMonth, rFilters, set
           <table className="rt">
             <thead>
               <tr>
-                <th>Date</th><th>JT No</th><th>Employee</th><th>Branch</th>
+                <th>Date</th><th>Netsuite#</th><th>Employee</th><th>Branch</th>
                 <th>Customer</th><th>Type</th><th>Status</th><th>Note</th>
               </tr>
             </thead>
