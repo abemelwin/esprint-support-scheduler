@@ -471,15 +471,6 @@ export default function UsersModal({ onClose }) {
                 ＋ Add User
               </button>
             </div>
-            <button
-              className="btn sm"
-              onClick={handleManualRefresh}
-              disabled={refreshing}
-              title="Refresh users and staff data"
-              style={{ padding: '4px 8px', fontSize: 12 }}
-            >
-              {refreshing ? '⏳ Refreshed…' : '🔄 Refresh'}
-            </button>
             <button className="btn sm ghost" onClick={onClose} title="Close" style={{ fontSize: 14, padding: '4px 8px', borderRadius: 6 }}>✕</button>
           </div>
         </div>
