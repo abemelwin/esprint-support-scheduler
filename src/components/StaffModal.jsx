@@ -1,26 +1,80 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { ROLES, ROLE_ORDER } from '../lib/constants'
 
 export default function StaffModal({ onClose }) {
-  const { staff, branches, loadStaff } = useApp()
-  const [form, setForm] = useState({ name:'', role:'junior', home_branch_id:'', hotline: false })
+  const { staff, branches, appUsers, loadStaff, loadAppUsers } = useApp()
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [form, setForm] = useState({ name:'', role:'senior', home_branch_id:'', hotline: false })
   const [busy, setBusy] = useState(false)
+  const [err,  setErr]  = useState('')
+
+  useEffect(() => {
+    loadAppUsers()
+  }, [])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  function handleAccountSelect(userId) {
+    setSelectedUserId(userId)
+    setErr('')
+    if (!userId) {
+      setForm({ name:'', role:'senior', home_branch_id:'', hotline: false })
+      return
+    }
+    const u = appUsers.find(x => x.id === userId)
+    if (!u) return
+
+    const alreadyStaff = staff.some(s => s.name.trim().toLowerCase() === u.name.trim().toLowerCase())
+    if (alreadyStaff) {
+      setErr(`Note: "${u.name}" is already registered as a staff member.`)
+    }
+
+    let staffRole = 'senior'
+    if (u.role === 'admin' || u.role === 'service_manager') staffRole = 'manager'
+
+    const homeBranch = u.branch_ids?.[0] || (branches.length > 0 ? branches[0].id : '')
+
+    setForm({
+      name: u.name,
+      role: staffRole,
+      home_branch_id: homeBranch,
+      hotline: homeBranch === 'b13',
+    })
+  }
+
   async function handleAdd() {
-    if (!form.name.trim() || !form.home_branch_id) return
+    if (!form.name.trim()) {
+      setErr('Please select an existing account from the dropdown.')
+      return
+    }
+    if (!form.home_branch_id) {
+      setErr('Please assign a home branch.')
+      return
+    }
+    const alreadyStaff = staff.some(s => s.name.trim().toLowerCase() === form.name.trim().toLowerCase())
+    if (alreadyStaff) {
+      setErr(`"${form.name}" is already in the staff list.`)
+      return
+    }
+
     setBusy(true)
-    await supabase.from('staff').insert({
+    setErr('')
+    const { error } = await supabase.from('staff').insert({
       name:           form.name.trim(),
       role:           form.role,
       home_branch_id: form.home_branch_id,
       hotline:        form.hotline,
     })
+    if (error) {
+      setErr(error.message)
+      setBusy(false)
+      return
+    }
     await loadStaff()
-    setForm({ name:'', role:'junior', home_branch_id:'', hotline: false })
+    setSelectedUserId('')
+    setForm({ name:'', role:'senior', home_branch_id:'', hotline: false })
     setBusy(false)
   }
 
@@ -42,12 +96,30 @@ export default function StaffModal({ onClose }) {
         <div className="modal-body">
           <div className="grid2">
             <div className="full">
-              <label className="fld">Name</label>
-              <input type="text" className="txt" placeholder="e.g. Juan Dela Cruz"
-                value={form.name} onChange={e => set('name', e.target.value)} />
+              <label className="fld">Existing Account <span className="req">*</span></label>
+              <select
+                className="sel"
+                value={selectedUserId}
+                onChange={e => handleAccountSelect(e.target.value)}
+              >
+                <option value="">-- Select an existing account ({appUsers.length}) --</option>
+                {appUsers.map(u => {
+                  const isAdded = staff.some(s => s.name.trim().toLowerCase() === u.name.trim().toLowerCase())
+                  return (
+                    <option key={u.id} value={u.id}>
+                      {isAdded ? '✓ ' : ''}{u.name} — {u.email} ({u.role})
+                    </option>
+                  )
+                })}
+              </select>
             </div>
+            {form.name && (
+              <div className="full" style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
+                Selected staff name: <strong style={{ color: 'var(--ink-1)' }}>{form.name}</strong>
+              </div>
+            )}
             <div>
-              <label className="fld">Role</label>
+              <label className="fld">Staff Role</label>
               <select className="sel" value={form.role} onChange={e => set('role', e.target.value)}>
                 {ROLE_ORDER.map(r => <option key={r} value={r}>{ROLES[r].label}</option>)}
               </select>
@@ -67,7 +139,8 @@ export default function StaffModal({ onClose }) {
               </label>
             </div>
           </div>
-          <button className="btn primary" style={{ marginTop:10 }} onClick={handleAdd} disabled={busy}>
+          {err && <div className="login-err" style={{ textAlign:'left', marginTop: 6 }}>{err}</div>}
+          <button className="btn primary" style={{ marginTop:10 }} onClick={handleAdd} disabled={busy || !selectedUserId}>
             ＋ Add staff
           </button>
 
