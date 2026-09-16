@@ -468,7 +468,7 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
             padding: '2px 8px',
             whiteSpace: 'nowrap',
           }}>
-            👁 View only
+            🔒 View only
           </span>
         )}
       </div>

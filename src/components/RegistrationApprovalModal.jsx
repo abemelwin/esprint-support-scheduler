@@ -33,7 +33,7 @@ function AccessToggle({ value, onChange }) {
           transition: 'background .15s, color .15s',
         }}
       >
-        👁 View Only
+        🔒 View Only
       </button>
       <button
         type="button"
@@ -144,7 +144,7 @@ function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
                 background: canEdit ? '#e8f5e9' : '#fff3e0',
                 color:      canEdit ? '#2e7d32' : '#e65100',
               }}>
-                {canEdit ? '✏️ Can Edit' : '👁 View Only'}
+                {canEdit ? '✏️ Can Edit' : '🔒 View Only'}
               </span>
               {reg.role === 'admin' ? (
                 <span className="user-branch-badge all" style={{ fontSize: 10.5 }}>🌐 All Branches (Admin)</span>
