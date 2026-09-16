@@ -286,13 +286,15 @@ export default function UsersModal({ onClose }) {
       setBusy(false); return
     }
 
+    const finalCanEdit = form.role === 'admin' ? true : form.can_edit
+
     const { error } = await supabase.from('app_users').insert({
       auth_id:     uid,
       name:        form.name.trim(),
       email:       form.email.trim(),
       role:        form.role,
       branch_ids:  needsBranch ? form.branch_ids : [],
-      can_edit:    form.can_edit,
+      can_edit:    finalCanEdit,
       is_active:   true,
       is_approved: true,
     })
@@ -352,20 +354,26 @@ export default function UsersModal({ onClose }) {
             <div>
               <label className="fld">Access level</label>
               <select className="sel" value={form.role} onChange={e => set('role', e.target.value)}>
-                {ROLE_OPTIONS.filter(r => r.value !== 'admin').map(r => (
+                {ROLE_OPTIONS.map(r => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
             </div>
-            <div className="full">
-              <label className="fld">Access permission</label>
-              <AccessToggle value={form.can_edit} onChange={v => set('can_edit', v)} />
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                {form.can_edit
-                  ? 'User can create, edit, and update job tickets.'
-                  : 'User can only view the schedule (View Only). No editing allowed.'}
+            {form.role !== 'admin' ? (
+              <div className="full">
+                <label className="fld">Access permission</label>
+                <AccessToggle value={form.can_edit} onChange={v => set('can_edit', v)} />
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                  {form.can_edit
+                    ? 'User can create, edit, and update job tickets.'
+                    : 'User can only view the schedule (View Only). No editing allowed.'}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="full" style={{ fontSize: 12, color: 'var(--senior)', background: 'color-mix(in srgb, var(--senior) 10%, transparent)', padding: '8px 12px', borderRadius: 8, border: '1px solid color-mix(in srgb, var(--senior) 25%, transparent)' }}>
+                👑 Admin accounts automatically have full edit access and global management across all branches.
+              </div>
+            )}
             {needsBranch && (
               <div className="full">
                 <label className="fld">

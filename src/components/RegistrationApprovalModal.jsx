@@ -3,14 +3,16 @@ import { useApp } from '../lib/AppContext'
 import { supabase, supabaseSignup } from '../lib/supabase'
 
 const ROLE_LABEL = {
+  admin:           'Admin',
   service_manager: 'Service Manager',
   employee:        'Employee',
   branch:          'Branch User',
 }
 
 const ROLE_OPTIONS = [
+  { value: 'admin',           label: 'Admin'           },
   { value: 'service_manager', label: 'Service Manager' },
-  { value: 'branch',          label: 'Branch User' },
+  { value: 'branch',          label: 'Branch User'     },
 ]
 
 // ── View Only / Can Edit toggle ───────────────────────────────────────────────
