@@ -57,11 +57,25 @@ function AccessToggle({ value, onChange }) {
 
 export default function UsersModal({ onClose }) {
   const {
-    appUsers, branches, loadAppUsers,
+    appUsers, branches, staff, loadAppUsers, loadStaff,
     updateUserRole, updateUserBranches, toggleUserActive,
   } = useApp()
 
-  const [activeTab, setActiveTab] = useState('list') // 'list' | 'add'
+  const [activeTab,    setActiveTab]    = useState('list') // 'list' | 'add'
+  const [successMsg,   setSuccessMsg]   = useState('')
+  const [refreshing,   setRefreshing]   = useState(false)
+
+  function showSuccess(msg) {
+    setSuccessMsg(msg)
+    setTimeout(() => setSuccessMsg(''), 4500)
+  }
+
+  async function handleManualRefresh() {
+    setRefreshing(true)
+    await Promise.all([loadAppUsers(), loadStaff()])
+    setRefreshing(false)
+    showSuccess('✓ Directory and staff schedule refreshed!')
+  }
 
   // ── Add user form ─────────────────────────────────────────────
   const [form, setForm] = useState({ name:'', email:'', password:'', role:'service_manager', branch_ids:[], can_edit: true })
@@ -248,9 +262,16 @@ export default function UsersModal({ onClose }) {
       }
     }
 
-    await loadAppUsers()
+    // 4. Also sync staff table name if staff member exists with matching name
+    const matchingStaff = staff.find(s => s.name?.trim().toLowerCase() === u.name?.trim().toLowerCase())
+    if (matchingStaff && editName.trim() !== u.name) {
+      await supabase.from('staff').update({ name: editName.trim() }).eq('id', matchingStaff.id)
+    }
+
+    await Promise.all([loadAppUsers(), loadStaff()])
     setEditBusy(false)
     setEditId(null)
+    showSuccess(`✓ User "${editName.trim()}" updated and schedule refreshed!`)
   }
 
   const needsBranch = form.role === 'branch' || form.role === 'service_manager'
@@ -289,10 +310,11 @@ export default function UsersModal({ onClose }) {
     }
 
     const finalCanEdit = form.role === 'admin' ? true : form.can_edit
+    const createdName  = form.name.trim()
 
     const { error } = await supabase.from('app_users').insert({
       auth_id:     uid,
-      name:        form.name.trim(),
+      name:        createdName,
       email:       form.email.trim(),
       role:        form.role,
       branch_ids:  needsBranch ? form.branch_ids : [],
@@ -302,19 +324,22 @@ export default function UsersModal({ onClose }) {
     })
     if (error) { setErr(error.message); setBusy(false); return }
 
-    await loadAppUsers()
+    await Promise.all([loadAppUsers(), loadStaff()])
     setForm({ name:'', email:'', password:'', role:'service_manager', branch_ids:[], can_edit: true })
     setBusy(false)
     setActiveTab('list')
+    showSuccess(`✓ User "${createdName}" created and added to directory!`)
   }
 
   async function handleToggleActive(u) {
     const next = !(u.is_active ?? true)
     await toggleUserActive(u.id, next)
+    await Promise.all([loadAppUsers(), loadStaff()])
+    showSuccess(`✓ User "${u.name}" ${next ? 'activated' : 'deactivated'}.`)
   }
 
-  async function handleDelete(id, authId, email) {
-    if (!confirm('Remove this user permanently?')) return
+  async function handleDelete(id, authId, email, name) {
+    if (!confirm(`Remove user "${name || email}" permanently?`)) return
     // Also delete the pending_registrations record so the email can re-register
     if (email) {
       await supabase.from('pending_registrations').delete().eq('email', email)
@@ -325,7 +350,8 @@ export default function UsersModal({ onClose }) {
     } else {
       await supabase.from('app_users').delete().eq('id', id)
     }
-    await loadAppUsers()
+    await Promise.all([loadAppUsers(), loadStaff()])
+    showSuccess(`✓ User "${name || email}" removed.`)
   }
 
   return (
@@ -351,11 +377,28 @@ export default function UsersModal({ onClose }) {
                 ＋ Add User
               </button>
             </div>
+            <button
+              className="btn sm"
+              onClick={handleManualRefresh}
+              disabled={refreshing}
+              title="Refresh users and staff data"
+              style={{ padding: '4px 8px', fontSize: 12 }}
+            >
+              {refreshing ? '⏳ Refreshed…' : '🔄 Refresh'}
+            </button>
             <button className="btn sm ghost" onClick={onClose} title="Close" style={{ fontSize: 14, padding: '4px 8px', borderRadius: 6 }}>✕</button>
           </div>
         </div>
 
         <div className="modal-body" style={{ padding: '16px 18px' }}>
+
+          {/* Success Toast Banner */}
+          {successMsg && (
+            <div className="user-success-toast">
+              <span>{successMsg}</span>
+              <button className="btn sm ghost" onClick={() => setSuccessMsg('')} style={{ color: 'inherit', padding: '1px 6px' }}>✕</button>
+            </div>
+          )}
 
           {/* ══════════════ TAB 1: USER LIST ══════════════ */}
           {activeTab === 'list' && (

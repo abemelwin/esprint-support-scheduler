@@ -4,11 +4,18 @@ import { ymd } from '../lib/dates'
 import { ROLES, ROLE_ORDER, TYPES, STATUS } from '../lib/constants'
 
 export default function AvailabilityPanel({ currentMonth }) {
-  const { jobs, inScope, visibleStaff, branches, appUsers } = useApp()
+  const { jobs, inScope, visibleStaff, branches, appUsers, loadStaff, loadAppUsers, loadJobs } = useApp()
   const [mode,         setMode]         = useState('month')   // 'month' | 'day'
   const [availDay,     setAvailDay]     = useState(ymd(new Date()))
   const [search,       setSearch]       = useState('')
   const [branchFilter, setBranchFilter] = useState('')
+  const [refreshing,   setRefreshing]   = useState(false)
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    await Promise.all([loadStaff?.(), loadAppUsers?.(), loadJobs?.()])
+    setRefreshing(false)
+  }
 
   // build day options for current month
   const dayOptions = useMemo(() => {
@@ -97,7 +104,19 @@ export default function AvailabilityPanel({ currentMonth }) {
 
   return (
     <div className="panel avail">
-      <div className="panel-head"><h2>Staff Schedule</h2></div>
+      <div className="panel-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h2>Staff Schedule</h2>
+        <button
+          className="btn sm ghost"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          title="Refresh staff & user branch mapping"
+          style={{ padding: '2px 8px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
+        >
+          <span style={{ display: 'inline-block', transform: refreshing ? 'rotate(360deg)' : 'none', transition: 'transform 0.6s' }}>🔄</span>
+          {refreshing ? 'Refreshing…' : ''}
+        </button>
+      </div>
       <div style={{ padding: '11px 13px 0' }}>
         <div className="seg-toggle">
           <button className={mode === 'month' ? 'active' : ''} onClick={() => setMode('month')}>This month</button>
