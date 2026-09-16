@@ -553,14 +553,9 @@ export default function UsersModal({ onClose }) {
                 )}
               </div>
 
-              {/* Sub-header with counter & quick add link */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>
-                <span>
-                  Showing {filteredUsers.length} of {appUsers.length} users
-                </span>
-                <button className="btn-link" onClick={() => setActiveTab('add')} style={{ fontSize: 12 }}>
-                  ＋ Add new user
-                </button>
+              {/* Sub-header with counter */}
+              <div style={{ marginBottom: 10, fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>
+                Showing {filteredUsers.length} of {appUsers.length} users
               </div>
 
               {/* ── Scrollable User List ── */}
