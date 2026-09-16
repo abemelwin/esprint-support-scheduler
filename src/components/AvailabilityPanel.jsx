@@ -64,8 +64,10 @@ export default function AvailabilityPanel({ currentMonth }) {
       if (matchedUser.role === 'admin') {
         return { label: '🌐 All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
       }
-      const uMain = matchedUser.main_branch_id || (matchedUser.branch_ids?.[0] || '')
-      const uViews = matchedUser.view_branch_ids || []
+      const uMain = matchedUser.main_branch_id || (matchedUser.can_edit !== false && matchedUser.branch_ids?.length === 1 ? matchedUser.branch_ids[0] : '')
+      const uViews = matchedUser.view_branch_ids?.length > 0
+        ? matchedUser.view_branch_ids
+        : (matchedUser.can_edit === false ? (matchedUser.branch_ids || []) : (matchedUser.branch_ids || []).filter(b => b !== uMain))
       const mainName = branches.find(b => b.id === uMain)?.name
       const viewNames = uViews.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
       const allIds = Array.from(new Set([...(uMain ? [uMain] : []), ...(matchedUser.branch_ids || []), ...uViews]))
@@ -86,16 +88,22 @@ export default function AvailabilityPanel({ currentMonth }) {
         }
       }
 
-      const uBranches = matchedUser.branch_ids || []
-      if (uBranches.length > 0) {
-        if (branches.length > 0 && branches.every(b => uBranches.includes(b.id))) {
-          return { label: `🌐 All Branches (${branches.length})`, isAll: true, branchIds: uBranches }
+      if (viewNames.length > 0) {
+        return {
+          label: `📍 ${viewNames.join(', ')}`,
+          isAll: false,
+          branchIds: allIds,
         }
-        const bNames = uBranches
-          .map(id => branches.find(b => b.id === id)?.name || id)
-          .filter(Boolean)
-        return { label: bNames.join(', '), isAll: false, branchIds: uBranches }
       }
+
+      const uBranches = matchedUser.branch_ids || []
+      if (branches.length > 0 && branches.every(b => uBranches.includes(b.id))) {
+        return { label: `🌐 All Branches (${branches.length})`, isAll: true, branchIds: uBranches }
+      }
+      const bNames = uBranches
+        .map(id => branches.find(b => b.id === id)?.name || id)
+        .filter(Boolean)
+      return { label: bNames.length > 0 ? bNames.join(', ') : '—', isAll: false, branchIds: uBranches }
     }
 
     const homeB = branches.find(b => b.id === s.home_branch_id)

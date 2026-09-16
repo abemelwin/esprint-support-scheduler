@@ -184,10 +184,10 @@ export default function UsersModal({ onClose }) {
     setEditCanEdit(u.can_edit !== false)
     
     // Resolve main branch & view branches
-    const uMain = u.main_branch_id || (u.branch_ids?.[0] || '')
+    const uMain = u.main_branch_id || (u.can_edit !== false && (u.branch_ids || []).length === 1 ? u.branch_ids[0] : '')
     const uViews = u.view_branch_ids?.length > 0
       ? u.view_branch_ids
-      : (u.branch_ids || []).filter(b => b !== uMain)
+      : (u.can_edit === false ? (u.branch_ids || []) : (u.branch_ids || []).filter(b => b !== uMain))
 
     setEditMainBranch(uMain)
     setEditViewBranches(uViews)
@@ -578,8 +578,10 @@ export default function UsersModal({ onClose }) {
                   const isEditing       = editId === u.id
                   const isActive        = u.is_active ?? true
                   const canEdit         = u.can_edit !== false
-                  const uMain           = u.main_branch_id || (u.branch_ids?.[0] || '')
-                  const uViews          = u.view_branch_ids || []
+                  const uMain           = u.main_branch_id || (u.can_edit !== false && (u.branch_ids || []).length === 1 ? u.branch_ids[0] : '')
+                  const uViews          = u.view_branch_ids?.length > 0
+                    ? u.view_branch_ids
+                    : (u.can_edit === false ? (u.branch_ids || []) : (u.branch_ids || []).filter(b => b !== uMain))
                   const mainBranchObj   = branches.find(x => x.id === uMain)
                   const hasBranches     = !!uMain || (u.branch_ids && u.branch_ids.length > 0) || uViews.length > 0
                   const isAllBranch     = branches.length > 0 && branches.every(b => (u.branch_ids || []).includes(b.id))
@@ -626,8 +628,10 @@ export default function UsersModal({ onClose }) {
                                   </div>
                                 )}
                                 {uViews.length > 0 && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
-                                    <span className="user-branch-label">Viewing Only ({uViews.length}):</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: mainBranchObj ? 2 : 0 }}>
+                                    <span className="user-branch-label">
+                                      {mainBranchObj ? `Viewing Only (${uViews.length}):` : `Assigned Branches (${uViews.length} - View Only):`}
+                                    </span>
                                     <div className="user-branch-chips">
                                       {uViews.map(id => {
                                         const b = branches.find(x => x.id === id)
@@ -746,7 +750,7 @@ export default function UsersModal({ onClose }) {
                                 {/* 🏢 Main Branch Selection */}
                                 <div className="full">
                                   <label className="fld">
-                                    🏢 Main Branch (Primary / Full Edit Access) <span className="req">*</span>
+                                    🏢 Main Branch (Primary / Full Edit Access) <span style={{ fontWeight: 'normal', color: 'var(--muted)', fontSize: 11 }}>(Optional)</span>
                                   </label>
                                   <select
                                     className="sel"
@@ -754,16 +758,18 @@ export default function UsersModal({ onClose }) {
                                     onChange={e => {
                                       const newMain = e.target.value
                                       setEditMainBranch(newMain)
-                                      setEditViewBranches(prev => prev.filter(id => id !== newMain))
+                                      if (newMain) {
+                                        setEditViewBranches(prev => prev.filter(id => id !== newMain))
+                                      }
                                     }}
                                   >
-                                    <option value="">Select Main Branch…</option>
+                                    <option value="">None (No Main Branch - Viewing Only across assigned branches)</option>
                                     {branches.map(b => (
                                       <option key={b.id} value={b.id}>{b.name} · {b.note}</option>
                                     ))}
                                   </select>
                                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>
-                                    Primary base where this user can create, update, and manage job tickets.
+                                    Primary base where this user can create, update, and manage job tickets. If &quot;None&quot;, all assigned branches will be in viewing-only mode.
                                   </div>
                                 </div>
 
@@ -888,7 +894,7 @@ export default function UsersModal({ onClose }) {
                     {/* 🏢 Main Branch */}
                     <div className="full">
                       <label className="fld">
-                        🏢 Main Branch (Primary / Full Edit Access) <span className="req">*</span>
+                        🏢 Main Branch (Primary / Full Edit Access) <span style={{ fontWeight: 'normal', color: 'var(--muted)', fontSize: 11 }}>(Optional)</span>
                       </label>
                       <select
                         className="sel"
@@ -896,16 +902,18 @@ export default function UsersModal({ onClose }) {
                         onChange={e => {
                           const newMain = e.target.value
                           set('main_branch_id', newMain)
-                          set('view_branch_ids', form.view_branch_ids.filter(id => id !== newMain))
+                          if (newMain) {
+                            set('view_branch_ids', form.view_branch_ids.filter(id => id !== newMain))
+                          }
                         }}
                       >
-                        <option value="">Select Main Branch…</option>
+                        <option value="">None (No Main Branch - Viewing Only across assigned branches)</option>
                         {branches.map(b => (
                           <option key={b.id} value={b.id}>{b.name} · {b.note}</option>
                         ))}
                       </select>
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>
-                        Primary branch where this user has full creation and editing privileges.
+                        Primary branch where this user has full creation and editing privileges. If &quot;None&quot;, all assigned branches will be view-only.
                       </div>
                     </div>
 
