@@ -195,15 +195,17 @@ export default function StaffModal({ onClose }) {
                   value={selectedUserId}
                   onChange={e => handleAccountSelect(e.target.value)}
                 >
-                  <option value="">-- Select an account ({appUsers.length}) --</option>
-                  {appUsers.map(u => {
-                    const isAdded = staff.some(s => s.name.trim().toLowerCase() === u.name.trim().toLowerCase())
-                    return (
-                      <option key={u.id} value={u.id}>
-                        {isAdded ? '✓ ' : ''}{u.name} — {u.email} ({u.role})
-                      </option>
-                    )
-                  })}
+                  <option value="">-- Select an account ({appUsers.filter(u => !u.email?.toLowerCase().includes('eileen') && !u.name?.toLowerCase().includes('eileen')).length}) --</option>
+                  {appUsers
+                    .filter(u => !u.email?.toLowerCase().includes('eileen') && !u.name?.toLowerCase().includes('eileen'))
+                    .map(u => {
+                      const isAdded = staff.some(s => s.name.trim().toLowerCase() === u.name.trim().toLowerCase())
+                      return (
+                        <option key={u.id} value={u.id}>
+                          {isAdded ? '✓ ' : ''}{u.name} — {u.email} ({u.role})
+                        </option>
+                      )
+                    })}
                 </select>
               </div>
               {form.name && (

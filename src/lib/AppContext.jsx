@@ -44,7 +44,8 @@ export function AppProvider({ children }) {
 
   const loadStaff = useCallback(async () => {
     const { data } = await supabase.from('staff').select('*').order('name')
-    setStaff(data || [])
+    const filtered = (data || []).filter(s => !s.name?.toLowerCase().includes('eileen'))
+    setStaff(filtered)
   }, [])
 
   const loadJobs = useCallback(async () => {
@@ -172,8 +173,9 @@ export function AppProvider({ children }) {
     return branches.filter(b => scopedBranchIds.includes(b.id))
   }
   function visibleStaff() {
-    if (!scopedBranchIds) return staff
-    return staff.filter(s => scopedBranchIds.includes(s.home_branch_id))
+    const activeStaff = staff.filter(s => !s.name?.toLowerCase().includes('eileen'))
+    if (!scopedBranchIds) return activeStaff
+    return activeStaff.filter(s => scopedBranchIds.includes(s.home_branch_id))
   }
 
   // ── Auth actions ──────────────────────────────────────────────

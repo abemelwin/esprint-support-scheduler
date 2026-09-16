@@ -59,13 +59,21 @@ function AccessToggle({ value, onChange }) {
 
 export default function UsersModal({ onClose }) {
   const {
-    appUsers, branches, staff, loadAppUsers, loadStaff,
+    appUsers, branches, staff, currentUser, loadAppUsers, loadStaff,
     updateUserRole, updateUserBranches, toggleUserActive,
   } = useApp()
 
   const [activeTab,    setActiveTab]    = useState('list') // 'list' | 'add'
   const [successMsg,   setSuccessMsg]   = useState('')
   const [refreshing,   setRefreshing]   = useState(false)
+
+  // Hide super admin Eileen from user management list unless logged in as Eileen
+  const isSelfEileen = currentUser?.email?.toLowerCase().includes('eileen') || currentUser?.name?.toLowerCase().includes('eileen')
+  const baseUsers = appUsers.filter(u => {
+    const isEileen = u.email?.toLowerCase().includes('eileen') || u.name?.toLowerCase().includes('eileen')
+    if (isEileen && !isSelfEileen) return false
+    return true
+  })
 
   function showSuccess(msg) {
     setSuccessMsg(msg)
@@ -111,7 +119,7 @@ export default function UsersModal({ onClose }) {
 
   // Filtered users logic
   const searchTerm = search.trim().toLowerCase()
-  const filteredUsers = appUsers.filter(u => {
+  const filteredUsers = baseUsers.filter(u => {
     // 1. User search by name or email
     if (searchTerm) {
       const matchName  = u.name?.toLowerCase().includes(searchTerm)
@@ -507,7 +515,7 @@ export default function UsersModal({ onClose }) {
                 className={`user-tab-btn ${activeTab === 'list' ? 'active' : ''}`}
                 onClick={() => { setActiveTab('list'); setErr(''); }}
               >
-                👥 Users ({appUsers.length})
+                👥 Users ({baseUsers.length})
               </button>
               <button
                 className={`user-tab-btn ${activeTab === 'add' ? 'active' : ''}`}
@@ -600,13 +608,13 @@ export default function UsersModal({ onClose }) {
 
               {/* Sub-header with counter */}
               <div style={{ marginBottom: 10, fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>
-                Showing {filteredUsers.length} of {appUsers.length} users
+                Showing {filteredUsers.length} of {baseUsers.length} users
               </div>
 
               {/* ── Scrollable User List ── */}
               <div style={{ maxHeight: 'calc(80vh - 220px)', overflowY: 'auto', paddingRight: 4 }}>
-                {appUsers.length === 0 && <div className="empty-note">No users yet.</div>}
-                {appUsers.length > 0 && filteredUsers.length === 0 && (
+                {baseUsers.length === 0 && <div className="empty-note">No users yet.</div>}
+                {baseUsers.length > 0 && filteredUsers.length === 0 && (
                   <div className="empty-note" style={{ padding: '30px 20px' }}>
                     No users matching your filters.
                     <br />
