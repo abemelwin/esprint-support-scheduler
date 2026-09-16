@@ -44,7 +44,7 @@ export default function LoginPage({ onRegister }) {
     <div className="login-bg">
       <div className="login-card">
         <div className="lhead">
-          <div className="logo">ES</div>
+          <img src="/logo.jpg" alt="ES Print Logo" className="login-logo-img" />
           <h2>Support Team Scheduler</h2>
           <div className="lsub">ES Print Group of Companies — please sign in</div>
         </div>

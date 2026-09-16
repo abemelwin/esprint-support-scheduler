@@ -56,7 +56,7 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
   return (
     <header className="app">
       <div className="brand">
-        <div className="logo">ES</div>
+        <img src="/logo.jpg" alt="ES Print Logo" className="logo-img" />
         <div>
           <h1>Support Team Scheduler</h1>
           <div className="sub">ES Print Group of Companies · Field Service</div>

@@ -68,7 +68,7 @@ export default function RegisterPage({ onBack }) {
       <div className="login-bg">
         <div className="login-card">
           <div className="lhead">
-            <div className="logo">ES</div>
+            <img src="/logo.jpg" alt="ES Print Logo" className="login-logo-img" />
             <h2>Request Submitted</h2>
             <div className="lsub">ES Print Group of Companies</div>
           </div>
@@ -92,7 +92,7 @@ export default function RegisterPage({ onBack }) {
     <div className="login-bg">
       <div className="login-card" style={{ maxWidth: 440 }}>
         <div className="lhead">
-          <div className="logo">ES</div>
+          <img src="/logo.jpg" alt="ES Print Logo" className="login-logo-img" />
           <h2>Create Account</h2>
           <div className="lsub">ES Print Group of Companies — request access</div>
         </div>
