@@ -3,17 +3,19 @@ import { useApp } from '../lib/AppContext'
 import { supabase, supabaseSignup } from '../lib/supabase'
 
 const ROLE_LABEL = {
-  admin:               'Admin',
-  service_manager:     'Service Manager',
-  service_coordinator: 'Service Coordinator',
-  branch:              'Branch User',
+  admin:                  'Admin',
+  service_manager:        'Service Manager',
+  service_coordinator:    'Service Coordinator',
+  field_service_engineer: 'Field Service Engineer',
+  branch:                 'Branch User',
 }
 
 const ROLE_OPTIONS = [
-  { value: 'service_coordinator', label: 'Service Coordinator' },
-  { value: 'service_manager',     label: 'Service Manager'     },
-  { value: 'branch',              label: 'Branch User'         },
-  { value: 'admin',               label: 'Admin'               },
+  { value: 'field_service_engineer', label: 'Field Service Engineer' },
+  { value: 'service_coordinator',    label: 'Service Coordinator'     },
+  { value: 'service_manager',        label: 'Service Manager'         },
+  { value: 'branch',                 label: 'Branch User'             },
+  { value: 'admin',                  label: 'Admin'                   },
 ]
 
 // ── Segmented Branch Selector (Can Edit vs View Only) ────────────────────────

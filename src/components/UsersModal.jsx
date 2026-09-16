@@ -3,17 +3,19 @@ import { useApp } from '../lib/AppContext'
 import { supabase, supabaseSignup } from '../lib/supabase'
 
 const ROLE_OPTIONS = [
-  { value: 'admin',               label: 'Admin'               },
-  { value: 'service_manager',     label: 'Service Manager'     },
-  { value: 'service_coordinator', label: 'Service Coordinator' },
-  { value: 'branch',              label: 'Branch User'         },
+  { value: 'admin',                  label: 'Admin'                   },
+  { value: 'service_manager',        label: 'Service Manager'         },
+  { value: 'service_coordinator',    label: 'Service Coordinator'     },
+  { value: 'field_service_engineer', label: 'Field Service Engineer' },
+  { value: 'branch',                 label: 'Branch User'             },
 ]
 
 const ROLE_LABEL = {
-  admin:               'Admin',
-  service_manager:     'Service Manager',
-  service_coordinator: 'Service Coordinator',
-  branch:              'Branch User',
+  admin:                  'Admin',
+  service_manager:        'Service Manager',
+  service_coordinator:    'Service Coordinator',
+  field_service_engineer: 'Field Service Engineer',
+  branch:                 'Branch User',
 }
 
 // ── View Only / Can Edit toggle ───────────────────────────────────────────────
@@ -258,7 +260,7 @@ export default function UsersModal({ onClose }) {
       setEditErr('Password must be at least 6 characters.'); return
     }
 
-    const needsBranch = editRole === 'service_manager' || editRole === 'service_coordinator' || editRole === 'branch'
+    const needsBranch = editRole === 'service_manager' || editRole === 'service_coordinator' || editRole === 'field_service_engineer' || editRole === 'branch'
     if (needsBranch && editEditBranches.length === 0 && editViewBranches.length === 0) {
       setEditErr('Please assign at least one branch (Can Edit or Viewing Only).'); return
     }
@@ -387,7 +389,7 @@ export default function UsersModal({ onClose }) {
     showSuccess(`✓ User "${editName.trim()}" updated and schedule refreshed!`)
   }
 
-  const needsBranch = form.role === 'branch' || form.role === 'service_manager' || form.role === 'service_coordinator'
+  const needsBranch = form.role === 'branch' || form.role === 'service_manager' || form.role === 'service_coordinator' || form.role === 'field_service_engineer'
 
   async function handleAdd() {
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
@@ -794,7 +796,7 @@ export default function UsersModal({ onClose }) {
                               </div>
                             )}
 
-                            {(editRole === 'service_manager' || editRole === 'service_coordinator' || editRole === 'branch') && (
+                            {(editRole === 'service_manager' || editRole === 'service_coordinator' || editRole === 'field_service_engineer' || editRole === 'branch') && (
                               <div className="full" style={{ marginTop: 4 }}>
                                 {/* ── Segmented Switcher between Can Edit & View Only ── */}
                                 <div style={{ display: 'flex', gap: 6, marginBottom: 10, background: 'var(--surface-2)', padding: 4, borderRadius: 8, border: '1px solid var(--border)' }}>

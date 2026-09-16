@@ -51,6 +51,7 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
   const roleLabel = currentUser?.role === 'admin' ? 'Admin'
     : currentUser?.role === 'service_manager' ? 'Service Manager'
     : currentUser?.role === 'service_coordinator' ? 'Service Coordinator'
+    : currentUser?.role === 'field_service_engineer' ? 'Field Service Engineer'
     : currentUser?.role === 'employee' ? 'Employee'
     : 'Branch'
 
@@ -75,7 +76,7 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
           className={view === 'reports' ? 'active' : ''}
           onClick={() => setView('reports')}
         >📊 Reports</button>
-        {currentUser?.role !== 'branch' && (isArnold || currentUser?.role === 'service_manager' || currentUser?.role === 'service_coordinator' || currentUser?.role === 'employee' || currentUser?.role === 'admin') && (
+        {currentUser?.role !== 'branch' && (isArnold || currentUser?.role === 'service_manager' || currentUser?.role === 'service_coordinator' || currentUser?.role === 'field_service_engineer' || currentUser?.role === 'employee' || currentUser?.role === 'admin') && (
           <button
             data-view="overview"
             className={view === 'overview' ? 'active' : ''}
