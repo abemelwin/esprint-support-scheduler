@@ -106,41 +106,43 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
               <span className="li"><span className="dot" style={{background:'var(--st-fail)'}} />Failed</span>
             </div>
           </div>
-          <div className="cal">
-            {DOW.map(d => <div key={d} className="dow">{d}</div>)}
-            {cells.map(cell => {
-              const isOther  = cell.getMonth() !== currentMonth.getMonth()
-              const isToday  = sameYMD(cell, today)
-              const dateKey  = ymd(cell)
-              const dayJobs  = filteredJobs(dateKey)
-              return (
-                <div
-                  key={dateKey}
-                  className={`cell${isOther ? ' other' : ''}${isToday ? ' today' : ''}`}
-                  onClick={() => onOpenJob({ date: dateKey })}
-                >
-                  <span className="dnum">{cell.getDate()}</span>
-                  <div className="jobs">
-                    {dayJobs.map(j => {
-                      const s = staffById(j.staff_id)
-                      const cls = TYPES[j.type]?.cls || ''
-                      return (
-                        <div
-                          key={j.id}
-                          className={`jchip ${cls}`}
-                          onClick={e => { e.stopPropagation(); onOpenJob({ date: dateKey, job: j }) }}
-                        >
-                          <span className={`st ${STATUS[j.status]?.dot || ''}`} />
-                          <span className="jn">{(j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : j.jt_no}</span>
-                          <span className="who">{s?.name?.split(',')[0] || '—'}</span>
-                        </div>
-                      )
-                    })}
+          <div className="cal-wrap">
+            <div className="cal">
+              {DOW.map(d => <div key={d} className="dow">{d}</div>)}
+              {cells.map(cell => {
+                const isOther  = cell.getMonth() !== currentMonth.getMonth()
+                const isToday  = sameYMD(cell, today)
+                const dateKey  = ymd(cell)
+                const dayJobs  = filteredJobs(dateKey)
+                return (
+                  <div
+                    key={dateKey}
+                    className={`cell${isOther ? ' other' : ''}${isToday ? ' today' : ''}`}
+                    onClick={() => onOpenJob({ date: dateKey })}
+                  >
+                    <span className="dnum">{cell.getDate()}</span>
+                    <div className="jobs">
+                      {dayJobs.map(j => {
+                        const s = staffById(j.staff_id)
+                        const cls = TYPES[j.type]?.cls || ''
+                        return (
+                          <div
+                            key={j.id}
+                            className={`jchip ${cls}`}
+                            onClick={e => { e.stopPropagation(); onOpenJob({ date: dateKey, job: j }) }}
+                          >
+                            <span className={`st ${STATUS[j.status]?.dot || ''}`} />
+                            <span className="jn">{(j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : j.jt_no}</span>
+                            <span className="who">{s?.name?.split(',')[0] || '—'}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <span className="addhint">＋</span>
                   </div>
-                  <span className="addhint">＋</span>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
 
