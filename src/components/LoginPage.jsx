@@ -49,55 +49,60 @@ export default function LoginPage({ onRegister }) {
           <div className="lsub">ES Print Group of Companies — please sign in</div>
         </div>
         <form className="lbody" onSubmit={handleLogin}>
-          <label className="fld">Username / Email</label>
-          <input
-            type="text"
-            className="txt"
-            placeholder="e.g. esprint.rickyeina@gmail.com"
-            value={email}
-            onChange={e => {
-              setEmail(e.target.value)
-              localStorage.setItem('esprint_last_email', e.target.value.trim())
-            }}
-            autoComplete="username"
-          />
-          <label className="fld">Password</label>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div style={{ marginBottom: 12 }}>
+            <label className="fld">Username / Email</label>
             <input
-              type={showPassword ? 'text' : 'password'}
+              type="text"
               className="txt"
-              placeholder="password"
-              style={{ width: '100%', paddingRight: 38 }}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(p => !p)}
-              style={{
-                position: 'absolute',
-                right: 8,
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--muted)',
-                padding: '5px',
-                borderRadius: '5px',
-                transition: 'color .15s ease',
+              placeholder="e.g. esprint.rickyeina@gmail.com"
+              style={{ width: '100%' }}
+              value={email}
+              onChange={e => {
+                setEmail(e.target.value)
+                localStorage.setItem('esprint_last_email', e.target.value.trim())
               }}
-              title={showPassword ? 'Hide password' : 'Show password'}
-            >
-              <EyeIcon visible={showPassword} />
-            </button>
+              autoComplete="username"
+            />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label className="fld">Password</label>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="txt"
+                placeholder="password"
+                style={{ width: '100%', paddingRight: 38 }}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                style={{
+                  position: 'absolute',
+                  right: 8,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--muted)',
+                  padding: '5px',
+                  borderRadius: '5px',
+                  transition: 'color .15s ease',
+                }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <EyeIcon visible={showPassword} />
+              </button>
+            </div>
           </div>
           <div className="login-err">{err}</div>
           <button
             className="btn primary"
-            style={{ width: '100%', justifyContent: 'center', marginTop: 6 }}
+            style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}
             disabled={busy}
           >
             {busy ? 'Signing in…' : 'Sign in'}
