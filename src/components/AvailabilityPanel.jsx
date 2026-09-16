@@ -64,25 +64,32 @@ export default function AvailabilityPanel({ currentMonth }) {
       if (matchedUser.role === 'admin') {
         return { label: '🌐 All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
       }
-      const uMain = matchedUser.main_branch_id || (matchedUser.can_edit !== false && matchedUser.branch_ids?.length === 1 ? matchedUser.branch_ids[0] : '')
+      const uCanEdit = matchedUser.can_edit !== false
+      const uEditBranches = uCanEdit
+        ? (matchedUser.branch_ids || []).filter(b => !(matchedUser.view_branch_ids || []).includes(b))
+        : []
+      if (uCanEdit && matchedUser.main_branch_id && !uEditBranches.includes(matchedUser.main_branch_id) && !(matchedUser.view_branch_ids || []).includes(matchedUser.main_branch_id)) {
+        uEditBranches.unshift(matchedUser.main_branch_id)
+      }
       const uViews = matchedUser.view_branch_ids?.length > 0
         ? matchedUser.view_branch_ids
-        : (matchedUser.can_edit === false ? (matchedUser.branch_ids || []) : (matchedUser.branch_ids || []).filter(b => b !== uMain))
-      const mainName = branches.find(b => b.id === uMain)?.name
-      const viewNames = uViews.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
-      const allIds = Array.from(new Set([...(uMain ? [uMain] : []), ...(matchedUser.branch_ids || []), ...uViews]))
+        : (!uCanEdit ? (matchedUser.branch_ids || []) : [])
 
-      if (mainName && viewNames.length > 0) {
+      const editNames = uEditBranches.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
+      const viewNames = uViews.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
+      const allIds = Array.from(new Set([...(matchedUser.branch_ids || []), ...uEditBranches, ...uViews]))
+
+      if (editNames.length > 0 && viewNames.length > 0) {
         return {
-          label: `🏢 ${mainName} · 📍 ${viewNames.join(', ')}`,
+          label: `✏️ ${editNames.join(', ')} · 📍 ${viewNames.join(', ')}`,
           isAll: false,
           branchIds: allIds,
         }
       }
 
-      if (mainName) {
+      if (editNames.length > 0) {
         return {
-          label: `🏢 ${mainName}`,
+          label: editNames.length === 1 ? `🏢 ${editNames[0]}` : `✏️ ${editNames.join(', ')}`,
           isAll: false,
           branchIds: allIds,
         }

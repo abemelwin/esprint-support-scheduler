@@ -80,7 +80,7 @@ export default function UsersModal({ onClose }) {
   // ── Add user form ─────────────────────────────────────────────
   const [form, setForm] = useState({
     name: '', email: '', password: '', role: 'service_manager',
-    main_branch_id: '', view_branch_ids: [], branch_ids: [], can_edit: true
+    edit_branch_ids: [], view_branch_ids: [], branch_ids: [], can_edit: true
   })
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState('')
@@ -92,7 +92,7 @@ export default function UsersModal({ onClose }) {
   const [editPassword,     setEditPassword]     = useState('')
   const [editRole,         setEditRole]         = useState('')
   const [editCanEdit,      setEditCanEdit]      = useState(true)
-  const [editMainBranch,   setEditMainBranch]   = useState('')
+  const [editEditBranches, setEditEditBranches] = useState([])
   const [editViewBranches, setEditViewBranches] = useState([])
   const [editBusy,         setEditBusy]         = useState(false)
   const [editErr,          setEditErr]          = useState('')
@@ -160,19 +160,46 @@ export default function UsersModal({ onClose }) {
     setStatusFilter('')
   }
 
+  function toggleAddEditBranch(id) {
+    setForm(f => {
+      const curEdit = f.edit_branch_ids || []
+      const nextEdit = curEdit.includes(id)
+        ? curEdit.filter(b => b !== id)
+        : [...curEdit, id]
+      return {
+        ...f,
+        edit_branch_ids: nextEdit,
+        view_branch_ids: (f.view_branch_ids || []).filter(b => b !== id),
+      }
+    })
+  }
+
   function toggleAddViewBranch(id) {
-    setForm(f => ({
-      ...f,
-      view_branch_ids: f.view_branch_ids.includes(id)
-        ? f.view_branch_ids.filter(b => b !== id)
-        : [...f.view_branch_ids, id],
-    }))
+    setForm(f => {
+      const curView = f.view_branch_ids || []
+      const nextView = curView.includes(id)
+        ? curView.filter(b => b !== id)
+        : [...curView, id]
+      return {
+        ...f,
+        view_branch_ids: nextView,
+        edit_branch_ids: (f.edit_branch_ids || []).filter(b => b !== id),
+      }
+    })
+  }
+
+  function toggleEditEditBranch(id) {
+    setEditEditBranches(cur =>
+      cur.includes(id) ? cur.filter(b => b !== id) : [...cur, id]
+    )
+    setEditViewBranches(cur => cur.filter(b => b !== id))
   }
 
   function toggleEditViewBranch(id) {
     setEditViewBranches(cur =>
       cur.includes(id) ? cur.filter(b => b !== id) : [...cur, id]
     )
+    setEditEditBranches(cur => cur.filter(b => b !== id))
   }
 
   function startEdit(u) {
@@ -183,14 +210,24 @@ export default function UsersModal({ onClose }) {
     setEditRole(u.role)
     setEditCanEdit(u.can_edit !== false)
     
-    // Resolve main branch & view branches
-    const uMain = u.main_branch_id || (u.can_edit !== false && (u.branch_ids || []).length === 1 ? u.branch_ids[0] : '')
-    const uViews = u.view_branch_ids?.length > 0
-      ? u.view_branch_ids
-      : (u.can_edit === false ? (u.branch_ids || []) : (u.branch_ids || []).filter(b => b !== uMain))
+    // Resolve editable branches & view branches
+    const canEdit = u.can_edit !== false
+    let uEditBranches = []
+    let uViewBranches = []
 
-    setEditMainBranch(uMain)
-    setEditViewBranches(uViews)
+    if (!canEdit) {
+      uViewBranches = u.view_branch_ids?.length > 0 ? u.view_branch_ids : (u.branch_ids || [])
+    } else {
+      const viewSet = new Set(u.view_branch_ids || [])
+      uViewBranches = u.view_branch_ids || []
+      uEditBranches = (u.branch_ids || []).filter(b => !viewSet.has(b))
+      if (u.main_branch_id && !uEditBranches.includes(u.main_branch_id) && !viewSet.has(u.main_branch_id)) {
+        uEditBranches.unshift(u.main_branch_id)
+      }
+    }
+
+    setEditEditBranches(uEditBranches)
+    setEditViewBranches(uViewBranches)
     setEditErr('')
   }
 
@@ -210,8 +247,8 @@ export default function UsersModal({ onClose }) {
     }
 
     const needsBranch = editRole === 'service_manager' || editRole === 'branch'
-    if (needsBranch && !editMainBranch && editViewBranches.length === 0) {
-      setEditErr('Please select a main branch or assign viewing branches.'); return
+    if (needsBranch && editEditBranches.length === 0 && editViewBranches.length === 0) {
+      setEditErr('Please assign at least one branch (Can Edit or Viewing Only).'); return
     }
 
     // Check if email already used by another user
@@ -224,11 +261,12 @@ export default function UsersModal({ onClose }) {
 
     setEditBusy(true); setEditErr('')
 
-    const finalCanEdit = editRole === 'admin' ? true : editCanEdit
+    const finalCanEdit = editRole === 'admin' ? true : (editEditBranches.length > 0)
     const combinedBranches = Array.from(new Set([
-      ...(editMainBranch ? [editMainBranch] : []),
+      ...editEditBranches,
       ...editViewBranches
     ]))
+    const mainBranch = editEditBranches[0] || null
 
     // 1. Update app_users with fallback if main_branch_id column not added yet
     let updateError = null
@@ -236,7 +274,7 @@ export default function UsersModal({ onClose }) {
       name:            editName.trim(),
       email:           editEmail.trim(),
       role:            editRole,
-      main_branch_id:  needsBranch ? (editMainBranch || null) : null,
+      main_branch_id:  needsBranch ? mainBranch : null,
       view_branch_ids: needsBranch ? editViewBranches : [],
       branch_ids:      needsBranch ? combinedBranches : [],
       can_edit:        finalCanEdit,
@@ -280,7 +318,7 @@ export default function UsersModal({ onClose }) {
           name:            editName.trim(),
           email:           editEmail.trim(),
           role:            editRole,
-          main_branch_id:  needsBranch ? (editMainBranch || null) : null,
+          main_branch_id:  needsBranch ? mainBranch : null,
           view_branch_ids: needsBranch ? editViewBranches : [],
           branch_ids:      needsBranch ? combinedBranches : [],
           can_edit:        finalCanEdit,
@@ -343,8 +381,10 @@ export default function UsersModal({ onClose }) {
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
       setErr('Name, email and password are required.'); return
     }
-    if (needsBranch && !form.main_branch_id && form.view_branch_ids.length === 0) {
-      setErr('Please select a main branch or assign viewing branches.'); return
+    const addEditBranches = form.edit_branch_ids || []
+    const addViewBranches = form.view_branch_ids || []
+    if (needsBranch && addEditBranches.length === 0 && addViewBranches.length === 0) {
+      setErr('Please assign at least one branch (Can Edit or Viewing Only).'); return
     }
 
     const already = appUsers.find(u => u.email.toLowerCase() === form.email.trim().toLowerCase())
@@ -372,20 +412,21 @@ export default function UsersModal({ onClose }) {
       setBusy(false); return
     }
 
-    const finalCanEdit = form.role === 'admin' ? true : form.can_edit
+    const finalCanEdit = form.role === 'admin' ? true : (addEditBranches.length > 0)
     const createdName  = form.name.trim()
     const combinedBranches = Array.from(new Set([
-      ...(form.main_branch_id ? [form.main_branch_id] : []),
-      ...(form.view_branch_ids || []),
+      ...addEditBranches,
+      ...addViewBranches,
     ]))
+    const mainBranch = addEditBranches[0] || null
 
     const fullInsert = {
       auth_id:         uid,
       name:            createdName,
       email:           form.email.trim(),
       role:            form.role,
-      main_branch_id:  needsBranch ? (form.main_branch_id || null) : null,
-      view_branch_ids: needsBranch ? (form.view_branch_ids || []) : [],
+      main_branch_id:  needsBranch ? mainBranch : null,
+      view_branch_ids: needsBranch ? addViewBranches : [],
       branch_ids:      needsBranch ? combinedBranches : [],
       can_edit:        finalCanEdit,
       is_active:       true,
@@ -418,7 +459,7 @@ export default function UsersModal({ onClose }) {
     await Promise.all([loadAppUsers(), loadStaff()])
     setForm({
       name: '', email: '', password: '', role: 'service_manager',
-      main_branch_id: '', view_branch_ids: [], branch_ids: [], can_edit: true
+      edit_branch_ids: [], view_branch_ids: [], branch_ids: [], can_edit: true
     })
     setBusy(false)
     setActiveTab('list')
@@ -573,13 +614,19 @@ export default function UsersModal({ onClose }) {
                   const isEditing       = editId === u.id
                   const isActive        = u.is_active ?? true
                   const canEdit         = u.can_edit !== false
-                  const uMain           = u.main_branch_id || (u.can_edit !== false && (u.branch_ids || []).length === 1 ? u.branch_ids[0] : '')
-                  const uViews          = u.view_branch_ids?.length > 0
-                    ? u.view_branch_ids
-                    : (u.can_edit === false ? (u.branch_ids || []) : (u.branch_ids || []).filter(b => b !== uMain))
-                  const mainBranchObj   = branches.find(x => x.id === uMain)
-                  const hasBranches     = !!uMain || (u.branch_ids && u.branch_ids.length > 0) || uViews.length > 0
-                  const isAllBranch     = branches.length > 0 && branches.every(b => (u.branch_ids || []).includes(b.id))
+                  let uEditBranches     = []
+                  let uViewBranches     = []
+                  if (!canEdit) {
+                    uViewBranches = u.view_branch_ids?.length > 0 ? u.view_branch_ids : (u.branch_ids || [])
+                  } else {
+                    const viewSet = new Set(u.view_branch_ids || [])
+                    uViewBranches = u.view_branch_ids || []
+                    uEditBranches = (u.branch_ids || []).filter(b => !viewSet.has(b))
+                    if (u.main_branch_id && !uEditBranches.includes(u.main_branch_id) && !viewSet.has(u.main_branch_id)) {
+                      uEditBranches.unshift(u.main_branch_id)
+                    }
+                  }
+                  const hasBranches = uEditBranches.length > 0 || uViewBranches.length > 0
 
                   return (
                     <div key={u.id} className={`user-mgmt-card${!isActive ? ' inactive' : ''}`}>
@@ -614,21 +661,31 @@ export default function UsersModal({ onClose }) {
                               </span>
                             ) : (
                               <>
-                                {mainBranchObj && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <span className="user-branch-label">Main:</span>
-                                    <span className="user-branch-badge main" title={`Main editable branch: ${mainBranchObj.name} · ${mainBranchObj.note}`}>
-                                      🏢 {mainBranchObj.name}
-                                    </span>
-                                  </div>
-                                )}
-                                {uViews.length > 0 && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: mainBranchObj ? 2 : 0 }}>
+                                {uEditBranches.length > 0 && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
                                     <span className="user-branch-label">
-                                      {mainBranchObj ? `Viewing Only (${uViews.length}):` : `Assigned Branches (${uViews.length} - View Only):`}
+                                      {uEditBranches.length === 1 ? 'Can Edit (1):' : `Can Edit (${uEditBranches.length}):`}
                                     </span>
                                     <div className="user-branch-chips">
-                                      {uViews.map(id => {
+                                      {uEditBranches.map(id => {
+                                        const b = branches.find(x => x.id === id)
+                                        const name = b ? b.name : id
+                                        return (
+                                          <span key={id} className="user-branch-badge main" title={`Full Edit Access: ${name} · ${b?.note || ''}`}>
+                                            ✏️ {name}
+                                          </span>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                                {uViewBranches.length > 0 && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: uEditBranches.length > 0 ? 2 : 0 }}>
+                                    <span className="user-branch-label">
+                                      Viewing Only ({uViewBranches.length}):
+                                    </span>
+                                    <div className="user-branch-chips">
+                                      {uViewBranches.map(id => {
                                         const b = branches.find(x => x.id === id)
                                         const name = b ? b.name : id
                                         return (
@@ -639,21 +696,6 @@ export default function UsersModal({ onClose }) {
                                       })}
                                     </div>
                                   </div>
-                                )}
-                                {!mainBranchObj && uViews.length === 0 && (u.branch_ids || []).length > 0 && (
-                                  <>
-                                    <span className="user-branch-label">Branches ({u.branch_ids.length}):</span>
-                                    <div className="user-branch-chips">
-                                      {u.branch_ids.map(id => {
-                                        const b = branches.find(x => x.id === id)
-                                        return (
-                                          <span key={id} className="user-branch-badge">
-                                            {b ? b.name : id}
-                                          </span>
-                                        )
-                                      })}
-                                    </div>
-                                  </>
                                 )}
                               </>
                             )}
@@ -742,40 +784,14 @@ export default function UsersModal({ onClose }) {
 
                             {(editRole === 'service_manager' || editRole === 'branch') && (
                               <>
-                                {/* 🏢 Main Branch Selection */}
-                                <div className="full">
-                                  <label className="fld">
-                                    🏢 Main Branch (Primary / Full Edit Access) <span style={{ fontWeight: 'normal', color: 'var(--muted)', fontSize: 11 }}>(Optional)</span>
-                                  </label>
-                                  <select
-                                    className="sel"
-                                    value={editMainBranch}
-                                    onChange={e => {
-                                      const newMain = e.target.value
-                                      setEditMainBranch(newMain)
-                                      if (newMain) {
-                                        setEditViewBranches(prev => prev.filter(id => id !== newMain))
-                                      }
-                                    }}
-                                  >
-                                    <option value="">None (No Main Branch - Viewing Only across assigned branches)</option>
-                                    {branches.map(b => (
-                                      <option key={b.id} value={b.id}>{b.name} · {b.note}</option>
-                                    ))}
-                                  </select>
-                                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>
-                                    Primary base where this user can create, update, and manage job tickets. If &quot;None&quot;, all assigned branches will be in viewing-only mode.
-                                  </div>
-                                </div>
-
-                                {/* 📍 Other Branches (Viewing Only) */}
+                                {/* ✏️ Editable Branches (Can Edit) */}
                                 <div className="full">
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                                     <label className="fld" style={{ margin: 0 }}>
-                                      📍 Other Branches (Viewing Only Access)
-                                      {editViewBranches.length > 0 && (
-                                        <span style={{ marginLeft: 6, fontWeight: 600, color: '#c084fc' }}>
-                                          ({editViewBranches.length} viewing only)
+                                      ✏️ Branches with CAN EDIT Access
+                                      {editEditBranches.length > 0 && (
+                                        <span style={{ marginLeft: 6, fontWeight: 700, color: '#60a5fa' }}>
+                                          ({editEditBranches.length} editable)
                                         </span>
                                       )}
                                     </label>
@@ -784,9 +800,63 @@ export default function UsersModal({ onClose }) {
                                         type="button"
                                         className="btn-link"
                                         style={{ fontSize: 11 }}
-                                        onClick={() => setEditViewBranches(branches.filter(b => b.id !== editMainBranch).map(b => b.id))}
+                                        onClick={() => {
+                                          setEditEditBranches(branches.map(b => b.id))
+                                          setEditViewBranches([])
+                                        }}
                                       >
-                                        Select All (View Only)
+                                        Select All (Edit)
+                                      </button>
+                                      <span style={{ color: 'var(--border)' }}>|</span>
+                                      <button
+                                        type="button"
+                                        className="btn-link"
+                                        style={{ fontSize: 11 }}
+                                        onClick={() => setEditEditBranches([])}
+                                      >
+                                        Clear
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+                                    User can create, edit, reschedule, and update job tickets in these branches.
+                                  </div>
+                                  <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
+                                    {branches.map(b => (
+                                      <label key={b.id}>
+                                        <input
+                                          type="checkbox"
+                                          checked={editEditBranches.includes(b.id)}
+                                          onChange={() => toggleEditEditBranch(b.id)}
+                                        />
+                                        <span>{b.name} · {b.note}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* 📍 Other Branches (Viewing Only) */}
+                                <div className="full">
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <label className="fld" style={{ margin: 0 }}>
+                                      📍 Branches with VIEWING ONLY Access
+                                      {editViewBranches.length > 0 && (
+                                        <span style={{ marginLeft: 6, fontWeight: 600, color: '#c084fc' }}>
+                                          ({editViewBranches.length} view only)
+                                        </span>
+                                      )}
+                                    </label>
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                      <button
+                                        type="button"
+                                        className="btn-link"
+                                        style={{ fontSize: 11 }}
+                                        onClick={() => {
+                                          const nonEdit = branches.filter(b => !editEditBranches.includes(b.id)).map(b => b.id)
+                                          setEditViewBranches(nonEdit)
+                                        }}
+                                      >
+                                        Select Remaining (View Only)
                                       </button>
                                       <span style={{ color: 'var(--border)' }}>|</span>
                                       <button
@@ -800,10 +870,10 @@ export default function UsersModal({ onClose }) {
                                     </div>
                                   </div>
                                   <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
-                                    User can view schedules, jobs, and staff for these branches, but cannot create or edit tickets.
+                                    User can view schedules, jobs, and staff for these branches in read-only mode (cannot create or edit).
                                   </div>
                                   <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-                                    {branches.filter(b => b.id !== editMainBranch).map(b => (
+                                    {branches.map(b => (
                                       <label key={b.id}>
                                         <input
                                           type="checkbox"
@@ -840,7 +910,7 @@ export default function UsersModal({ onClose }) {
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-1)' }}>Add New User Account</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-                  Create authentication credentials and configure Main vs. View-Only Branch permissions.
+                  Create authentication credentials and configure Can Edit vs. View-Only Branch permissions.
                 </div>
               </div>
 
@@ -874,7 +944,7 @@ export default function UsersModal({ onClose }) {
                     <AccessToggle value={form.can_edit} onChange={v => set('can_edit', v)} />
                     <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
                       {form.can_edit
-                        ? 'User can create, edit, and update job tickets in their Main Branch.'
+                        ? 'User can create, edit, and update job tickets in their assigned Can Edit branches.'
                         : 'User can only view the schedule (View Only everywhere). No editing allowed.'}
                     </div>
                   </div>
@@ -886,29 +956,57 @@ export default function UsersModal({ onClose }) {
 
                 {needsBranch && (
                   <>
-                    {/* 🏢 Main Branch */}
+                    {/* ✏️ Editable Branches (Can Edit) */}
                     <div className="full">
-                      <label className="fld">
-                        🏢 Main Branch (Primary / Full Edit Access) <span style={{ fontWeight: 'normal', color: 'var(--muted)', fontSize: 11 }}>(Optional)</span>
-                      </label>
-                      <select
-                        className="sel"
-                        value={form.main_branch_id}
-                        onChange={e => {
-                          const newMain = e.target.value
-                          set('main_branch_id', newMain)
-                          if (newMain) {
-                            set('view_branch_ids', form.view_branch_ids.filter(id => id !== newMain))
-                          }
-                        }}
-                      >
-                        <option value="">None (No Main Branch - Viewing Only across assigned branches)</option>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <label className="fld" style={{ margin: 0 }}>
+                          ✏️ Branches with CAN EDIT Access
+                          {form.edit_branch_ids.length > 0 && (
+                            <span style={{ marginLeft: 6, fontWeight: 700, color: '#60a5fa' }}>
+                              ({form.edit_branch_ids.length} editable)
+                            </span>
+                          )}
+                        </label>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            type="button"
+                            className="btn-link"
+                            style={{ fontSize: 11 }}
+                            onClick={() => {
+                              setForm(f => ({
+                                ...f,
+                                edit_branch_ids: branches.map(b => b.id),
+                                view_branch_ids: [],
+                              }))
+                            }}
+                          >
+                            Select All (Edit)
+                          </button>
+                          <span style={{ color: 'var(--border)' }}>|</span>
+                          <button
+                            type="button"
+                            className="btn-link"
+                            style={{ fontSize: 11 }}
+                            onClick={() => setForm(f => ({ ...f, edit_branch_ids: [] }))}
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+                        User can create, edit, reschedule, and update job tickets in these branches.
+                      </div>
+                      <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
                         {branches.map(b => (
-                          <option key={b.id} value={b.id}>{b.name} · {b.note}</option>
+                          <label key={b.id}>
+                            <input
+                              type="checkbox"
+                              checked={(form.edit_branch_ids || []).includes(b.id)}
+                              onChange={() => toggleAddEditBranch(b.id)}
+                            />
+                            <span>{b.name} · {b.note}</span>
+                          </label>
                         ))}
-                      </select>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>
-                        Primary branch where this user has full creation and editing privileges. If &quot;None&quot;, all assigned branches will be view-only.
                       </div>
                     </div>
 
@@ -916,8 +1014,8 @@ export default function UsersModal({ onClose }) {
                     <div className="full">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                         <label className="fld" style={{ margin: 0 }}>
-                          📍 Other Branches (Viewing Only Access)
-                          {form.view_branch_ids.length > 0 && (
+                          📍 Branches with VIEWING ONLY Access
+                          {(form.view_branch_ids || []).length > 0 && (
                             <span style={{ marginLeft: 6, fontWeight: 600, color: '#c084fc' }}>
                               ({form.view_branch_ids.length} viewing only)
                             </span>
@@ -928,16 +1026,21 @@ export default function UsersModal({ onClose }) {
                             type="button"
                             className="btn-link"
                             style={{ fontSize: 11 }}
-                            onClick={() => set('view_branch_ids', branches.filter(b => b.id !== form.main_branch_id).map(b => b.id))}
+                            onClick={() => {
+                              setForm(f => ({
+                                ...f,
+                                view_branch_ids: branches.filter(b => !(f.edit_branch_ids || []).includes(b.id)).map(b => b.id),
+                              }))
+                            }}
                           >
-                            Select All (View Only)
+                            Select Remaining (View Only)
                           </button>
                           <span style={{ color: 'var(--border)' }}>|</span>
                           <button
                             type="button"
                             className="btn-link"
                             style={{ fontSize: 11 }}
-                            onClick={() => set('view_branch_ids', [])}
+                            onClick={() => setForm(f => ({ ...f, view_branch_ids: [] }))}
                           >
                             Clear
                           </button>
@@ -947,11 +1050,11 @@ export default function UsersModal({ onClose }) {
                         User can monitor schedule, calendar, and staff for these branches in read-only mode.
                       </div>
                       <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-                        {branches.filter(b => b.id !== form.main_branch_id).map(b => (
+                        {branches.map(b => (
                           <label key={b.id}>
                             <input
                               type="checkbox"
-                              checked={form.view_branch_ids.includes(b.id)}
+                              checked={(form.view_branch_ids || []).includes(b.id)}
                               onChange={() => toggleAddViewBranch(b.id)}
                             />
                             <span>{b.name} · {b.note}</span>
