@@ -132,7 +132,36 @@ export function AppProvider({ children }) {
   // ── Permissions helpers ───────────────────────────────────────
   const isAdmin          = currentUser?.role === 'admin'
   const isServiceManager = currentUser?.role === 'service_manager'
-  const scopedBranchIds  = isAdmin ? null : (currentUser?.branch_ids || [])
+
+  // All branches accessible (Main + Assigned + View-only)
+  const scopedBranchIds = isAdmin
+    ? null
+    : Array.from(new Set([
+        ...(currentUser?.main_branch_id ? [currentUser.main_branch_id] : []),
+        ...(currentUser?.branch_ids || []),
+        ...(currentUser?.view_branch_ids || []),
+      ]))
+
+  // Branch IDs where the user has edit/create permissions
+  const editableBranchIds = isAdmin
+    ? null
+    : currentUser?.can_edit === false
+      ? []
+      : currentUser?.main_branch_id
+        ? Array.from(new Set([
+            currentUser.main_branch_id,
+            ...(currentUser.branch_ids || []).filter(id => !(currentUser.view_branch_ids || []).includes(id)),
+          ]))
+        : (currentUser?.branch_ids || []).filter(id => !(currentUser?.view_branch_ids || []).includes(id))
+
+  function canEditBranch(branchId) {
+    if (!currentUser) return false
+    if (isAdmin) return true
+    if (currentUser.can_edit === false) return false
+    if (!branchId) return (editableBranchIds === null || editableBranchIds.length > 0)
+    if (editableBranchIds === null) return true
+    return editableBranchIds.includes(branchId)
+  }
 
   function inScope(job) {
     if (!scopedBranchIds) return true
@@ -163,7 +192,7 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       currentUser, loading, isAdmin, isServiceManager,
       branches, staff, jobs, appUsers, pendingRegs, pendingRegCount,
-      inScope, scopedBranches, visibleStaff,
+      inScope, scopedBranches, visibleStaff, canEditBranch, editableBranchIds, scopedBranchIds,
       loadBranches, loadStaff, loadJobs, loadAppUsers, loadPendingRegs,
       signIn, signOut,
       setBranches, setStaff, setJobs, setAppUsers,

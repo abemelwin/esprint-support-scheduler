@@ -100,7 +100,7 @@ export default function App() {
             setCurrentMonth={setCurrentMonth}
             filters={filters}
             setFilters={setFilters}
-            onOpenJob={isReadOnlyUser ? null : payload => setJobModal(payload)}
+            onOpenJob={payload => setJobModal(payload)}
           />
         ) : view === 'reports' ? (
           <ReportsView
@@ -113,7 +113,7 @@ export default function App() {
           <OverviewView
             currentMonth={currentMonth}
             setCurrentMonth={setCurrentMonth}
-            onOpenJob={isReadOnlyUser ? null : payload => setJobModal(payload)}
+            onOpenJob={payload => setJobModal(payload)}
             scopedBranchIds={(isServiceManager || isBranch || isReadOnlyUser) ? (currentUser?.branch_ids || []) : null}
             readOnly={isReadOnlyUser}
           />

@@ -62,12 +62,34 @@ export default function AvailabilityPanel({ currentMonth }) {
 
     if (matchedUser) {
       if (matchedUser.role === 'admin') {
-        return { label: 'All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
+        return { label: '🌐 All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
       }
+      const uMain = matchedUser.main_branch_id || (matchedUser.branch_ids?.[0] || '')
+      const uViews = matchedUser.view_branch_ids || []
+      const mainName = branches.find(b => b.id === uMain)?.name
+      const viewNames = uViews.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
+      const allIds = Array.from(new Set([...(uMain ? [uMain] : []), ...(matchedUser.branch_ids || []), ...uViews]))
+
+      if (mainName && viewNames.length > 0) {
+        return {
+          label: `🏢 ${mainName} · 👁️ ${viewNames.join(', ')}`,
+          isAll: false,
+          branchIds: allIds,
+        }
+      }
+
+      if (mainName) {
+        return {
+          label: `🏢 ${mainName}`,
+          isAll: false,
+          branchIds: allIds,
+        }
+      }
+
       const uBranches = matchedUser.branch_ids || []
       if (uBranches.length > 0) {
         if (branches.length > 0 && branches.every(b => uBranches.includes(b.id))) {
-          return { label: `All Branches (${branches.length})`, isAll: true, branchIds: uBranches }
+          return { label: `🌐 All Branches (${branches.length})`, isAll: true, branchIds: uBranches }
         }
         const bNames = uBranches
           .map(id => branches.find(b => b.id === id)?.name || id)

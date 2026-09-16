@@ -872,6 +872,159 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
   -webkit-overflow-scrolling: touch;
 }
 
+/* ── User Management & Branch Badges ──────────────────────────── */
+.user-tabs-nav {
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.user-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.user-tab-btn.active {
+  background: var(--surface-1);
+  color: var(--ink-1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.user-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+.user-mgmt-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.user-mgmt-card:hover {
+  border-color: color-mix(in srgb, var(--senior) 40%, var(--border));
+}
+.user-mgmt-card.inactive {
+  opacity: 0.65;
+  background: color-mix(in srgb, var(--st-fail) 4%, var(--surface-1));
+}
+.user-edit-panel {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.user-form-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.user-branch-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.user-branch-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.user-branch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.user-branch-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.user-branch-badge.main {
+  background: color-mix(in srgb, var(--senior) 18%, transparent);
+  color: #60a5fa;
+  border-color: color-mix(in srgb, var(--senior) 45%, transparent);
+  font-weight: 700;
+}
+.user-branch-badge.view {
+  background: color-mix(in srgb, #a855f7 16%, transparent);
+  color: #c084fc;
+  border-color: color-mix(in srgb, #a855f7 35%, transparent);
+}
+.user-branch-badge.all {
+  background: color-mix(in srgb, var(--sm-mgr) 20%, transparent);
+  color: #38bdf8;
+  border-color: color-mix(in srgb, var(--sm-mgr) 40%, transparent);
+  font-weight: 650;
+}
+.user-branch-badge.none {
+  background: color-mix(in srgb, var(--st-pending) 15%, transparent);
+  color: #fbbf24;
+  border-color: color-mix(in srgb, var(--st-pending) 30%, transparent);
+}
+.user-success-toast {
+  background: color-mix(in srgb, #22c55e 18%, transparent);
+  color: #4ade80;
+  border: 1px solid color-mix(in srgb, #22c55e 40%, transparent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  animation: fadeIn 0.2s ease;
+}
+.job-view-banner {
+  background: color-mix(in srgb, #a855f7 18%, transparent);
+  color: #d8b4fe;
+  border: 1px solid color-mix(in srgb, #a855f7 40%, transparent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.branch-check-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+  background: var(--surface-1);
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
 @media (max-width: 1200px) {
   .ovl-region-cols {
     grid-template-columns: repeat(2, 1fr);

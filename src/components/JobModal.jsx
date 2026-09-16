@@ -65,11 +65,25 @@ function StaffPicker({ staffList, value, onChange }) {
 }
 
 export default function JobModal({ payload, onClose }) {
-  const { branches, staff, loadJobs, isAdmin, currentUser, visibleStaff } = useApp()
+  const { branches, staff, loadJobs, isAdmin, currentUser, visibleStaff, canEditBranch } = useApp()
   const isEdit = !!payload.job
   const [form, setForm] = useState(EMPTY)
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState('')
+
+  // Check if current user has edit permission for this job
+  const canEditJob = isEdit
+    ? (isAdmin || canEditBranch(payload.job?.branch_id))
+    : (isAdmin || canEditBranch())
+
+  const isServiceManager = currentUser?.role === 'service_manager'
+
+  // When creating: only branches user can edit. When viewing: full branch or assigned branches.
+  const availableBranches = isAdmin
+    ? branches
+    : isEdit
+      ? branches
+      : branches.filter(b => canEditBranch(b.id))
 
   useEffect(() => {
     if (isEdit) {
@@ -88,12 +102,15 @@ export default function JobModal({ payload, onClose }) {
         status_note: j.status_note || '',
       })
     } else {
-      const defaultBranch = currentUser?.branch_ids?.[0] || ''
+      const defaultBranch = currentUser?.main_branch_id || availableBranches[0]?.id || ''
       setForm({ ...EMPTY, branch_id: defaultBranch })
     }
   }, [])
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k, v) => {
+    if (!canEditJob) return
+    setForm(f => ({ ...f, [k]: v }))
+  }
 
   // Leave / Absent are "absence" markers, not real work
   const isAbsence        = form.type === 'leave' || form.type === 'absent'
@@ -114,6 +131,7 @@ export default function JobModal({ payload, onClose }) {
   }
 
   async function handleSave() {
+    if (!canEditJob) return
     const e = validate(); if (e) { setErr(e); return }
     setBusy(true); setErr('')
     const row = {
@@ -142,6 +160,7 @@ export default function JobModal({ payload, onClose }) {
   }
 
   async function handleDelete() {
+    if (!canEditJob) return
     if (!confirm('Delete this job ticket?')) return
     setBusy(true)
     await supabase.from('jobs').delete().eq('id', payload.job.id)
@@ -149,27 +168,36 @@ export default function JobModal({ payload, onClose }) {
     onClose()
   }
 
-  const isServiceManager = currentUser?.role === 'service_manager'
-
-  // For service_manager: limit branches to their assigned ones only
-  const availableBranches = isServiceManager
-    ? branches.filter(b => (currentUser?.branch_ids || []).includes(b.id))
-    : branches
-
-  // For service_manager: limit staff to those in their assigned branches
-  const staffList = isServiceManager
-    ? visibleStaff().filter(s => (currentUser?.branch_ids || []).includes(s.home_branch_id))
-    : visibleStaff()
+  // Limit staff to those visible in available branches
+  const staffList = visibleStaff()
   const showStatusNote = form.status === 'fail' || form.status === 'ongoing'
+  const currentBranchObj = branches.find(b => b.id === (form.branch_id || payload.job?.branch_id))
 
   return (
     <div className="modal-bg open">
       <div className="modal">
         <div className="modal-head">
-          <h3>{isAbsence ? (isEdit ? 'Edit Absence' : 'Mark Absence') : (isEdit ? 'Edit Job Ticket' : 'New Job Ticket')}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3>{isAbsence ? (isEdit ? 'Edit Absence' : 'Mark Absence') : (isEdit ? (canEditJob ? 'Edit Job Ticket' : 'Job Ticket Details') : 'New Job Ticket')}</h3>
+            {!canEditJob && (
+              <span className="user-branch-badge view" style={{ fontSize: 11 }}>
+                👁️ View Only
+              </span>
+            )}
+          </div>
           <div className="spacer" />
+          <button className="btn sm ghost" onClick={onClose} title="Close">✕</button>
         </div>
         <div className="modal-body">
+          {!canEditJob && (
+            <div className="job-view-banner">
+              <span>👁️</span>
+              <span>
+                <strong>Viewing Mode:</strong> You have view-only access to {currentBranchObj ? currentBranchObj.name : 'this branch'}. Changes cannot be saved.
+              </span>
+            </div>
+          )}
+
           <div className="grid2">
             <div>
               <label className="fld">Date</label>
@@ -177,53 +205,104 @@ export default function JobModal({ payload, onClose }) {
             </div>
             <div>
               <label className="fld">JT No. {jtRequired && <span className="req">*</span>}</label>
-              <input type="text" className="txt" placeholder="e.g. JT-1050"
-                value={form.jt_no} onChange={e => set('jt_no', e.target.value)} />
-            </div>
-            <div>
-              <label className="fld">Employee <span className="req">*</span></label>
-              <StaffPicker
-                staffList={staffList}
-                value={form.staff_id}
-                onChange={v => set('staff_id', v)}
+              <input
+                type="text"
+                className="txt"
+                placeholder="e.g. JT-1050"
+                value={form.jt_no}
+                disabled={!canEditJob}
+                onChange={e => set('jt_no', e.target.value)}
               />
             </div>
             <div>
+              <label className="fld">Employee <span className="req">*</span></label>
+              {canEditJob ? (
+                <StaffPicker
+                  staffList={staffList}
+                  value={form.staff_id}
+                  onChange={v => set('staff_id', v)}
+                />
+              ) : (
+                <input
+                  type="text"
+                  className="txt"
+                  value={staff.find(s => s.id === form.staff_id)?.name || '—'}
+                  disabled
+                />
+              )}
+            </div>
+            <div>
               <label className="fld">Branch serviced <span className="req">*</span></label>
-              <select className="sel" value={form.branch_id} onChange={e => set('branch_id', e.target.value)}>
+              <select
+                className="sel"
+                value={form.branch_id}
+                disabled={!canEditJob}
+                onChange={e => set('branch_id', e.target.value)}
+              >
                 <option value="">Select…</option>
-                {availableBranches.map(b => <option key={b.id} value={b.id}>{b.name} · {b.note}</option>)}
+                {availableBranches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name} · {b.note}</option>
+                ))}
               </select>
             </div>
             {!isAbsence && <>
               <div className="full">
                 <label className="fld">Customer name {customerRequired && <span className="req">*</span>}</label>
-                <input type="text" className="txt" placeholder="e.g. National Bookstore"
-                  value={form.customer} onChange={e => set('customer', e.target.value)} />
+                <input
+                  type="text"
+                  className="txt"
+                  placeholder="e.g. National Bookstore"
+                  value={form.customer}
+                  disabled={!canEditJob}
+                  onChange={e => set('customer', e.target.value)}
+                />
               </div>
               <div className="full">
                 <label className="fld">Location</label>
-                <input type="text" className="txt" placeholder="e.g. 2F, near foodcourt"
-                  value={form.location} onChange={e => set('location', e.target.value)} />
+                <input
+                  type="text"
+                  className="txt"
+                  placeholder="e.g. 2F, near foodcourt"
+                  value={form.location}
+                  disabled={!canEditJob}
+                  onChange={e => set('location', e.target.value)}
+                />
               </div>
               <div>
                 <label className="fld">Machine</label>
-                <input type="text" className="txt" placeholder="e.g. Epson L3210"
-                  value={form.machine} onChange={e => set('machine', e.target.value)} />
+                <input
+                  type="text"
+                  className="txt"
+                  placeholder="e.g. Epson L3210"
+                  value={form.machine}
+                  disabled={!canEditJob}
+                  onChange={e => set('machine', e.target.value)}
+                />
               </div>
               <div>
                 <label className="fld">Serial No.</label>
-                <input type="text" className="txt" placeholder="e.g. X4Y123456"
-                  value={form.serial_no} onChange={e => set('serial_no', e.target.value)} />
+                <input
+                  type="text"
+                  className="txt"
+                  placeholder="e.g. X4Y123456"
+                  value={form.serial_no}
+                  disabled={!canEditJob}
+                  onChange={e => set('serial_no', e.target.value)}
+                />
               </div>
             </>}
             <div className="full">
               <label className="fld">Type <span className="req">*</span></label>
               <div className="seg-radio">
                 {TYPE_KEYS.map(t => (
-                  <button key={t} type="button" data-v={t}
+                  <button
+                    key={t}
+                    type="button"
+                    data-v={t}
+                    disabled={!canEditJob}
                     className={form.type === t ? 'active' : ''}
-                    onClick={() => set('type', t)}>
+                    onClick={() => set('type', t)}
+                  >
                     {TYPES[t].label}
                   </button>
                 ))}
@@ -231,9 +310,14 @@ export default function JobModal({ payload, onClose }) {
               {isAdmin && (
                 <div className="seg-radio absence" style={{ marginTop: 6 }}>
                   {ABSENCE_KEYS.map(t => (
-                    <button key={t} type="button" data-v={t}
+                    <button
+                      key={t}
+                      type="button"
+                      data-v={t}
+                      disabled={!canEditJob}
                       className={form.type === t ? 'active' : ''}
-                      onClick={() => set('type', t)}>
+                      onClick={() => set('type', t)}
+                    >
                       {t === 'leave' ? '🌴 Leave' : '🚫 Absent'}
                     </button>
                   ))}
@@ -243,8 +327,14 @@ export default function JobModal({ payload, onClose }) {
             {form.type === 'others' && (
               <div className="full">
                 <label className="fld">Describe the service <span className="req">*</span></label>
-                <input type="text" className="txt" placeholder="e.g. Preventive maintenance…"
-                  value={form.type_other} onChange={e => set('type_other', e.target.value)} />
+                <input
+                  type="text"
+                  className="txt"
+                  placeholder="e.g. Preventive maintenance…"
+                  value={form.type_other}
+                  disabled={!canEditJob}
+                  onChange={e => set('type_other', e.target.value)}
+                />
               </div>
             )}
             {!isAbsence && (
@@ -252,9 +342,14 @@ export default function JobModal({ payload, onClose }) {
                 <label className="fld">Status</label>
                 <div className="seg-radio status" style={{ flexWrap:'wrap' }}>
                   {['pending','ongoing','success','fail'].map(s => (
-                    <button key={s} type="button" data-v={s}
+                    <button
+                      key={s}
+                      type="button"
+                      data-v={s}
+                      disabled={!canEditJob}
                       className={form.status === s ? 'active' : ''}
-                      onClick={() => set('status', s)}>
+                      onClick={() => set('status', s)}
+                    >
                       {s === 'pending' ? '⏳ Pending' : s === 'ongoing' ? '◐ Ongoing' : s === 'success' ? '✓ Successful' : '✕ Not successful'}
                     </button>
                   ))}
@@ -264,19 +359,31 @@ export default function JobModal({ payload, onClose }) {
             {!isAbsence && showStatusNote && (
               <div className="full">
                 <label className="fld">{form.status === 'fail' ? 'Reason for failure' : 'Ongoing note'} <span className="req">*</span></label>
-                <input type="text" className="txt" placeholder="Enter note…"
-                  value={form.status_note} onChange={e => set('status_note', e.target.value)} />
+                <input
+                  type="text"
+                  className="txt"
+                  placeholder="Enter note…"
+                  value={form.status_note}
+                  disabled={!canEditJob}
+                  onChange={e => set('status_note', e.target.value)}
+                />
               </div>
             )}
           </div>
           {err && <div className="login-err" style={{ textAlign:'left', marginTop:8 }}>{err}</div>}
         </div>
         <div className="modal-foot">
-          {isEdit && <button className="btn danger" style={{ marginRight:'auto' }} onClick={handleDelete} disabled={busy}>Delete</button>}
-          <button className="btn ghost" onClick={onClose}>Cancel</button>
-          <button className="btn primary" onClick={handleSave} disabled={busy}>
-            {busy ? 'Saving…' : isAbsence ? 'Save Absence' : 'Save Job Ticket'}
+          {isEdit && canEditJob && (
+            <button className="btn danger" style={{ marginRight:'auto' }} onClick={handleDelete} disabled={busy}>Delete</button>
+          )}
+          <button className="btn ghost" onClick={onClose}>
+            {canEditJob ? 'Cancel' : 'Close'}
           </button>
+          {canEditJob && (
+            <button className="btn primary" onClick={handleSave} disabled={busy}>
+              {busy ? 'Saving…' : isAbsence ? 'Save Absence' : 'Save Job Ticket'}
+            </button>
+          )}
         </div>
       </div>
     </div>
