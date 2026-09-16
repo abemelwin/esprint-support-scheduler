@@ -1236,3 +1236,14 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
   .layout { grid-template-columns: 1fr; }
   body { background: #fff; }
 }
+
+@keyframes slideUpBounce {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

@@ -13,6 +13,7 @@ import BranchModal from './components/BranchModal'
 import UsersModal from './components/UsersModal'
 import KpiDrillModal from './components/KpiDrillModal'
 import RegistrationApprovalModal from './components/RegistrationApprovalModal'
+import UpdateNotifierModal from './components/UpdateNotifierModal'
 
 // Arnold is identified by his app_users name. Swap to email check if preferred:
 // const isArnold = currentUser?.email === 'arnold@esprint.com'
@@ -149,6 +150,9 @@ export default function App() {
           onClose={() => setKpiDrill(null)}
         />
       )}
+
+      {/* Auto-detect new deployments and prompt user to refresh */}
+      <UpdateNotifierModal />
     </>
   )
 }
