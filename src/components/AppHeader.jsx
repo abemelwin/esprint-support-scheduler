@@ -85,33 +85,40 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
 
       <div className="spacer" />
 
-      <div className="user-chip">
-        <span className={`role-tag ${currentUser?.role}`}>{roleLabel}</span>
-        {currentUser?.role !== 'admin' && currentUser?.can_edit === false && (
-          <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: '#fff3e0', color: '#e65100' }}>
-            🔒 View Only
-          </span>
-        )}
-        <span className="uname">{currentUser?.name}</span>
+      {isAdmin && (
+        <div className="header-admin-tools">
+          <button className="btn" onClick={onUsers}>🔑 Users</button>
+          <button className="btn reg-approval-btn" onClick={onRegApproval}>
+            📋 Approvals
+            {pendingRegCount > 0 && (
+              <span className="reg-badge">{pendingRegCount}</span>
+            )}
+          </button>
+          <button className="btn" onClick={onStaff}>👥 Staff</button>
+          <button className="btn" onClick={onBranch}>＋ Branch</button>
+          <button className="btn" onClick={() => fileRef.current.click()}>⤓ Import</button>
+          <button className="btn" onClick={handleExport}>⤒ Export</button>
+        </div>
+      )}
+
+      <div className="user-profile-group">
+        <button className="btn ghost" onClick={toggleTheme} title="Toggle light/dark" style={{ padding: '6px 8px' }}>🌓</button>
+
+        <div className="user-chip">
+          <span className={`role-tag ${currentUser?.role}`}>{roleLabel}</span>
+          {currentUser?.role !== 'admin' && currentUser?.can_edit === false && (
+            <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: '#fff3e0', color: '#e65100' }}>
+              🔒 View Only
+            </span>
+          )}
+          <span className="uname">{currentUser?.name}</span>
+        </div>
+
+        <button className="btn-signout" onClick={signOut} title="Sign out from application">
+          ⏻ Sign out
+        </button>
       </div>
 
-      <button className="btn ghost" onClick={toggleTheme} title="Toggle light/dark">🌓</button>
-
-      {isAdmin && <>
-        <button className="btn" onClick={onUsers}>🔑 Users</button>
-        <button className="btn reg-approval-btn" onClick={onRegApproval}>
-          📋 Approvals
-          {pendingRegCount > 0 && (
-            <span className="reg-badge">{pendingRegCount}</span>
-          )}
-        </button>
-        <button className="btn" onClick={onStaff}>👥 Staff</button>
-        <button className="btn" onClick={onBranch}>＋ Branch</button>
-        <button className="btn" onClick={() => fileRef.current.click()}>⤓ Import</button>
-        <button className="btn" onClick={handleExport}>⤒ Export</button>
-      </>}
-
-      <button className="btn" onClick={signOut}>⏻ Sign out</button>
       <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={handleImport} />
     </header>
   )

@@ -1,15 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const ACCESS_LEVELS = [
-  { value: 'service_manager', label: 'Service Manager', desc: 'Full KPI access, scoped to assigned branches' },
-  { value: 'employee',        label: 'Employee',        desc: 'View-only overview for assigned branches' },
-]
-
 export default function RegisterPage({ onBack }) {
   const [step, setStep] = useState('form') // 'form' | 'done'
   const [form, setForm] = useState({
-    name: '', email: '', password: '', confirm: '', role: 'service_manager',
+    name: '', email: '', password: '', confirm: '',
   })
   const [err,  setErr]  = useState('')
   const [busy, setBusy] = useState(false)
@@ -22,7 +17,6 @@ export default function RegisterPage({ onBack }) {
     if (!/\S+@\S+\.\S+/.test(form.email)) return 'Enter a valid email address.'
     if (form.password.length < 6) return 'Password must be at least 6 characters.'
     if (form.password !== form.confirm) return 'Passwords do not match.'
-    if (!form.role)            return 'Please select an access level.'
     return null
   }
 
@@ -59,7 +53,7 @@ export default function RegisterPage({ onBack }) {
       name:       form.name.trim(),
       email:      form.email.trim().toLowerCase(),
       password:   form.password,
-      role:       form.role,
+      role:       'branch',
       branch_ids: [],
       status:     'pending',
     })
@@ -82,7 +76,7 @@ export default function RegisterPage({ onBack }) {
             <div style={{ fontSize: 42 }}>📬</div>
             <p style={{ margin: 0, color: 'var(--ink-2)', lineHeight: 1.6 }}>
               Your registration request has been submitted.<br />
-              <strong>Arnold</strong> will review and approve your account.<br />
+              <strong>Administrator</strong> will review your request and designate your branch assignment & role.<br />
               You'll be able to sign in once approved.
             </p>
             <button className="btn primary" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={onBack}>
@@ -132,25 +126,6 @@ export default function RegisterPage({ onBack }) {
             autoComplete="new-password"
           />
 
-          <label className="fld">Access level <span className="req">*</span></label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {ACCESS_LEVELS.map(al => (
-              <label
-                key={al.value}
-                className={`reg-level-option${form.role === al.value ? ' selected' : ''}`}
-                onClick={() => set('role', al.value)}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className={`reg-radio-dot${form.role === al.value ? ' active' : ''}`} />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{al.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{al.desc}</div>
-                  </div>
-                </div>
-              </label>
-            ))}
-          </div>
-
           <div className="login-err" style={{ minHeight: 18 }}>{err}</div>
 
           <button
@@ -173,7 +148,7 @@ export default function RegisterPage({ onBack }) {
         </form>
 
         <div className="login-note">
-          Your request will be reviewed by the admin. Branch assignments will be set during approval.
+          Your designated branch assignments and access permissions will be set by the Administrator upon account approval.
         </div>
       </div>
     </div>
