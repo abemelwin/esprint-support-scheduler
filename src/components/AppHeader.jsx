@@ -75,7 +75,7 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
           className={view === 'reports' ? 'active' : ''}
           onClick={() => setView('reports')}
         >📊 Reports</button>
-        {(isArnold || currentUser?.role === 'service_manager' || currentUser?.role === 'service_coordinator' || currentUser?.role === 'employee' || currentUser?.role === 'branch') && (
+        {currentUser?.role !== 'branch' && (isArnold || currentUser?.role === 'service_manager' || currentUser?.role === 'service_coordinator' || currentUser?.role === 'employee' || currentUser?.role === 'admin') && (
           <button
             data-view="overview"
             className={view === 'overview' ? 'active' : ''}

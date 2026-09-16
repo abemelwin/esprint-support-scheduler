@@ -45,12 +45,14 @@ export default function App() {
   const [rFilters, setRFilters] = useState({ branch: '', emp: '' })
 
   // Arnold check — matches if the user's name contains 'Arnold'
-  const isArnold         = !!(currentUser?.name?.includes(ARNOLD_NAME))
-  const isServiceManager = currentUser?.role === 'service_manager'
-  const isEmployee       = currentUser?.role === 'employee'
-  const isBranch         = currentUser?.role === 'branch'
-  const isReadOnlyUser   = currentUser?.role !== 'admin' && (isEmployee || currentUser?.can_edit === false)
-  const canViewOverview  = isArnold || isServiceManager || isBranch || isReadOnlyUser
+  const isArnold             = !!(currentUser?.name?.includes(ARNOLD_NAME))
+  const isServiceManager     = currentUser?.role === 'service_manager'
+  const isServiceCoordinator = currentUser?.role === 'service_coordinator'
+  const isEmployee           = currentUser?.role === 'employee'
+  const isBranch             = currentUser?.role === 'branch'
+  const isAdmin              = currentUser?.role === 'admin'
+  const isReadOnlyUser       = currentUser?.role !== 'admin' && (isEmployee || currentUser?.can_edit === false)
+  const canViewOverview      = !isBranch && (isAdmin || isArnold || isServiceManager || isServiceCoordinator || isEmployee)
 
   // Reset to calendar whenever a non-overview user logs in
   useEffect(() => {
