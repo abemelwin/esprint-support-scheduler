@@ -94,6 +94,8 @@ export default function UsersModal({ onClose }) {
   const [editCanEdit,      setEditCanEdit]      = useState(true)
   const [editEditBranches, setEditEditBranches] = useState([])
   const [editViewBranches, setEditViewBranches] = useState([])
+  const [editBranchTab,    setEditBranchTab]    = useState('edit') // 'edit' | 'view'
+  const [addBranchTab,     setAddBranchTab]     = useState('edit')  // 'edit' | 'view'
   const [editBusy,         setEditBusy]         = useState(false)
   const [editErr,          setEditErr]          = useState('')
 
@@ -783,109 +785,170 @@ export default function UsersModal({ onClose }) {
                             )}
 
                             {(editRole === 'service_manager' || editRole === 'branch') && (
-                              <>
-                                {/* ✏️ Editable Branches (Can Edit) */}
-                                <div className="full">
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <label className="fld" style={{ margin: 0 }}>
-                                      ✏️ Branches with CAN EDIT Access
-                                      {editEditBranches.length > 0 && (
-                                        <span style={{ marginLeft: 6, fontWeight: 700, color: '#60a5fa' }}>
-                                          ({editEditBranches.length} editable)
-                                        </span>
-                                      )}
-                                    </label>
-                                    <div style={{ display: 'flex', gap: 6 }}>
-                                      <button
-                                        type="button"
-                                        className="btn-link"
-                                        style={{ fontSize: 11 }}
-                                        onClick={() => {
-                                          setEditEditBranches(branches.map(b => b.id))
-                                          setEditViewBranches([])
-                                        }}
-                                      >
-                                        Select All (Edit)
-                                      </button>
-                                      <span style={{ color: 'var(--border)' }}>|</span>
-                                      <button
-                                        type="button"
-                                        className="btn-link"
-                                        style={{ fontSize: 11 }}
-                                        onClick={() => setEditEditBranches([])}
-                                      >
-                                        Clear
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
-                                    User can create, edit, reschedule, and update job tickets in these branches.
-                                  </div>
-                                  <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-                                    {branches.map(b => (
-                                      <label key={b.id}>
-                                        <input
-                                          type="checkbox"
-                                          checked={editEditBranches.includes(b.id)}
-                                          onChange={() => toggleEditEditBranch(b.id)}
-                                        />
-                                        <span>{b.name} · {b.note}</span>
-                                      </label>
-                                    ))}
-                                  </div>
+                              <div className="full" style={{ marginTop: 4 }}>
+                                {/* ── Segmented Switcher between Can Edit & View Only ── */}
+                                <div style={{ display: 'flex', gap: 6, marginBottom: 10, background: 'var(--surface-2)', padding: 4, borderRadius: 8, border: '1px solid var(--border)' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditBranchTab('edit')}
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 12px',
+                                      fontSize: 12.5,
+                                      fontWeight: 650,
+                                      borderRadius: 6,
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: 6,
+                                      background: editBranchTab === 'edit' ? 'var(--senior)' : 'transparent',
+                                      color: editBranchTab === 'edit' ? '#fff' : 'var(--muted)',
+                                      boxShadow: editBranchTab === 'edit' ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
+                                      transition: 'all 0.15s ease',
+                                    }}
+                                  >
+                                    <span>✏️ Can Edit Branches</span>
+                                    <span style={{
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      padding: '1px 7px',
+                                      borderRadius: 10,
+                                      background: editBranchTab === 'edit' ? 'rgba(255,255,255,0.28)' : 'var(--surface-3)',
+                                      color: editBranchTab === 'edit' ? '#fff' : 'var(--ink-2)',
+                                    }}>
+                                      {editEditBranches.length}
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditBranchTab('view')}
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 12px',
+                                      fontSize: 12.5,
+                                      fontWeight: 650,
+                                      borderRadius: 6,
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: 6,
+                                      background: editBranchTab === 'view' ? '#8b5cf6' : 'transparent',
+                                      color: editBranchTab === 'view' ? '#fff' : 'var(--muted)',
+                                      boxShadow: editBranchTab === 'view' ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
+                                      transition: 'all 0.15s ease',
+                                    }}
+                                  >
+                                    <span>📍 View Only Branches</span>
+                                    <span style={{
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      padding: '1px 7px',
+                                      borderRadius: 10,
+                                      background: editBranchTab === 'view' ? 'rgba(255,255,255,0.28)' : 'var(--surface-3)',
+                                      color: editBranchTab === 'view' ? '#fff' : 'var(--ink-2)',
+                                    }}>
+                                      {editViewBranches.length}
+                                    </span>
+                                  </button>
                                 </div>
 
-                                {/* 📍 Other Branches (Viewing Only) */}
-                                <div className="full">
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <label className="fld" style={{ margin: 0 }}>
-                                      📍 Branches with VIEWING ONLY Access
-                                      {editViewBranches.length > 0 && (
-                                        <span style={{ marginLeft: 6, fontWeight: 600, color: '#c084fc' }}>
-                                          ({editViewBranches.length} view only)
-                                        </span>
-                                      )}
-                                    </label>
-                                    <div style={{ display: 'flex', gap: 6 }}>
-                                      <button
-                                        type="button"
-                                        className="btn-link"
-                                        style={{ fontSize: 11 }}
-                                        onClick={() => {
-                                          const nonEdit = branches.filter(b => !editEditBranches.includes(b.id)).map(b => b.id)
-                                          setEditViewBranches(nonEdit)
-                                        }}
-                                      >
-                                        Select Remaining (View Only)
-                                      </button>
-                                      <span style={{ color: 'var(--border)' }}>|</span>
-                                      <button
-                                        type="button"
-                                        className="btn-link"
-                                        style={{ fontSize: 11 }}
-                                        onClick={() => setEditViewBranches([])}
-                                      >
-                                        Clear
-                                      </button>
+                                {/* ── TAB 1: CAN EDIT CHECKLIST ── */}
+                                {editBranchTab === 'edit' && (
+                                  <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                      <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+                                        User has <strong>Full Edit Access</strong> (can create, reschedule, &amp; update tickets) in checked branches:
+                                      </span>
+                                      <div style={{ display: 'flex', gap: 6 }}>
+                                        <button
+                                          type="button"
+                                          className="btn-link"
+                                          style={{ fontSize: 11 }}
+                                          onClick={() => {
+                                            setEditEditBranches(branches.map(b => b.id))
+                                            setEditViewBranches([])
+                                          }}
+                                        >
+                                          Select All (Edit)
+                                        </button>
+                                        <span style={{ color: 'var(--border)' }}>|</span>
+                                        <button
+                                          type="button"
+                                          className="btn-link"
+                                          style={{ fontSize: 11 }}
+                                          onClick={() => setEditEditBranches([])}
+                                        >
+                                          Clear
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                                      {branches.map(b => (
+                                        <label key={b.id} style={{ padding: '7px 9px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                                          <input
+                                            type="checkbox"
+                                            style={{ width: 17, height: 17, cursor: 'pointer' }}
+                                            checked={editEditBranches.includes(b.id)}
+                                            onChange={() => toggleEditEditBranch(b.id)}
+                                          />
+                                          <span><strong>{b.name}</strong> · {b.note}</span>
+                                        </label>
+                                      ))}
                                     </div>
                                   </div>
-                                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
-                                    User can view schedules, jobs, and staff for these branches in read-only mode (cannot create or edit).
+                                )}
+
+                                {/* ── TAB 2: VIEW ONLY CHECKLIST ── */}
+                                {editBranchTab === 'view' && (
+                                  <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                      <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+                                        User has <strong>Read-Only Access</strong> (can view schedule/roster, cannot edit) in checked branches:
+                                      </span>
+                                      <div style={{ display: 'flex', gap: 6 }}>
+                                        <button
+                                          type="button"
+                                          className="btn-link"
+                                          style={{ fontSize: 11 }}
+                                          onClick={() => {
+                                            const nonEdit = branches.filter(b => !editEditBranches.includes(b.id)).map(b => b.id)
+                                            setEditViewBranches(nonEdit)
+                                          }}
+                                        >
+                                          Select Remaining (View Only)
+                                        </button>
+                                        <span style={{ color: 'var(--border)' }}>|</span>
+                                        <button
+                                          type="button"
+                                          className="btn-link"
+                                          style={{ fontSize: 11 }}
+                                          onClick={() => setEditViewBranches([])}
+                                        >
+                                          Clear
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                                      {branches.map(b => (
+                                        <label key={b.id} style={{ padding: '7px 9px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                                          <input
+                                            type="checkbox"
+                                            style={{ width: 17, height: 17, cursor: 'pointer' }}
+                                            checked={editViewBranches.includes(b.id)}
+                                            onChange={() => toggleEditViewBranch(b.id)}
+                                          />
+                                          <span><strong>{b.name}</strong> · {b.note}</span>
+                                        </label>
+                                      ))}
+                                    </div>
                                   </div>
-                                  <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-                                    {branches.map(b => (
-                                      <label key={b.id}>
-                                        <input
-                                          type="checkbox"
-                                          checked={editViewBranches.includes(b.id)}
-                                          onChange={() => toggleEditViewBranch(b.id)}
-                                        />
-                                        <span>{b.name} · {b.note}</span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-                              </>
+                                )}
+                              </div>
                             )}
                           </div>
                           {editErr && <div className="login-err" style={{ textAlign:'left', marginTop: 8 }}>{editErr}</div>}
@@ -955,114 +1018,175 @@ export default function UsersModal({ onClose }) {
                 )}
 
                 {needsBranch && (
-                  <>
-                    {/* ✏️ Editable Branches (Can Edit) */}
-                    <div className="full">
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <label className="fld" style={{ margin: 0 }}>
-                          ✏️ Branches with CAN EDIT Access
-                          {form.edit_branch_ids.length > 0 && (
-                            <span style={{ marginLeft: 6, fontWeight: 700, color: '#60a5fa' }}>
-                              ({form.edit_branch_ids.length} editable)
-                            </span>
-                          )}
-                        </label>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            type="button"
-                            className="btn-link"
-                            style={{ fontSize: 11 }}
-                            onClick={() => {
-                              setForm(f => ({
-                                ...f,
-                                edit_branch_ids: branches.map(b => b.id),
-                                view_branch_ids: [],
-                              }))
-                            }}
-                          >
-                            Select All (Edit)
-                          </button>
-                          <span style={{ color: 'var(--border)' }}>|</span>
-                          <button
-                            type="button"
-                            className="btn-link"
-                            style={{ fontSize: 11 }}
-                            onClick={() => setForm(f => ({ ...f, edit_branch_ids: [] }))}
-                          >
-                            Clear
-                          </button>
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
-                        User can create, edit, reschedule, and update job tickets in these branches.
-                      </div>
-                      <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-                        {branches.map(b => (
-                          <label key={b.id}>
-                            <input
-                              type="checkbox"
-                              checked={(form.edit_branch_ids || []).includes(b.id)}
-                              onChange={() => toggleAddEditBranch(b.id)}
-                            />
-                            <span>{b.name} · {b.note}</span>
-                          </label>
-                        ))}
-                      </div>
+                  <div className="full" style={{ marginTop: 4 }}>
+                    {/* ── Segmented Switcher between Can Edit & View Only ── */}
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 10, background: 'var(--surface-2)', padding: 4, borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setAddBranchTab('edit')}
+                        style={{
+                          flex: 1,
+                          padding: '8px 12px',
+                          fontSize: 12.5,
+                          fontWeight: 650,
+                          borderRadius: 6,
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          background: addBranchTab === 'edit' ? 'var(--senior)' : 'transparent',
+                          color: addBranchTab === 'edit' ? '#fff' : 'var(--muted)',
+                          boxShadow: addBranchTab === 'edit' ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>✏️ Can Edit Branches</span>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '1px 7px',
+                          borderRadius: 10,
+                          background: addBranchTab === 'edit' ? 'rgba(255,255,255,0.28)' : 'var(--surface-3)',
+                          color: addBranchTab === 'edit' ? '#fff' : 'var(--ink-2)',
+                        }}>
+                          {(form.edit_branch_ids || []).length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAddBranchTab('view')}
+                        style={{
+                          flex: 1,
+                          padding: '8px 12px',
+                          fontSize: 12.5,
+                          fontWeight: 650,
+                          borderRadius: 6,
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          background: addBranchTab === 'view' ? '#8b5cf6' : 'transparent',
+                          color: addBranchTab === 'view' ? '#fff' : 'var(--muted)',
+                          boxShadow: addBranchTab === 'view' ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>📍 View Only Branches</span>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '1px 7px',
+                          borderRadius: 10,
+                          background: addBranchTab === 'view' ? 'rgba(255,255,255,0.28)' : 'var(--surface-3)',
+                          color: addBranchTab === 'view' ? '#fff' : 'var(--ink-2)',
+                        }}>
+                          {(form.view_branch_ids || []).length}
+                        </span>
+                      </button>
                     </div>
 
-                    {/* 📍 Other Branches (Viewing Only) */}
-                    <div className="full">
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <label className="fld" style={{ margin: 0 }}>
-                          📍 Branches with VIEWING ONLY Access
-                          {(form.view_branch_ids || []).length > 0 && (
-                            <span style={{ marginLeft: 6, fontWeight: 600, color: '#c084fc' }}>
-                              ({form.view_branch_ids.length} viewing only)
-                            </span>
-                          )}
-                        </label>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            type="button"
-                            className="btn-link"
-                            style={{ fontSize: 11 }}
-                            onClick={() => {
-                              setForm(f => ({
-                                ...f,
-                                view_branch_ids: branches.filter(b => !(f.edit_branch_ids || []).includes(b.id)).map(b => b.id),
-                              }))
-                            }}
-                          >
-                            Select Remaining (View Only)
-                          </button>
-                          <span style={{ color: 'var(--border)' }}>|</span>
-                          <button
-                            type="button"
-                            className="btn-link"
-                            style={{ fontSize: 11 }}
-                            onClick={() => setForm(f => ({ ...f, view_branch_ids: [] }))}
-                          >
-                            Clear
-                          </button>
+                    {/* ── TAB 1: CAN EDIT CHECKLIST ── */}
+                    {addBranchTab === 'edit' && (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+                            User has <strong>Full Edit Access</strong> (can create, reschedule, &amp; update tickets) in checked branches:
+                          </span>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              type="button"
+                              className="btn-link"
+                              style={{ fontSize: 11 }}
+                              onClick={() => {
+                                setForm(f => ({
+                                  ...f,
+                                  edit_branch_ids: branches.map(b => b.id),
+                                  view_branch_ids: [],
+                                }))
+                              }}
+                            >
+                              Select All (Edit)
+                            </button>
+                            <span style={{ color: 'var(--border)' }}>|</span>
+                            <button
+                              type="button"
+                              className="btn-link"
+                              style={{ fontSize: 11 }}
+                              onClick={() => setForm(f => ({ ...f, edit_branch_ids: [] }))}
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+                        <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                          {branches.map(b => (
+                            <label key={b.id} style={{ padding: '7px 9px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                style={{ width: 17, height: 17, cursor: 'pointer' }}
+                                checked={(form.edit_branch_ids || []).includes(b.id)}
+                                onChange={() => toggleAddEditBranch(b.id)}
+                              />
+                              <span><strong>{b.name}</strong> · {b.note}</span>
+                            </label>
+                          ))}
                         </div>
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
-                        User can monitor schedule, calendar, and staff for these branches in read-only mode.
+                    )}
+
+                    {/* ── TAB 2: VIEW ONLY CHECKLIST ── */}
+                    {addBranchTab === 'view' && (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+                            User has <strong>Read-Only Access</strong> (can view schedule/roster, cannot edit) in checked branches:
+                          </span>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              type="button"
+                              className="btn-link"
+                              style={{ fontSize: 11 }}
+                              onClick={() => {
+                                setForm(f => ({
+                                  ...f,
+                                  view_branch_ids: branches.filter(b => !(f.edit_branch_ids || []).includes(b.id)).map(b => b.id),
+                                }))
+                              }}
+                            >
+                              Select Remaining (View Only)
+                            </button>
+                            <span style={{ color: 'var(--border)' }}>|</span>
+                            <button
+                              type="button"
+                              className="btn-link"
+                              style={{ fontSize: 11 }}
+                              onClick={() => setForm(f => ({ ...f, view_branch_ids: [] }))}
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+                        <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                          {branches.map(b => (
+                            <label key={b.id} style={{ padding: '7px 9px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                style={{ width: 17, height: 17, cursor: 'pointer' }}
+                                checked={(form.view_branch_ids || []).includes(b.id)}
+                                onChange={() => toggleAddViewBranch(b.id)}
+                              />
+                              <span><strong>{b.name}</strong> · {b.note}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                      <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-                        {branches.map(b => (
-                          <label key={b.id}>
-                            <input
-                              type="checkbox"
-                              checked={(form.view_branch_ids || []).includes(b.id)}
-                              onChange={() => toggleAddViewBranch(b.id)}
-                            />
-                            <span>{b.name} · {b.note}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </>
+                    )}
+                  </div>
                 )}
               </div>
 
