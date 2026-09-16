@@ -748,25 +748,49 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
 }
 
 /* ── User Filters & Branch Chips ────────────────────────────────── */
+.user-tabs-nav {
+  display: flex;
+  align-items: center;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  gap: 2px;
+}
+.user-tab-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.user-tab-btn:hover {
+  color: var(--ink-1);
+}
+.user-tab-btn.active {
+  background: var(--surface-1);
+  color: var(--senior);
+  box-shadow: var(--shadow-sm);
+}
+
 .user-filter-bar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 8px 10px;
   margin-bottom: 12px;
-}
-.user-filter-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   flex-wrap: wrap;
 }
 .user-branch-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   margin-top: 6px;
   flex-wrap: wrap;
@@ -775,7 +799,6 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
   font-size: 11px;
   font-weight: 600;
   color: var(--muted);
-  margin-top: 2px;
   flex-shrink: 0;
 }
 .user-branch-chips {
@@ -812,6 +835,13 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
   border-color: color-mix(in srgb, var(--st-fail) 35%, transparent);
   color: var(--st-fail);
   font-weight: 650;
+}
+
+.user-form-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
 }
 
 /* ── Responsive & Mobile Design System ─────────────────────────────── */
