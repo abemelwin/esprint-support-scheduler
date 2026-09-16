@@ -156,192 +156,6 @@ function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggl
   )
 }
 
-// ── Resolved card with Edit / View mode ──────────────────────────────────────
-function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
-  const [mode,             setMode]             = useState('view')
-  const [editRole,         setEditRole]         = useState(reg.role || 'branch')
-  const [editEditBranches, setEditEditBranches] = useState(() => {
-    if (reg.can_edit === false) return []
-    const viewSet = new Set(reg.view_branch_ids || [])
-    return (reg.branch_ids || []).filter(b => !viewSet.has(b))
-  })
-  const [editViewBranches, setEditViewBranches] = useState(() => {
-    if (reg.can_edit === false) return reg.branch_ids || []
-    return reg.view_branch_ids || []
-  })
-  const [saving,           setSaving]           = useState(false)
-  const [saveErr,          setSaveErr]          = useState('')
-
-  function toggleEdit(id) {
-    setEditEditBranches(cur => cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id])
-    setEditViewBranches(cur => cur.filter(x => x !== id))
-  }
-
-  function toggleView(id) {
-    setEditViewBranches(cur => cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id])
-    setEditEditBranches(cur => cur.filter(x => x !== id))
-  }
-
-  function selectAllEdit(ids) {
-    setEditEditBranches(ids)
-    if (ids.length > 0) {
-      setEditViewBranches([])
-    }
-  }
-
-  function selectAllView(ids) {
-    setEditViewBranches(ids)
-    if (ids.length > 0) {
-      setEditEditBranches([])
-    }
-  }
-
-  async function handleSave() {
-    if (editRole !== 'admin' && editEditBranches.length === 0 && editViewBranches.length === 0) {
-      setSaveErr('Assign at least one branch.'); return
-    }
-    setSaving(true); setSaveErr('')
-    await onSaveEdit(reg, editRole, editEditBranches, editViewBranches)
-    setSaving(false)
-    setMode('view')
-  }
-
-  function cancelEdit() {
-    setEditRole(reg.role || 'branch')
-    const viewSet = new Set(reg.view_branch_ids || [])
-    setEditEditBranches(reg.can_edit === false ? [] : (reg.branch_ids || []).filter(b => !viewSet.has(b)))
-    setEditViewBranches(reg.can_edit === false ? (reg.branch_ids || []) : (reg.view_branch_ids || []))
-    setSaveErr('')
-    setMode('view')
-  }
-
-  const canEdit = reg.can_edit !== false
-  const activeEditBranches = canEdit ? (reg.branch_ids || []).filter(b => !(reg.view_branch_ids || []).includes(b)) : []
-  const activeViewBranches = canEdit ? (reg.view_branch_ids || []) : (reg.branch_ids || [])
-
-  return (
-    <div className="reg-card resolved">
-      <div className="reg-card-top">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="reg-name" style={{ opacity: mode === 'view' ? .85 : 1 }}>{reg.name}</div>
-          <div className="reg-meta">{reg.email}</div>
-          {reg.note && <div className="reg-meta" style={{ color: 'var(--st-fail)' }}>Note: {reg.note}</div>}
-
-          {mode === 'view' && (
-            <div className="reg-meta" style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
-                <span className={`role-tag ${reg.role}`}>{ROLE_LABEL[reg.role] || reg.role}</span>
-                <span style={{
-                  fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 10,
-                  background: canEdit ? '#e8f5e9' : '#fff3e0',
-                  color:      canEdit ? '#2e7d32' : '#e65100',
-                }}>
-                  {canEdit ? '✏️ Can Edit' : '🔒 View Only'}
-                </span>
-                {reg.role === 'admin' && (
-                  <span className="user-branch-badge all" style={{ fontSize: 10.5 }}>🌐 All Branches (Admin)</span>
-                )}
-              </div>
-
-              {reg.role !== 'admin' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 2 }}>
-                  {activeEditBranches.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: '#2e7d32' }}>Can Edit:</span>
-                      {activeEditBranches.map(id => {
-                        const b = branches.find(x => x.id === id)
-                        return (
-                          <span key={id} className="user-branch-badge main" style={{ fontSize: 10.5 }}>
-                            ✏️ {b ? b.name : id}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {activeViewBranches.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>View Only:</span>
-                      {activeViewBranches.map(id => {
-                        const b = branches.find(x => x.id === id)
-                        return (
-                          <span key={id} className="user-branch-badge view" style={{ fontSize: 10.5 }}>
-                            📍 {b ? b.name : id}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {activeEditBranches.length === 0 && activeViewBranches.length === 0 && (
-                    <span className="user-branch-badge none" style={{ fontSize: 10.5 }}>⚠️ No branches assigned</span>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flexShrink: 0 }}>
-          {mode === 'view' && (
-            <>
-              <span className={`reg-status-badge ${reg.status}`}>
-                {reg.status === 'approved' ? '✓ Approved' : '✕ Rejected'}
-              </span>
-              <button className="btn sm" title="Edit" onClick={() => setMode('edit')}>✏️ Edit</button>
-              <button className="btn sm ghost" onClick={() => onDelete(reg.id)}>✕</button>
-            </>
-          )}
-          {mode === 'edit' && (
-            <>
-              <button className="btn sm primary" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving…' : '✓ Save'}
-              </button>
-              <button className="btn sm ghost" onClick={cancelEdit} disabled={saving}>Cancel</button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {mode === 'edit' && (
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* Role */}
-          <div>
-            <div className="fld" style={{ marginBottom: 4 }}>Role Designation</div>
-            <select
-              className="txt"
-              style={{ padding: '6px 10px', fontSize: 13 }}
-              value={editRole}
-              onChange={e => setEditRole(e.target.value)}
-            >
-              {ROLE_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Branches Section */}
-          {editRole !== 'admin' ? (
-            <BranchAssignmentSection
-              branches={branches}
-              editBranches={editEditBranches}
-              viewBranches={editViewBranches}
-              onToggleEdit={toggleEdit}
-              onToggleView={toggleView}
-              onSelectAllEdit={selectAllEdit}
-              onSelectAllView={selectAllView}
-            />
-          ) : (
-            <div style={{ fontSize: 12, color: 'var(--senior)', background: 'color-mix(in srgb, var(--senior) 10%, transparent)', padding: '8px 12px', borderRadius: 8, border: '1px solid color-mix(in srgb, var(--senior) 25%, transparent)' }}>
-              👑 Admin accounts automatically have full edit access and global management across all branches.
-            </div>
-          )}
-
-          {saveErr && <div className="login-err" style={{ textAlign: 'left' }}>{saveErr}</div>}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Main modal ────────────────────────────────────────────────────────────────
 export default function RegistrationApprovalModal({ onClose }) {
   const { pendingRegs, branches, appUsers, loadPendingRegs, loadAppUsers } = useApp()
@@ -349,6 +163,13 @@ export default function RegistrationApprovalModal({ onClose }) {
   const [rejectId,   setRejectId]   = useState(null)
   const [rejectNote, setRejectNote] = useState('')
   const [err,        setErr]        = useState('')
+
+  // Cleanup any old non-pending rows on mount
+  useState(() => {
+    supabase.from('pending_registrations').delete().neq('status', 'pending').then(() => {
+      loadPendingRegs()
+    })
+  })
 
   // Mapping states per pending reg ID
   const [roleMap,         setRoleMap]         = useState({}) // { [regId]: string }
@@ -397,17 +218,6 @@ export default function RegistrationApprovalModal({ onClose }) {
     if (ids.length > 0) {
       setEditBranchesMap(m => ({ ...m, [regId]: [] }))
     }
-  }
-
-  async function handleMarkApprovedOnly(regId) {
-    setBusy(regId); setErr('')
-    const { error } = await supabase
-      .from('pending_registrations')
-      .update({ status: 'approved' })
-      .eq('id', regId)
-    if (error) setErr(error.message)
-    await Promise.all([loadPendingRegs(), loadAppUsers()])
-    setBusy(null)
   }
 
   async function handleApprove(reg) {
@@ -527,80 +337,27 @@ export default function RegistrationApprovalModal({ onClose }) {
       }
     }
 
-    // 3. Mark as approved in pending_registrations
-    const { error: regUpdateErr } = await supabase.from('pending_registrations').update({
-      status:     'approved',
-      role:       finalRole,
-      branch_ids: combinedBranches,
-      can_edit:   finalCanEdit,
-    }).eq('id', reg.id)
-
-    if (regUpdateErr && (regUpdateErr.message?.includes('can_edit') || regUpdateErr.message?.includes('branch_ids'))) {
-      await supabase.from('pending_registrations').update({
-        status: 'approved',
-      }).eq('id', reg.id)
-    }
+    // 3. Remove from pending_registrations once approved
+    await supabase.from('pending_registrations').delete().eq('id', reg.id)
 
     await Promise.all([loadPendingRegs(), loadAppUsers()])
     setBusy(null)
   }
 
-  async function handleReject() {
-    if (!rejectNote.trim()) { setErr('Please enter a reason for rejection.'); return }
-    setBusy(rejectId); setErr('')
-    await supabase.from('pending_registrations')
-      .update({ status: 'rejected', note: rejectNote.trim() })
-      .eq('id', rejectId)
+  async function handleReject(id) {
+    setBusy(id); setErr('')
+    await supabase.from('pending_registrations').delete().eq('id', id)
     await loadPendingRegs()
     setRejectId(null); setRejectNote(''); setBusy(null)
   }
 
   async function handleDelete(id) {
-    if (!confirm('Remove this registration request permanently?')) return
+    if (!confirm('Remove this registration request?')) return
     await supabase.from('pending_registrations').delete().eq('id', id)
     await loadPendingRegs()
   }
 
-  async function handleSaveEdit(reg, newRole, newEditBranches, newViewBranches) {
-    const finalCanEdit = newRole === 'admin' ? true : (newEditBranches.length > 0)
-    const combinedBranches = Array.from(new Set([...newEditBranches, ...newViewBranches]))
-    const mainBranch = newEditBranches[0] || null
-
-    const fullPayload = {
-      role:            newRole,
-      main_branch_id:  newRole !== 'admin' ? mainBranch : null,
-      view_branch_ids: newRole !== 'admin' ? newViewBranches : [],
-      branch_ids:      newRole !== 'admin' ? combinedBranches : [],
-      can_edit:        finalCanEdit,
-    }
-
-    const { error: err1 } = await supabase
-      .from('app_users')
-      .update(fullPayload)
-      .eq('email', reg.email)
-
-    if (err1 && (err1.message?.includes('main_branch_id') || err1.message?.includes('view_branch_ids'))) {
-      await supabase
-        .from('app_users')
-        .update({
-          role:       newRole,
-          branch_ids: newRole !== 'admin' ? combinedBranches : [],
-          can_edit:   finalCanEdit,
-        })
-        .eq('email', reg.email)
-    }
-
-    await supabase.from('pending_registrations').update({
-      role:       newRole,
-      branch_ids: combinedBranches,
-      can_edit:   finalCanEdit,
-    }).eq('id', reg.id)
-
-    await Promise.all([loadPendingRegs(), loadAppUsers()])
-  }
-
-  const pending  = pendingRegs.filter(r => r.status === 'pending')
-  const resolved = pendingRegs.filter(r => r.status !== 'pending')
+  const pending = pendingRegs.filter(r => r.status === 'pending')
 
   return (
     <div className="modal-bg open">
@@ -621,7 +378,11 @@ export default function RegistrationApprovalModal({ onClose }) {
           {err && <div className="login-err" style={{ textAlign: 'left', marginBottom: 10 }}>{err}</div>}
 
           {/* ── Pending ── */}
-          {pending.length === 0 && <div className="empty-note">No pending registration requests.</div>}
+          {pending.length === 0 && (
+            <div className="empty-note" style={{ padding: '36px 16px', fontSize: 13.5 }}>
+              ✨ No pending registration requests.
+            </div>
+          )}
 
           {pending.map(reg => {
             const currentRole = getRole(reg)
@@ -649,20 +410,9 @@ export default function RegistrationApprovalModal({ onClose }) {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-                    {alreadyInUsers ? (
-                      <button
-                        className="btn sm"
-                        style={{ background: '#e8f5e9', color: '#2e7d32', borderColor: '#a5d6a7', fontWeight: 650 }}
-                        onClick={() => handleMarkApprovedOnly(reg.id)}
-                        disabled={busy === reg.id}
-                        title="User is already registered in directory. Move to resolved."
-                      >
-                        {busy === reg.id ? '…' : '✓ Mark Approved'}
-                      </button>
-                    ) : null}
                     <button
                       className="btn sm danger"
-                      onClick={() => { setRejectId(reg.id); setRejectNote(''); setErr('') }}
+                      onClick={() => handleReject(reg.id)}
                       disabled={busy === reg.id}
                     >Reject</button>
                     <button
@@ -710,45 +460,9 @@ export default function RegistrationApprovalModal({ onClose }) {
                     👑 Admin accounts automatically have full edit access and global management across all branches.
                   </div>
                 )}
-
-                {/* Rejection note */}
-                {rejectId === reg.id && (
-                  <div style={{ marginTop: 12, display: 'flex', gap: 6, background: 'var(--surface-2)', padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}>
-                    <input
-                      className="txt"
-                      placeholder="Reason for rejection…"
-                      value={rejectNote}
-                      onChange={e => setRejectNote(e.target.value)}
-                      style={{ flex: 1 }}
-                      autoFocus
-                    />
-                    <button className="btn sm danger" onClick={handleReject} disabled={busy === reg.id}>
-                      {busy === reg.id ? '…' : 'Confirm'}
-                    </button>
-                    <button className="btn sm ghost" onClick={() => setRejectId(null)}>Cancel</button>
-                  </div>
-                )}
               </div>
             )
           })}
-
-          {/* ── Resolved ── */}
-          {resolved.length > 0 && (
-            <>
-              <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--muted)', margin: '18px 0 6px', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                Resolved / Approved Users ({resolved.length})
-              </div>
-              {resolved.map(reg => (
-                <ResolvedCard
-                  key={reg.id}
-                  reg={reg}
-                  branches={branches}
-                  onDelete={handleDelete}
-                  onSaveEdit={handleSaveEdit}
-                />
-              ))}
-            </>
-          )}
         </div>
 
         <div className="modal-foot">
