@@ -181,7 +181,7 @@ export default function JobModal({ payload, onClose }) {
             <h3>{isAbsence ? (isEdit ? 'Edit Absence' : 'Mark Absence') : (isEdit ? (canEditJob ? 'Edit Job Ticket' : 'Job Ticket Details') : 'New Job Ticket')}</h3>
             {!canEditJob && (
               <span className="user-branch-badge view" style={{ fontSize: 11 }}>
-                👁️ View Only
+                🔒 View Only
               </span>
             )}
           </div>
@@ -191,7 +191,7 @@ export default function JobModal({ payload, onClose }) {
         <div className="modal-body">
           {!canEditJob && (
             <div className="job-view-banner">
-              <span>👁️</span>
+              <span>🔒</span>
               <span>
                 <strong>Viewing Mode:</strong> You have view-only access to {currentBranchObj ? currentBranchObj.name : 'this branch'}. Changes cannot be saved.
               </span>

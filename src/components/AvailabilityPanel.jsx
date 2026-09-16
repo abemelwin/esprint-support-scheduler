@@ -72,7 +72,7 @@ export default function AvailabilityPanel({ currentMonth }) {
 
       if (mainName && viewNames.length > 0) {
         return {
-          label: `🏢 ${mainName} · 👁️ ${viewNames.join(', ')}`,
+          label: `🏢 ${mainName} · 📍 ${viewNames.join(', ')}`,
           isAll: false,
           branchIds: allIds,
         }

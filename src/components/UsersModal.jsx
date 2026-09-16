@@ -32,7 +32,7 @@ function AccessToggle({ value, onChange }) {
           transition: 'background .15s, color .15s',
         }}
       >
-        👁 View Only
+        🔒 View Only
       </button>
       <button
         type="button"
@@ -230,19 +230,42 @@ export default function UsersModal({ onClose }) {
       ...editViewBranches
     ]))
 
-    // 1. Update app_users
-    const { error: updateError } = await supabase
+    // 1. Update app_users with fallback if main_branch_id column not added yet
+    let updateError = null
+    const fullPayload = {
+      name:            editName.trim(),
+      email:           editEmail.trim(),
+      role:            editRole,
+      main_branch_id:  needsBranch ? (editMainBranch || null) : null,
+      view_branch_ids: needsBranch ? editViewBranches : [],
+      branch_ids:      needsBranch ? combinedBranches : [],
+      can_edit:        finalCanEdit,
+    }
+
+    const { error: err1 } = await supabase
       .from('app_users')
-      .update({
-        name:            editName.trim(),
-        email:           editEmail.trim(),
-        role:            editRole,
-        main_branch_id:  needsBranch ? (editMainBranch || null) : null,
-        view_branch_ids: needsBranch ? editViewBranches : [],
-        branch_ids:      needsBranch ? combinedBranches : [],
-        can_edit:        finalCanEdit,
-      })
+      .update(fullPayload)
       .eq('id', u.id)
+
+    if (err1) {
+      if (err1.message?.includes('main_branch_id') || err1.message?.includes('view_branch_ids')) {
+        // Fallback for when SQL migration has not been run yet in Supabase
+        const fallbackPayload = {
+          name:       editName.trim(),
+          email:      editEmail.trim(),
+          role:       editRole,
+          branch_ids: needsBranch ? combinedBranches : [],
+          can_edit:   finalCanEdit,
+        }
+        const { error: err2 } = await supabase
+          .from('app_users')
+          .update(fallbackPayload)
+          .eq('id', u.id)
+        if (err2) updateError = err2
+      } else {
+        updateError = err1
+      }
+    }
 
     if (updateError) {
       setEditErr(updateError.message)
@@ -252,22 +275,40 @@ export default function UsersModal({ onClose }) {
 
     // 2. Update pending_registrations if existing
     if (u.email) {
-      const regUpdates = {
-        name:            editName.trim(),
-        email:           editEmail.trim(),
-        role:            editRole,
-        main_branch_id:  needsBranch ? (editMainBranch || null) : null,
-        view_branch_ids: needsBranch ? editViewBranches : [],
-        branch_ids:      needsBranch ? combinedBranches : [],
-        can_edit:        finalCanEdit,
+      try {
+        const regUpdates = {
+          name:            editName.trim(),
+          email:           editEmail.trim(),
+          role:            editRole,
+          main_branch_id:  needsBranch ? (editMainBranch || null) : null,
+          view_branch_ids: needsBranch ? editViewBranches : [],
+          branch_ids:      needsBranch ? combinedBranches : [],
+          can_edit:        finalCanEdit,
+        }
+        if (editPassword.trim()) {
+          regUpdates.password = editPassword.trim()
+        }
+        const { error: regErr } = await supabase
+          .from('pending_registrations')
+          .update(regUpdates)
+          .eq('email', u.email)
+
+        if (regErr && (regErr.message?.includes('main_branch_id') || regErr.message?.includes('view_branch_ids'))) {
+          await supabase
+            .from('pending_registrations')
+            .update({
+              name:       editName.trim(),
+              email:      editEmail.trim(),
+              role:       editRole,
+              branch_ids: needsBranch ? combinedBranches : [],
+              can_edit:   finalCanEdit,
+              ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
+            })
+            .eq('email', u.email)
+        }
+      } catch (err) {
+        console.warn('pending_registrations update skipped:', err)
       }
-      if (editPassword.trim()) {
-        regUpdates.password = editPassword.trim()
-      }
-      await supabase
-        .from('pending_registrations')
-        .update(regUpdates)
-        .eq('email', u.email)
     }
 
     // 3. Update auth user credentials (password/email/name) via RPC if available
@@ -338,7 +379,7 @@ export default function UsersModal({ onClose }) {
       ...(form.view_branch_ids || []),
     ]))
 
-    const { error } = await supabase.from('app_users').insert({
+    const fullInsert = {
       auth_id:         uid,
       name:            createdName,
       email:           form.email.trim(),
@@ -349,8 +390,30 @@ export default function UsersModal({ onClose }) {
       can_edit:        finalCanEdit,
       is_active:       true,
       is_approved:     true,
-    })
-    if (error) { setErr(error.message); setBusy(false); return }
+    }
+
+    let insertError = null
+    const { error: err1 } = await supabase.from('app_users').insert(fullInsert)
+    if (err1) {
+      if (err1.message?.includes('main_branch_id') || err1.message?.includes('view_branch_ids')) {
+        const fallbackInsert = {
+          auth_id:     uid,
+          name:        createdName,
+          email:       form.email.trim(),
+          role:        form.role,
+          branch_ids:  needsBranch ? combinedBranches : [],
+          can_edit:    finalCanEdit,
+          is_active:   true,
+          is_approved: true,
+        }
+        const { error: err2 } = await supabase.from('app_users').insert(fallbackInsert)
+        if (err2) insertError = err2
+      } else {
+        insertError = err1
+      }
+    }
+
+    if (insertError) { setErr(insertError.message); setBusy(false); return }
 
     await Promise.all([loadAppUsers(), loadStaff()])
     setForm({
@@ -544,7 +607,7 @@ export default function UsersModal({ onClose }) {
                                 background: canEdit ? '#e8f5e9' : '#fff3e0',
                                 color:      canEdit ? '#2e7d32' : '#e65100',
                               }}>
-                                {canEdit ? '✏️ Can Edit' : '👁 View Only'}
+                                {canEdit ? '✏️ Can Edit' : '🔒 View Only'}
                               </span>
                             )}
                             {!isActive && <span className="role-tag" style={{ background: 'var(--st-fail)', color: '#fff' }}>Inactive</span>}
@@ -580,7 +643,7 @@ export default function UsersModal({ onClose }) {
                                         const name = b ? b.name : id
                                         return (
                                           <span key={id} className="user-branch-badge view" title={`View Only: ${name} · ${b?.note || ''}`}>
-                                            👁️ {name}
+                                            📍 {name}
                                           </span>
                                         )
                                       })}
@@ -713,11 +776,11 @@ export default function UsersModal({ onClose }) {
                                   </div>
                                 </div>
 
-                                {/* 👁️ Other Branches (Viewing Only) */}
+                                {/* 📍 Other Branches (Viewing Only) */}
                                 <div className="full">
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                                     <label className="fld" style={{ margin: 0 }}>
-                                      👁️ Other Branches (Viewing Only Access)
+                                      📍 Other Branches (Viewing Only Access)
                                       {editViewBranches.length > 0 && (
                                         <span style={{ marginLeft: 6, fontWeight: 600, color: '#c084fc' }}>
                                           ({editViewBranches.length} viewing only)
@@ -755,7 +818,7 @@ export default function UsersModal({ onClose }) {
                                           checked={editViewBranches.includes(b.id)}
                                           onChange={() => toggleEditViewBranch(b.id)}
                                         />
-                                        <span>👁️ {b.name} · {b.note}</span>
+                                        <span>{b.name} · {b.note}</span>
                                       </label>
                                     ))}
                                   </div>
@@ -855,11 +918,11 @@ export default function UsersModal({ onClose }) {
                       </div>
                     </div>
 
-                    {/* 👁️ Other Branches (Viewing Only) */}
+                    {/* 📍 Other Branches (Viewing Only) */}
                     <div className="full">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                         <label className="fld" style={{ margin: 0 }}>
-                          👁️ Other Branches (Viewing Only Access)
+                          📍 Other Branches (Viewing Only Access)
                           {form.view_branch_ids.length > 0 && (
                             <span style={{ marginLeft: 6, fontWeight: 600, color: '#c084fc' }}>
                               ({form.view_branch_ids.length} viewing only)
@@ -897,7 +960,7 @@ export default function UsersModal({ onClose }) {
                               checked={form.view_branch_ids.includes(b.id)}
                               onChange={() => toggleAddViewBranch(b.id)}
                             />
-                            <span>👁️ {b.name} · {b.note}</span>
+                            <span>{b.name} · {b.note}</span>
                           </label>
                         ))}
                       </div>

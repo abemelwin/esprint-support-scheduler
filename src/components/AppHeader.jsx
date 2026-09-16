@@ -89,7 +89,7 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
         <span className={`role-tag ${currentUser?.role}`}>{roleLabel}</span>
         {currentUser?.role !== 'admin' && currentUser?.can_edit === false && (
           <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: '#fff3e0', color: '#e65100' }}>
-            👁 View Only
+            🔒 View Only
           </span>
         )}
         <span className="uname">{currentUser?.name}</span>
