@@ -107,7 +107,7 @@ export default function UpdateNotifierModal() {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', color: '#fff' }}>
-              May Bagong Update!
+              System Update Available!
             </h4>
             <button
               onClick={() => {
@@ -123,14 +123,14 @@ export default function UpdateNotifierModal() {
                 padding: '0 4px',
                 lineHeight: 1,
               }}
-              title="Later"
+              title="Dismiss for now"
             >
               ✕
             </button>
           </div>
 
           <p style={{ margin: '6px 0 12px', fontSize: 12, lineHeight: 1.45, color: 'var(--muted, #cbd5e1)' }}>
-            May bagong deployment ang system. I-update para magamit agad ang mga pinakabagong features at roles.
+            A new version has been deployed. Click below to refresh and load the latest updates and features.
           </p>
 
           <div style={{ display: 'flex', gap: 8 }}>
