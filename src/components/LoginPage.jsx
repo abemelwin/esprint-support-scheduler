@@ -8,6 +8,8 @@ export default function LoginPage({ onRegister }) {
   const [err,      setErr]      = useState('')
   const [busy,     setBusy]     = useState(false)
 
+  const [showPassword, setShowPassword] = useState(false)
+
   async function handleLogin(e) {
     e.preventDefault()
     if (!email || !password) { setErr('Please enter username and password.'); return }
@@ -26,24 +28,44 @@ export default function LoginPage({ onRegister }) {
           <div className="lsub">ES Print Group of Companies — please sign in</div>
         </div>
         <form className="lbody" onSubmit={handleLogin}>
-          <label className="fld">Username</label>
+          <label className="fld">Username / Email</label>
           <input
             type="text"
             className="txt"
-            placeholder="username"
+            placeholder="e.g. esprint.rickyeina@gmail.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
             autoComplete="username"
           />
           <label className="fld">Password</label>
-          <input
-            type="password"
-            className="txt"
-            placeholder="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              className="txt"
+              placeholder="password"
+              style={{ width: '100%', paddingRight: 38 }}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(p => !p)}
+              style={{
+                position: 'absolute',
+                right: 8,
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 14,
+                opacity: 0.7,
+                padding: '4px 6px',
+              }}
+              title={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
           <div className="login-err">{err}</div>
           <button
             className="btn primary"
