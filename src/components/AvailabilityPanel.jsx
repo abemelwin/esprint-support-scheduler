@@ -5,9 +5,10 @@ import { ROLES, ROLE_ORDER, TYPES, STATUS } from '../lib/constants'
 
 export default function AvailabilityPanel({ currentMonth }) {
   const { jobs, inScope, visibleStaff, branches } = useApp()
-  const [mode,     setMode]     = useState('month')   // 'month' | 'day'
-  const [availDay, setAvailDay] = useState(ymd(new Date()))
-  const [search,   setSearch]   = useState('')
+  const [mode,         setMode]         = useState('month')   // 'month' | 'day'
+  const [availDay,     setAvailDay]     = useState(ymd(new Date()))
+  const [search,       setSearch]       = useState('')
+  const [branchFilter, setBranchFilter] = useState('')
 
   // build day options for current month
   const dayOptions = useMemo(() => {
@@ -41,11 +42,13 @@ export default function AvailabilityPanel({ currentMonth }) {
     })
   }
 
-  // filter by search term
+  // filter by search term and branch
   const searchTerm = search.trim().toLowerCase()
-  const filteredRoster = searchTerm
-    ? roster.filter(s => s.name.toLowerCase().includes(searchTerm))
-    : roster
+  const filteredRoster = roster.filter(s => {
+    if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
+    if (branchFilter && s.home_branch_id !== branchFilter) return false
+    return true
+  })
 
   // group by role
   const grouped = ROLE_ORDER.reduce((acc, r) => {
@@ -71,18 +74,32 @@ export default function AvailabilityPanel({ currentMonth }) {
             {dayOptions.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
           </select>
         )}
-        {/* Search staff */}
-        <div className="ovl-role-search" style={{ marginTop: 8 }}>
-          <span className="ovl-role-search-icon">🔍</span>
-          <input
-            className="ovl-role-search-input"
-            placeholder="Search staff…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          {search && (
-            <span className="ovl-role-search-clear" onClick={() => setSearch('')}>✕</span>
-          )}
+        {/* Search staff & Branch filter */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <div className="ovl-role-search" style={{ flex: 1, margin: 0 }}>
+            <span className="ovl-role-search-icon">🔍</span>
+            <input
+              className="ovl-role-search-input"
+              placeholder="Search staff…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <span className="ovl-role-search-clear" onClick={() => setSearch('')}>✕</span>
+            )}
+          </div>
+          <select
+            className="sel"
+            style={{ width: 'auto', minWidth: 90, fontSize: 12, padding: '4px 6px' }}
+            value={branchFilter}
+            onChange={e => setBranchFilter(e.target.value)}
+            title="Filter by branch"
+          >
+            <option value="">All Branches</option>
+            {branches.map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 

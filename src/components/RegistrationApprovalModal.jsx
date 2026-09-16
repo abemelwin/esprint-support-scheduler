@@ -144,13 +144,24 @@ function ResolvedCard({ reg, branches, onDelete, onSaveEdit }) {
               }}>
                 {canEdit ? '✏️ Can Edit' : '👁 View Only'}
               </span>
-              {(reg.branch_ids || []).length > 0 && (
-                <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+              {reg.role === 'admin' ? (
+                <span className="user-branch-badge all" style={{ fontSize: 10.5 }}>🌐 All Branches (Admin)</span>
+              ) : (reg.branch_ids || []).length > 0 && branches.length > 0 && branches.every(b => (reg.branch_ids || []).includes(b.id)) ? (
+                <span className="user-branch-badge all" style={{ fontSize: 10.5 }}>🌐 All Branches ({branches.length})</span>
+              ) : (reg.branch_ids || []).length > 0 ? (
+                <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 3, marginLeft: 2 }}>
                   {(reg.branch_ids || []).map(id => {
                     const b = branches.find(x => x.id === id)
-                    return b ? b.name : id
-                  }).join(', ')}
-                </span>
+                    const name = b ? b.name : id
+                    return (
+                      <span key={id} className="user-branch-badge" style={{ fontSize: 10.5 }} title={b?.note ? `${name} · ${b.note}` : name}>
+                        {name}
+                      </span>
+                    )
+                  })}
+                </div>
+              ) : (
+                <span className="user-branch-badge none" style={{ fontSize: 10.5 }}>⚠️ No branches</span>
               )}
             </div>
           )}

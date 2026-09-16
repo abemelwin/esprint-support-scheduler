@@ -747,6 +747,73 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
   border-top: 1px solid var(--border);
 }
 
+/* ── User Filters & Branch Chips ────────────────────────────────── */
+.user-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.user-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.user-branch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.user-branch-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.user-branch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.user-branch-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 650;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  line-height: 1.3;
+  transition: all .15s ease;
+}
+.user-branch-badge:hover {
+  border-color: var(--senior);
+  color: var(--senior);
+}
+.user-branch-badge.all {
+  background: color-mix(in srgb, var(--senior) 14%, transparent);
+  border-color: color-mix(in srgb, var(--senior) 35%, transparent);
+  color: var(--senior);
+  font-weight: 700;
+}
+.user-branch-badge.none {
+  background: color-mix(in srgb, var(--st-fail) 14%, transparent);
+  border-color: color-mix(in srgb, var(--st-fail) 35%, transparent);
+  color: var(--st-fail);
+  font-weight: 650;
+}
+
 /* ── Responsive & Mobile Design System ─────────────────────────────── */
 .cal-wrap {
   width: 100%;

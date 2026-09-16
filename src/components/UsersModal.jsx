@@ -68,13 +68,75 @@ export default function UsersModal({ onClose }) {
 
   // ── Edit state ────────────────────────────────────────────────
   const [editId,       setEditId]       = useState(null)   // user id being edited
+  const [editName,     setEditName]     = useState('')
+  const [editEmail,    setEditEmail]    = useState('')
+  const [editPassword, setEditPassword] = useState('')
   const [editRole,     setEditRole]     = useState('')
   const [editCanEdit,  setEditCanEdit]  = useState(true)
   const [editBranches, setEditBranches] = useState([])
   const [editBusy,     setEditBusy]     = useState(false)
   const [editErr,      setEditErr]      = useState('')
 
+  // ── Search & Filter State for Existing Users ─────────────────
+  const [search,       setSearch]       = useState('')
+  const [roleFilter,   setRoleFilter]   = useState('')
+  const [branchFilter, setBranchFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  // Filtered users logic
+  const searchTerm = search.trim().toLowerCase()
+  const filteredUsers = appUsers.filter(u => {
+    // 1. User search by name or email
+    if (searchTerm) {
+      const matchName  = u.name?.toLowerCase().includes(searchTerm)
+      const matchEmail = u.email?.toLowerCase().includes(searchTerm)
+      if (!matchName && !matchEmail) return false
+    }
+
+    // 2. Role filter
+    if (roleFilter && u.role !== roleFilter) {
+      return false
+    }
+
+    // 3. Branch filter
+    if (branchFilter) {
+      const uBranches = u.branch_ids || []
+      const isAllBranchesUser = branches.length > 0 && branches.every(b => uBranches.includes(b.id))
+      
+      if (branchFilter === '__all__') {
+        if (u.role !== 'admin' && !isAllBranchesUser) return false
+      } else if (branchFilter === '__unassigned__') {
+        if (u.role === 'admin' || uBranches.length > 0) return false
+      } else {
+        const hasBranch = uBranches.includes(branchFilter)
+        const isAdminAccess = u.role === 'admin'
+        if (!hasBranch && !isAdminAccess) return false
+      }
+    }
+
+    // 4. Status / Access filter
+    if (statusFilter) {
+      const isActive = u.is_active ?? true
+      const canEdit  = u.can_edit !== false
+      if (statusFilter === 'active'    && !isActive) return false
+      if (statusFilter === 'inactive'  && isActive)  return false
+      if (statusFilter === 'can_edit'  && !canEdit)  return false
+      if (statusFilter === 'view_only' && canEdit)   return false
+    }
+
+    return true
+  })
+
+  const isFiltered = !!(searchTerm || roleFilter || branchFilter || statusFilter)
+
+  function resetFilters() {
+    setSearch('')
+    setRoleFilter('')
+    setBranchFilter('')
+    setStatusFilter('')
+  }
 
   function toggleBranch(id) {
     setForm(f => ({
@@ -93,6 +155,9 @@ export default function UsersModal({ onClose }) {
 
   function startEdit(u) {
     setEditId(u.id)
+    setEditName(u.name || '')
+    setEditEmail(u.email || '')
+    setEditPassword('') // Leave blank unless changing
     setEditRole(u.role)
     setEditCanEdit(u.can_edit !== false)
     setEditBranches(u.branch_ids || [])
@@ -104,38 +169,81 @@ export default function UsersModal({ onClose }) {
   }
 
   async function saveEdit(u) {
+    if (!editName.trim()) {
+      setEditErr('Full name is required.'); return
+    }
+    if (!editEmail.trim()) {
+      setEditErr('Email address is required.'); return
+    }
+    if (editPassword.trim() && editPassword.trim().length < 6) {
+      setEditErr('Password must be at least 6 characters.'); return
+    }
+
     const needsBranch = editRole === 'service_manager' || editRole === 'branch'
     if (needsBranch && editBranches.length === 0) {
       setEditErr('Assign at least one branch.'); return
     }
+
+    // Check if email already used by another user
+    const existingOther = appUsers.find(
+      x => x.id !== u.id && x.email?.trim().toLowerCase() === editEmail.trim().toLowerCase()
+    )
+    if (existingOther) {
+      setEditErr('This email is already in use by another user.'); return
+    }
+
     setEditBusy(true); setEditErr('')
 
     const finalCanEdit = editRole === 'admin' ? true : editCanEdit
 
-    const { error } = await supabase
+    // 1. Update app_users
+    const { error: updateError } = await supabase
       .from('app_users')
       .update({
+        name:       editName.trim(),
+        email:      editEmail.trim(),
         role:       editRole,
         branch_ids: needsBranch ? editBranches : [],
         can_edit:   finalCanEdit,
       })
       .eq('id', u.id)
 
-    if (error) {
-      setEditErr(error.message)
+    if (updateError) {
+      setEditErr(updateError.message)
       setEditBusy(false)
       return
     }
 
+    // 2. Update pending_registrations if existing
     if (u.email) {
+      const regUpdates = {
+        name:       editName.trim(),
+        email:      editEmail.trim(),
+        role:       editRole,
+        branch_ids: needsBranch ? editBranches : [],
+        can_edit:   finalCanEdit,
+      }
+      if (editPassword.trim()) {
+        regUpdates.password = editPassword.trim()
+      }
       await supabase
         .from('pending_registrations')
-        .update({
-          role:       editRole,
-          branch_ids: needsBranch ? editBranches : [],
-          can_edit:   finalCanEdit,
-        })
+        .update(regUpdates)
         .eq('email', u.email)
+    }
+
+    // 3. Update auth user credentials (password/email/name) via RPC if available
+    if (u.auth_id && (editPassword.trim() || editEmail.trim() !== u.email || editName.trim() !== u.name)) {
+      try {
+        await supabase.rpc('admin_update_user', {
+          target_user_id: u.auth_id,
+          new_email:    editEmail.trim() !== u.email ? editEmail.trim() : null,
+          new_password: editPassword.trim() ? editPassword.trim() : null,
+          new_name:     editName.trim() !== u.name ? editName.trim() : null,
+        })
+      } catch (rpcErr) {
+        console.warn('admin_update_user RPC skipped or unavailable:', rpcErr)
+      }
     }
 
     await loadAppUsers()
@@ -217,7 +325,7 @@ export default function UsersModal({ onClose }) {
 
   return (
     <div className="modal-bg open">
-      <div className="modal" style={{ maxWidth: 660, width: '100%' }}>
+      <div className="modal" style={{ maxWidth: 700, width: '100%' }}>
         <div className="modal-head"><h3>User Access Management</h3><div className="spacer" /></div>
         <div className="modal-body">
 
@@ -260,7 +368,14 @@ export default function UsersModal({ onClose }) {
             </div>
             {needsBranch && (
               <div className="full">
-                <label className="fld">Assigned branches</label>
+                <label className="fld">
+                  Assigned branches
+                  {form.branch_ids.length > 0 && (
+                    <span style={{ marginLeft: 6, fontWeight: 500, color: 'var(--senior)' }}>
+                      ({branches.length > 0 && branches.every(b => form.branch_ids.includes(b.id)) ? `All ${branches.length}` : `${form.branch_ids.length} of ${branches.length}`} selected)
+                    </span>
+                  )}
+                </label>
                 <div className="branch-check" style={{ maxHeight: 120, overflowY: 'auto' }}>
                   <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
                     <input
@@ -292,20 +407,94 @@ export default function UsersModal({ onClose }) {
             ＋ Add user
           </button>
 
-          {/* ── Existing users ── */}
-          <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--muted)', margin: '20px 0 8px', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-            Existing users ({appUsers.length})
+          {/* ── Existing users header & filters ── */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '24px 0 8px', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+              Existing users ({isFiltered ? `${filteredUsers.length} of ${appUsers.length}` : appUsers.length})
+            </div>
+            {isFiltered && (
+              <button className="btn-link" style={{ fontSize: 12 }} onClick={resetFilters}>
+                ✕ Reset filters
+              </button>
+            )}
+          </div>
+
+          {/* ── Search and Filter Controls ── */}
+          <div className="user-filter-bar">
+            <div className="user-filter-row">
+              {/* Search user */}
+              <div className="ovl-role-search" style={{ flex: 1, minWidth: 180, margin: 0 }}>
+                <span className="ovl-role-search-icon">🔍</span>
+                <input
+                  className="ovl-role-search-input"
+                  placeholder="Filter by name or email…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+                {search && (
+                  <span className="ovl-role-search-clear" onClick={() => setSearch('')}>✕</span>
+                )}
+              </div>
+
+              {/* Branch filter */}
+              <select
+                className="sel"
+                style={{ fontSize: 12, padding: '5px 8px', minWidth: 140 }}
+                value={branchFilter}
+                onChange={e => setBranchFilter(e.target.value)}
+              >
+                <option value="">All Branches</option>
+                <option value="__all__">🌐 All Branches Access (Admin/Global)</option>
+                <option value="__unassigned__">⚠️ No Branch Assigned</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name} · {b.note}</option>
+                ))}
+              </select>
+
+              {/* Role filter */}
+              <select
+                className="sel"
+                style={{ fontSize: 12, padding: '5px 8px', minWidth: 110 }}
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+              >
+                <option value="">All Roles</option>
+                {ROLE_OPTIONS.map(r => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+
+              {/* Status / Access filter */}
+              <select
+                className="sel"
+                style={{ fontSize: 12, padding: '5px 8px', minWidth: 110 }}
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="can_edit">Can Edit</option>
+                <option value="view_only">View Only</option>
+              </select>
+            </div>
           </div>
 
           {appUsers.length === 0 && <div className="empty-note">No users yet.</div>}
+          {appUsers.length > 0 && filteredUsers.length === 0 && (
+            <div className="empty-note">
+              No users matching your filters.
+              <br />
+              <button className="btn-link" style={{ marginTop: 6 }} onClick={resetFilters}>Clear all filters</button>
+            </div>
+          )}
 
-          {appUsers.map(u => {
-            const isEditing  = editId === u.id
-            const isActive   = u.is_active ?? true
-            const canEdit    = u.can_edit !== false
-            const branchNames = (u.branch_ids || [])
-              .map(id => branches.find(b => b.id === id)?.name || id)
-              .join(', ')
+          {filteredUsers.map(u => {
+            const isEditing   = editId === u.id
+            const isActive    = u.is_active ?? true
+            const canEdit     = u.can_edit !== false
+            const uBranches   = u.branch_ids || []
+            const isAllBranch = branches.length > 0 && branches.every(b => uBranches.includes(b.id))
 
             return (
               <div key={u.id} className={`user-mgmt-card${!isActive ? ' inactive' : ''}`}>
@@ -327,7 +516,39 @@ export default function UsersModal({ onClose }) {
                       {!isActive && <span className="role-tag" style={{ background: 'var(--st-fail)', color: '#fff' }}>Inactive</span>}
                     </div>
                     <div className="pmeta">{u.email}</div>
-                    {branchNames && <div className="pmeta" style={{ color: 'var(--muted)' }}>Branches: {branchNames}</div>}
+
+                    {/* Enhanced Branch display */}
+                    <div className="user-branch-row">
+                      {u.role === 'admin' ? (
+                        <span className="user-branch-badge all" title="Administrator has full access to all branches">
+                          🌐 All Branches (Admin)
+                        </span>
+                      ) : isAllBranch ? (
+                        <span className="user-branch-badge all" title={`Assigned to all ${branches.length} branches`}>
+                          🌐 All Branches ({branches.length})
+                        </span>
+                      ) : uBranches.length === 0 ? (
+                        <span className="user-branch-badge none" title="No branch assigned to this user">
+                          ⚠️ No branch assigned
+                        </span>
+                      ) : (
+                        <>
+                          <span className="user-branch-label">Branches ({uBranches.length}):</span>
+                          <div className="user-branch-chips">
+                            {uBranches.map(id => {
+                              const b = branches.find(x => x.id === id)
+                              const name = b ? b.name : id
+                              const note = b?.note ? ` · ${b.note}` : ''
+                              return (
+                                <span key={id} className="user-branch-badge" title={`${name}${note}`}>
+                                  {name}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Action buttons */}
@@ -349,7 +570,43 @@ export default function UsersModal({ onClose }) {
                 {/* Inline edit panel */}
                 {isEditing && (
                   <div className="user-edit-panel">
+                    <div style={{ fontWeight: 650, fontSize: 12, color: 'var(--senior)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                      Edit User Details
+                    </div>
                     <div className="grid2" style={{ gap: 10 }}>
+                      <div>
+                        <label className="fld">Full name <span className="req">*</span></label>
+                        <input
+                          type="text"
+                          className="txt"
+                          placeholder="e.g. Grace Villanueva"
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="fld">Email address <span className="req">*</span></label>
+                        <input
+                          type="email"
+                          className="txt"
+                          placeholder="grace@esprint.com"
+                          value={editEmail}
+                          onChange={e => setEditEmail(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="fld">New password (optional)</label>
+                        <input
+                          type="text"
+                          className="txt"
+                          placeholder="leave blank to keep current"
+                          value={editPassword}
+                          onChange={e => setEditPassword(e.target.value)}
+                        />
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>
+                          Leave empty if not changing password.
+                        </div>
+                      </div>
                       <div>
                         <label className="fld">Access level</label>
                         <select className="sel" value={editRole} onChange={e => setEditRole(e.target.value)}>
@@ -359,7 +616,7 @@ export default function UsersModal({ onClose }) {
                         </select>
                       </div>
                       {editRole !== 'admin' ? (
-                        <div>
+                        <div className="full">
                           <label className="fld">Access permission</label>
                           <AccessToggle value={editCanEdit} onChange={setEditCanEdit} />
                           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
@@ -368,10 +625,17 @@ export default function UsersModal({ onClose }) {
                               : 'View Only (no editing allowed)'}
                           </div>
                         </div>
-                      ) : <div />}
+                      ) : null}
                       {(editRole === 'service_manager' || editRole === 'branch') && (
                         <div className="full">
-                          <label className="fld">Assigned branches</label>
+                          <label className="fld">
+                            Assigned branches
+                            {editBranches.length > 0 && (
+                              <span style={{ marginLeft: 6, fontWeight: 500, color: 'var(--senior)' }}>
+                                ({branches.length > 0 && branches.every(b => editBranches.includes(b.id)) ? `All ${branches.length}` : `${editBranches.length} of ${branches.length}`} selected)
+                              </span>
+                            )}
+                          </label>
                           <div className="branch-check" style={{ maxHeight: 120, overflowY: 'auto' }}>
                             <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
                               <input
@@ -399,8 +663,8 @@ export default function UsersModal({ onClose }) {
                         </div>
                       )}
                     </div>
-                    {editErr && <div className="login-err" style={{ textAlign:'left', marginTop: 6 }}>{editErr}</div>}
-                    <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                    {editErr && <div className="login-err" style={{ textAlign:'left', marginTop: 8 }}>{editErr}</div>}
+                    <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
                       <button className="btn primary" onClick={() => saveEdit(u)} disabled={editBusy}>
                         {editBusy ? 'Saving…' : '✓ Save'}
                       </button>
