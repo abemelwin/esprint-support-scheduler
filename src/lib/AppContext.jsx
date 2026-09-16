@@ -70,8 +70,8 @@ export function AppProvider({ children }) {
     loadBranches()
     loadStaff()
     loadJobs()
+    loadAppUsers()
     if (currentUser.role === 'admin') {
-      loadAppUsers()
       loadPendingRegs()
     }
   }, [currentUser])
@@ -84,6 +84,7 @@ export function AppProvider({ children }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' },                   () => loadJobs())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' },                  () => loadStaff())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'branches' },               () => loadBranches())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_users' },              () => loadAppUsers())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_registrations' },  () => {
         if (currentUser.role === 'admin') loadPendingRegs()
       })

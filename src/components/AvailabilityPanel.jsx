@@ -4,7 +4,7 @@ import { ymd } from '../lib/dates'
 import { ROLES, ROLE_ORDER, TYPES, STATUS } from '../lib/constants'
 
 export default function AvailabilityPanel({ currentMonth }) {
-  const { jobs, inScope, visibleStaff, branches } = useApp()
+  const { jobs, inScope, visibleStaff, branches, appUsers } = useApp()
   const [mode,         setMode]         = useState('month')   // 'month' | 'day'
   const [availDay,     setAvailDay]     = useState(ymd(new Date()))
   const [search,       setSearch]       = useState('')
@@ -42,11 +42,50 @@ export default function AvailabilityPanel({ currentMonth }) {
     })
   }
 
+  // Helper to get complete branch info for a staff member
+  function getStaffBranchInfo(s) {
+    const sNameNorm = s.name.trim().toLowerCase()
+    const matchedUser = appUsers?.find(u => {
+      const uNameNorm = u.name?.trim().toLowerCase() || ''
+      if (!uNameNorm) return false
+      return uNameNorm === sNameNorm ||
+        sNameNorm.includes(uNameNorm) ||
+        uNameNorm.includes(sNameNorm)
+    })
+
+    if (matchedUser) {
+      if (matchedUser.role === 'admin') {
+        return { label: 'All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
+      }
+      const uBranches = matchedUser.branch_ids || []
+      if (uBranches.length > 0) {
+        if (branches.length > 0 && branches.every(b => uBranches.includes(b.id))) {
+          return { label: `All Branches (${branches.length})`, isAll: true, branchIds: uBranches }
+        }
+        const bNames = uBranches
+          .map(id => branches.find(b => b.id === id)?.name || id)
+          .filter(Boolean)
+        return { label: bNames.join(', '), isAll: false, branchIds: uBranches }
+      }
+    }
+
+    const homeB = branches.find(b => b.id === s.home_branch_id)
+    return {
+      label: homeB ? homeB.name : '—',
+      isAll: false,
+      branchIds: s.home_branch_id ? [s.home_branch_id] : [],
+    }
+  }
+
   // filter by search term and branch
   const searchTerm = search.trim().toLowerCase()
   const filteredRoster = roster.filter(s => {
     if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
-    if (branchFilter && s.home_branch_id !== branchFilter) return false
+    if (branchFilter) {
+      const info = getStaffBranchInfo(s)
+      if (info.isAll) return true
+      if (!info.branchIds.includes(branchFilter)) return false
+    }
     return true
   })
 
@@ -116,12 +155,19 @@ export default function AvailabilityPanel({ currentMonth }) {
               </h3>
               {grp.map(s => {
                 const tasks = tasksFor(s.id)
-                const branchName = branches.find(b => b.id === s.home_branch_id)?.name || '—'
+                const branchInfo = getStaffBranchInfo(s)
                 return (
                   <div key={s.id} className={`person${tasks.length === 0 ? ' free' : ' busy-row'}`}>
-                    <div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div className="pname">{s.name}</div>
-                      <div className="pmeta">{branchName}</div>
+                      <div className="pmeta" style={{
+                        color: branchInfo.isAll ? 'var(--senior)' : 'var(--muted)',
+                        fontWeight: branchInfo.isAll ? 600 : 400,
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                      }} title={branchInfo.label}>
+                        {branchInfo.label}
+                      </div>
                     </div>
                     <div className="pspacer" />
                     <StaffStatusBadge tasks={tasks} />
