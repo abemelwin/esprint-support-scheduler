@@ -99,7 +99,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
         )}
       </div>
 
-      <div className={`layout${isFieldStaff ? ' full-width' : ''}`}>
+      <div className="layout">
         {/* Calendar panel */}
         <div className="panel">
           <div className="panel-head">
@@ -157,7 +157,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
         </div>
 
         {/* Availability panel */}
-        {!isFieldStaff && <AvailabilityPanel currentMonth={currentMonth} />}
+        <AvailabilityPanel currentMonth={currentMonth} />
       </div>
     </div>
   )
