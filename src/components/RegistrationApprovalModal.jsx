@@ -7,17 +7,20 @@ const ROLE_LABEL = {
   service_manager:        'Service Manager',
   service_coordinator:    'Service Coordinator',
   senior_fse:             'Senior FSE',
-  field_service_engineer: 'Field Service Engineer',
+  junior_fse:             'Junior FSE',
+  field_service_engineer: 'Junior FSE',
+  trainee:                'Trainee',
   branch:                 'Branch User',
 }
 
 const ROLE_OPTIONS = [
-  { value: 'senior_fse',             label: 'Senior FSE'             },
-  { value: 'field_service_engineer', label: 'Field Service Engineer' },
-  { value: 'service_coordinator',    label: 'Service Coordinator'     },
-  { value: 'service_manager',        label: 'Service Manager'         },
-  { value: 'branch',                 label: 'Branch User'             },
-  { value: 'admin',                  label: 'Admin'                   },
+  { value: 'senior_fse',          label: 'Senior FSE'          },
+  { value: 'junior_fse',          label: 'Junior FSE'          },
+  { value: 'trainee',             label: 'Trainee'             },
+  { value: 'service_coordinator', label: 'Service Coordinator'  },
+  { value: 'service_manager',     label: 'Service Manager'      },
+  { value: 'branch',              label: 'Branch User'          },
+  { value: 'admin',               label: 'Admin'                },
 ]
 
 // ── Segmented Branch Selector (Can Edit vs View Only) ────────────────────────

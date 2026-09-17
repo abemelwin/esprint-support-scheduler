@@ -7,7 +7,8 @@ const ROLE_OPTIONS = [
   { value: 'service_manager',        label: 'Service Manager'         },
   { value: 'service_coordinator',    label: 'Service Coordinator'     },
   { value: 'senior_fse',             label: 'Senior FSE'             },
-  { value: 'field_service_engineer', label: 'Field Service Engineer' },
+  { value: 'junior_fse',             label: 'Junior FSE'             },
+  { value: 'trainee',                label: 'Trainee'                },
   { value: 'branch',                 label: 'Branch User'             },
 ]
 
@@ -16,7 +17,9 @@ const ROLE_LABEL = {
   service_manager:        'Service Manager',
   service_coordinator:    'Service Coordinator',
   senior_fse:             'Senior FSE',
-  field_service_engineer: 'Field Service Engineer',
+  junior_fse:             'Junior FSE',
+  field_service_engineer: 'Junior FSE',
+  trainee:                'Trainee',
   branch:                 'Branch User',
 }
 
@@ -262,7 +265,7 @@ export default function UsersModal({ onClose }) {
       setEditErr('Password must be at least 6 characters.'); return
     }
 
-    const needsBranch = editRole === 'service_manager' || editRole === 'service_coordinator' || editRole === 'senior_fse' || editRole === 'field_service_engineer' || editRole === 'branch'
+    const needsBranch = editRole !== 'admin'
     if (needsBranch && editEditBranches.length === 0 && editViewBranches.length === 0) {
       setEditErr('Please assign at least one branch (Can Edit or Viewing Only).'); return
     }
@@ -391,7 +394,7 @@ export default function UsersModal({ onClose }) {
     showSuccess(`✓ User "${editName.trim()}" updated and schedule refreshed!`)
   }
 
-  const needsBranch = form.role === 'branch' || form.role === 'service_manager' || form.role === 'service_coordinator' || form.role === 'senior_fse' || form.role === 'field_service_engineer'
+  const needsBranch = form.role !== 'admin'
 
   async function handleAdd() {
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
@@ -775,7 +778,7 @@ export default function UsersModal({ onClose }) {
                               </div>
                             </div>
                             <div>
-                              <label className="fld">Access level</label>
+                              <label className="fld">Roles</label>
                               <select className="sel" value={editRole} onChange={e => setEditRole(e.target.value)}>
                                 {ROLE_OPTIONS.map(r => (
                                   <option key={r.value} value={r.value}>{r.label}</option>
@@ -798,7 +801,7 @@ export default function UsersModal({ onClose }) {
                               </div>
                             )}
 
-                            {(editRole === 'service_manager' || editRole === 'service_coordinator' || editRole === 'senior_fse' || editRole === 'field_service_engineer' || editRole === 'branch') && (
+                            {editRole !== 'admin' && (
                               <div className="full" style={{ marginTop: 4 }}>
                                 {/* ── Segmented Switcher between Can Edit & View Only ── */}
                                 <div style={{ display: 'flex', gap: 6, marginBottom: 10, background: 'var(--surface-2)', padding: 4, borderRadius: 8, border: '1px solid var(--border)' }}>
@@ -1008,7 +1011,7 @@ export default function UsersModal({ onClose }) {
                     value={form.password} onChange={e => set('password', e.target.value)} />
                 </div>
                 <div>
-                  <label className="fld">Access level</label>
+                  <label className="fld">Roles</label>
                   <select className="sel" value={form.role} onChange={e => set('role', e.target.value)}>
                     {ROLE_OPTIONS.map(r => (
                       <option key={r.value} value={r.value}>{r.label}</option>

@@ -52,7 +52,9 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
     : currentUser?.role === 'service_manager' ? 'Service Manager'
     : currentUser?.role === 'service_coordinator' ? 'Service Coordinator'
     : currentUser?.role === 'senior_fse' ? 'Senior FSE'
-    : currentUser?.role === 'field_service_engineer' ? 'Field Service Engineer'
+    : currentUser?.role === 'junior_fse' ? 'Junior FSE'
+    : currentUser?.role === 'field_service_engineer' ? 'Junior FSE'
+    : currentUser?.role === 'trainee' ? 'Trainee'
     : currentUser?.role === 'employee' ? 'Employee'
     : 'Branch'
 
@@ -77,7 +79,7 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
           className={view === 'reports' ? 'active' : ''}
           onClick={() => setView('reports')}
         >📊 Reports</button>
-        {currentUser?.role !== 'branch' && (isArnold || currentUser?.role === 'service_manager' || currentUser?.role === 'service_coordinator' || currentUser?.role === 'senior_fse' || currentUser?.role === 'field_service_engineer' || currentUser?.role === 'employee' || currentUser?.role === 'admin') && (
+        {currentUser?.role !== 'branch' && (isArnold || currentUser?.role === 'service_manager' || currentUser?.role === 'service_coordinator' || currentUser?.role === 'senior_fse' || currentUser?.role === 'junior_fse' || currentUser?.role === 'field_service_engineer' || currentUser?.role === 'trainee' || currentUser?.role === 'employee' || currentUser?.role === 'admin') && (
           <button
             data-view="overview"
             className={view === 'overview' ? 'active' : ''}
