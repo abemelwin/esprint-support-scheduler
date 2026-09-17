@@ -6,14 +6,57 @@ import { ROLES, ROLE_ORDER, TYPES, STATUS, formatBranchSummary, getBranchRegion 
 // Designated Manager assignments per branch specified by company structure
 const DESIGNATED_MANAGERS = [
   // Service Managers
-  { nameKey: 'ricky eina',        role: 'manager', branchCodes: ['MAK'],                           label: '🏢 MAK · Makati' },
-  { nameKey: 'limwel de chavez',  role: 'manager', branchCodes: ['ISA', 'PANG', 'CAB', 'CAMSUR'],  label: '✏️ ISA, PANG, CAB, CAMSUR' },
+  {
+    nameKey: 'eina',
+    fullName: 'Ricky Eina',
+    role: 'manager',
+    branchCodes: ['MAK'],
+    label: '🏢 MAK · Makati',
+  },
+  {
+    nameKey: 'de chavez',
+    fullName: 'Limwel De Chavez',
+    role: 'manager',
+    branchCodes: ['ISA', 'PANG', 'CAB', 'CAMSUR'],
+    label: '✏️ ISA, PANG, CAB, CAMSUR',
+  },
   // Branch Service Managers
-  { nameKey: 'michael almoite',   role: 'bsm',     branchCodes: ['PAL'],                           label: '🏢 PAL · Palawan' },
-  { nameKey: 'coliflores',        role: 'bsm',     branchCodes: ['TAC'],                           label: '🏢 TAC · Tacloban' },
-  { nameKey: 'jessriel calvo',    role: 'bsm',     branchCodes: ['CEB'],                           label: '🏢 CEB · Cebu' },
-  { nameKey: 'gerald sacuan',     role: 'bsm',     branchCodes: ['CDO', 'BUT', 'PAG', 'ZAM', 'BUK'], label: '✏️ North Mindanao' },
-  { nameKey: 'martin genabe',     role: 'bsm',     branchCodes: ['TAG', 'DAV', 'GENSAN'],          label: '✏️ South Mindanao' },
+  {
+    nameKey: 'almoite',
+    fullName: 'Michael Almoite',
+    role: 'bsm',
+    branchCodes: ['PAL'],
+    label: '🏢 PAL · Palawan',
+  },
+  {
+    nameKey: 'coliflores',
+    fullName: 'Darel Coliflores',
+    role: 'bsm',
+    branchCodes: ['TAC'],
+    label: '🏢 TAC · Tacloban',
+  },
+  {
+    nameKey: 'calvo',
+    fullName: 'Jessriel Calvo',
+    role: 'bsm',
+    branchCodes: ['CEB'],
+    filterMatch: (nameNorm) => nameNorm.includes('jessriel') || (nameNorm.includes('calvo') && !nameNorm.includes('jerus')),
+    label: '🏢 CEB · Cebu',
+  },
+  {
+    nameKey: 'sacuan',
+    fullName: 'Gerald Sacuan',
+    role: 'bsm',
+    branchCodes: ['CDO', 'BUT', 'PAG', 'ZAM', 'BUK'],
+    label: '✏️ North Mindanao',
+  },
+  {
+    nameKey: 'genabe',
+    fullName: 'Martin Genabe',
+    role: 'bsm',
+    branchCodes: ['TAG', 'DAV', 'GENSAN'],
+    label: '✏️ South Mindanao',
+  },
 ]
 
 export default function AvailabilityPanel({ currentMonth }) {
@@ -65,8 +108,6 @@ export default function AvailabilityPanel({ currentMonth }) {
     return ids.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
   }, [currentUser, staff, branches])
 
-  const roster = visibleStaff()
-
   // tasks for the selected period
   function tasksFor(staffId) {
     if (mode === 'day') {
@@ -85,7 +126,10 @@ export default function AvailabilityPanel({ currentMonth }) {
   // Helper to get complete branch info for a staff member
   function getStaffBranchInfo(s) {
     const sNameNorm = s.name.trim().toLowerCase()
-    const desMgr = DESIGNATED_MANAGERS.find(m => sNameNorm.includes(m.nameKey) || m.nameKey.includes(sNameNorm))
+    const desMgr = DESIGNATED_MANAGERS.find(m => {
+      if (m.filterMatch) return m.filterMatch(sNameNorm)
+      return sNameNorm.includes(m.nameKey)
+    })
     if (desMgr) {
       const bIds = desMgr.branchCodes.map(c => branches.find(b => b.name === c)?.id).filter(Boolean)
       return {
@@ -168,34 +212,49 @@ export default function AvailabilityPanel({ currentMonth }) {
 
   // filter by search term and branch
   const searchTerm = search.trim().toLowerCase()
-  const filteredRoster = roster.filter(s => {
+  const filteredRoster = useMemo(() => {
     if (isFieldStaff) {
-      // Field staff only sees Service Manager and Branch Service Manager assigned to their branch
-      const sNorm = s.name.trim().toLowerCase()
-      const isMgr = s.role === 'manager' || s.role === 'bsm' || s.role === 'service_manager'
-      if (!isMgr) return false
-
-      const desMgr = DESIGNATED_MANAGERS.find(m => sNorm.includes(m.nameKey) || m.nameKey.includes(sNorm))
-      if (desMgr) {
+      // Find strictly designated managers for this field staff's branch
+      const matchedDesManagers = DESIGNATED_MANAGERS.filter(desMgr => {
         if (myBranchCodes.length === 0) return true
         return desMgr.branchCodes.some(code => myBranchCodes.includes(code))
+      })
+
+      return matchedDesManagers.map(desMgr => {
+        const found = staff?.find(s => {
+          const sNorm = s.name.trim().toLowerCase()
+          if (desMgr.filterMatch) return desMgr.filterMatch(sNorm)
+          return sNorm.includes(desMgr.nameKey)
+        })
+
+        if (found) {
+          return {
+            ...found,
+            role: desMgr.role,
+            _displayLabel: desMgr.label,
+          }
+        }
+
+        return {
+          id: 'des-' + desMgr.nameKey,
+          name: desMgr.fullName,
+          role: desMgr.role,
+          _displayLabel: desMgr.label,
+        }
+      })
+    }
+
+    const roster = visibleStaff()
+    return roster.filter(s => {
+      if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
+      if (branchFilter) {
+        const info = getStaffBranchInfo(s)
+        if (info.isAll) return true
+        if (!info.branchIds.includes(branchFilter)) return false
       }
-
-      const info = getStaffBranchInfo(s)
-      if (info.isAll) return true
-      if (myBranchCodes.length === 0) return true
-      const staffBranchCodes = info.branchIds.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
-      return staffBranchCodes.some(code => myBranchCodes.includes(code))
-    }
-
-    if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
-    if (branchFilter) {
-      const info = getStaffBranchInfo(s)
-      if (info.isAll) return true
-      if (!info.branchIds.includes(branchFilter)) return false
-    }
-    return true
-  })
+      return true
+    })
+  }, [isFieldStaff, myBranchCodes, staff, visibleStaff, searchTerm, branchFilter, branches, appUsers])
 
   // group by role
   const activeRoles = isFieldStaff ? ['manager', 'bsm'] : ROLE_ORDER
@@ -268,7 +327,7 @@ export default function AvailabilityPanel({ currentMonth }) {
               </h3>
               {grp.map(s => {
                 const tasks = tasksFor(s.id)
-                const branchInfo = getStaffBranchInfo(s)
+                const branchInfo = s._displayLabel ? { label: s._displayLabel, isAll: false } : getStaffBranchInfo(s)
                 return (
                   <div key={s.id} className={`person${tasks.length === 0 ? ' free' : ' busy-row'}`}>
                     <div className="person-main">
