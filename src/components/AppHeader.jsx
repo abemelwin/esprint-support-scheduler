@@ -99,7 +99,6 @@ export default function AppHeader({ view, setView, onStaff, onBranch, onUsers, o
               <span className="reg-badge">{pendingRegCount}</span>
             )}
           </button>
-          <button className="btn" onClick={onStaff}>👥 Staff</button>
           <button className="btn" onClick={onBranch}>＋ Branch</button>
           <button className="btn" onClick={() => fileRef.current.click()}>⤓ Import</button>
           <button className="btn" onClick={handleExport}>⤒ Export</button>
