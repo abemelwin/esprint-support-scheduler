@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { TYPE_KEYS, ABSENCE_KEYS, TYPES } from '../lib/constants'
@@ -65,7 +65,7 @@ function StaffPicker({ staffList, value, onChange }) {
 }
 
 export default function JobModal({ payload, onClose }) {
-  const { branches, staff, loadJobs, isAdmin, currentUser, visibleStaff, canEditBranch } = useApp()
+  const { branches, staff, appUsers, loadJobs, isAdmin, currentUser, visibleStaff, canEditBranch } = useApp()
   const isEdit = !!payload.job
   const [form, setForm] = useState(EMPTY)
   const [busy, setBusy] = useState(false)
@@ -168,8 +168,31 @@ export default function JobModal({ payload, onClose }) {
     onClose()
   }
 
-  // Limit staff to those visible in available branches
-  const staffList = visibleStaff()
+  // Combined staff list: all existing staff + app users (merged without duplicates)
+  const staffList = useMemo(() => {
+    const list = [...(staff || [])]
+
+    // Also include any appUsers that might not be in staff table yet
+    ;(appUsers || []).forEach(u => {
+      if (!u.name || u.email?.toLowerCase().includes('eileen')) return
+      const uNorm = u.name.trim().toLowerCase()
+      const alreadyExists = list.some(s => {
+        const sNorm = s.name.trim().toLowerCase()
+        return sNorm === uNorm || sNorm.includes(uNorm) || uNorm.includes(sNorm)
+      })
+      if (!alreadyExists) {
+        list.push({
+          id: u.id,
+          name: u.name,
+          role: u.role || 'junior',
+          home_branch_id: u.main_branch_id || u.branch_ids?.[0] || '',
+        })
+      }
+    })
+
+    return list.sort((a, b) => a.name.localeCompare(b.name))
+  }, [staff, appUsers])
+
   const showStatusNote = form.status === 'fail' || form.status === 'ongoing'
   const currentBranchObj = branches.find(b => b.id === (form.branch_id || payload.job?.branch_id))
 
