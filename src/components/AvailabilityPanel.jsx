@@ -204,20 +204,25 @@ export default function AvailabilityPanel({ currentMonth }) {
                 const branchInfo = getStaffBranchInfo(s)
                 return (
                   <div key={s.id} className={`person${tasks.length === 0 ? ' free' : ' busy-row'}`}>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div className="pname">{s.name}</div>
-                      <div className="pmeta" style={{
-                        color: branchInfo.isAll ? 'var(--senior)' : 'var(--muted)',
-                        fontWeight: branchInfo.isAll ? 600 : 400,
-                        whiteSpace: 'normal',
-                        wordBreak: 'break-word',
-                      }} title={branchInfo.label}>
+                    <div className="person-main">
+                      <div className="person-top-row">
+                        <div className="pname" title={s.name}>{s.name}</div>
+                        <div className="person-status-area">
+                          <StaffStatusBadge tasks={tasks} />
+                          {s.hotline && <span className="htag" title="Hotline Staff">☎</span>}
+                        </div>
+                      </div>
+                      <div
+                        className="pmeta"
+                        style={{
+                          color: branchInfo.isAll ? 'var(--senior)' : 'var(--muted)',
+                          fontWeight: branchInfo.isAll ? 600 : 400,
+                        }}
+                        title={branchInfo.label}
+                      >
                         {branchInfo.label}
                       </div>
                     </div>
-                    <div className="pspacer" />
-                    <StaffStatusBadge tasks={tasks} />
-                    {s.hotline && <span className="htag">☎</span>}
                   </div>
                 )
               })}
