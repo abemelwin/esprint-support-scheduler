@@ -120,26 +120,26 @@ alter publication supabase_realtime add table public.branches;
 -- Seed: Branches
 -- ============================================================
 insert into public.branches (id, name, note) values
-  ('b1',  'BAC',    'Bacolod'),
+  ('b1',  'BAC',    'Negros Occidental'),
   ('b2',  'BUK',    'Bukidnon'),
-  ('b3',  'BUT',    'Butuan'),
-  ('b4',  'CAB',    'Cabanatuan'),
+  ('b3',  'BUT',    'Agusan del Norte'),
+  ('b4',  'CAB',    'Nueva Ecija'),
   ('b5',  'CAMSUR', 'Camarines Sur'),
   ('b6',  'CAV',    'Cavite'),
-  ('b7',  'CDO',    'Cagayan De Oro'),
+  ('b7',  'CDO',    'Misamis Oriental'),
   ('b8',  'CEB',    'Cebu'),
-  ('b9',  'DAV',    'Davao'),
-  ('b10', 'GENSAN', 'General Santos'),
+  ('b9',  'DAV',    'Davao del Sur'),
+  ('b10', 'GENSAN', 'South Cotabato'),
   ('b11', 'ILO',    'Iloilo'),
   ('b12', 'ISA',    'Isabela'),
-  ('b13', 'MAK',    'Makati'),
-  ('b14', 'PAG',    'Pagadian'),
+  ('b13', 'MAK',    'Metro Manila'),
+  ('b14', 'PAG',    'Zamboanga del Sur'),
   ('b15', 'PAL',    'Palawan'),
   ('b16', 'PANG',   'Pangasinan'),
   ('b17', 'RIZ',    'Rizal'),
-  ('b18', 'TAC',    'Tacloban'),
-  ('b19', 'TAG',    'Tagum'),
-  ('b20', 'ZAM',    'Zamboanga')
+  ('b18', 'TAC',    'Leyte'),
+  ('b19', 'TAG',    'Davao del Norte'),
+  ('b20', 'ZAM',    'Zamboanga del Sur')
 on conflict (id) do nothing;
 
 -- ============================================================

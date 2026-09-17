@@ -31,36 +31,99 @@ export const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
 // Regional grouping by branch short-code (branch.name)
 export const REGIONS = {
-  Luzon:    ['CAB','CAMSUR','CAV','ISA','MAK','PAL','PANG','RIZ'],
-  Visayas:  ['BAC','CEB','ILO','TAC'],
-  Mindanao: ['BUK','BUT','CDO','DAV','GENSAN','PAG','TAG','ZAM'],
+  'North Luzon':    ['CAB','ISA','PANG'],
+  'South Luzon':    ['CAV','CAMSUR','MAK','PAL','RIZ'],
+  'Visayas':        ['BAC','CEB','ILO','TAC'],
+  'North Mindanao': ['BUK','BUT','CDO','PAG','ZAM'],
+  'South Mindanao': ['DAV','GENSAN','TAG'],
 }
 
 export const REGION_COLORS = {
-  Luzon:    '#2a78d6',
-  Visayas:  '#b5179e',
-  Mindanao: '#1baf7a',
+  'North Luzon':    '#2a78d6',
+  'South Luzon':    '#0ea5e9',
+  'Visayas':        '#b5179e',
+  'North Mindanao': '#1baf7a',
+  'South Mindanao': '#10b981',
+}
+
+export function getBranchRegion(branchCode) {
+  if (!branchCode) return null
+  for (const [region, codes] of Object.entries(REGIONS)) {
+    if (codes.includes(branchCode)) return region
+  }
+  return null
+}
+
+export function formatBranchSummary(branchIds, allBranches = []) {
+  if (!branchIds || branchIds.length === 0) return '—'
+  if (allBranches.length > 0 && allBranches.every(b => branchIds.includes(b.id))) {
+    return 'All Branches'
+  }
+
+  const branchCodes = branchIds
+    .map(id => allBranches.find(b => b.id === id)?.name || id)
+    .filter(Boolean)
+
+  if (branchCodes.length === 0) return '—'
+
+  // Check if all Luzon
+  const luzonCodes = [...(REGIONS['North Luzon'] || []), ...(REGIONS['South Luzon'] || [])]
+  if (luzonCodes.every(c => branchCodes.includes(c)) && branchCodes.length === luzonCodes.length) {
+    return 'Luzon'
+  }
+
+  // Check if all Mindanao
+  const minCodes = [...(REGIONS['North Mindanao'] || []), ...(REGIONS['South Mindanao'] || [])]
+  if (minCodes.every(c => branchCodes.includes(c)) && branchCodes.length === minCodes.length) {
+    return 'Mindanao'
+  }
+
+  // Check matching individual regions
+  const matchedRegions = []
+  let remainingCodes = [...branchCodes]
+
+  for (const [region, codes] of Object.entries(REGIONS)) {
+    if (codes.length > 0 && codes.every(c => branchCodes.includes(c))) {
+      matchedRegions.push(region)
+      remainingCodes = remainingCodes.filter(c => !codes.includes(c))
+    }
+  }
+
+  if (matchedRegions.length > 0) {
+    if (remainingCodes.length === 0) {
+      return matchedRegions.join(', ')
+    }
+    return `${matchedRegions.join(', ')}, ${remainingCodes.join(', ')}`
+  }
+
+  if (branchCodes.length === 1) {
+    const code = branchCodes[0]
+    const reg = getBranchRegion(code)
+    return reg ? `${code} (${reg})` : code
+  }
+
+  return branchCodes.join(', ')
 }
 
 export const SEED_BRANCHES = [
-  { id:'b1',  name:'BAC',    note:'Bacolod' },
+  { id:'b1',  name:'BAC',    note:'Negros Occidental' },
   { id:'b2',  name:'BUK',    note:'Bukidnon' },
-  { id:'b3',  name:'BUT',    note:'Butuan' },
-  { id:'b4',  name:'CAB',    note:'Cabanatuan' },
+  { id:'b3',  name:'BUT',    note:'Agusan del Norte' },
+  { id:'b4',  name:'CAB',    note:'Nueva Ecija' },
   { id:'b5',  name:'CAMSUR', note:'Camarines Sur' },
   { id:'b6',  name:'CAV',    note:'Cavite' },
-  { id:'b7',  name:'CDO',    note:'Cagayan De Oro' },
+  { id:'b7',  name:'CDO',    note:'Misamis Oriental' },
   { id:'b8',  name:'CEB',    note:'Cebu' },
-  { id:'b9',  name:'DAV',    note:'Davao' },
-  { id:'b10', name:'GENSAN', note:'General Santos' },
+  { id:'b9',  name:'DAV',    note:'Davao del Sur' },
+  { id:'b10', name:'GENSAN', note:'South Cotabato' },
   { id:'b11', name:'ILO',    note:'Iloilo' },
   { id:'b12', name:'ISA',    note:'Isabela' },
-  { id:'b13', name:'MAK',    note:'Makati' },
-  { id:'b14', name:'PAG',    note:'Pagadian' },
+  { id:'b13', name:'MAK',    note:'Metro Manila' },
+  { id:'b14', name:'PAG',    note:'Zamboanga del Sur' },
   { id:'b15', name:'PAL',    note:'Palawan' },
   { id:'b16', name:'PANG',   note:'Pangasinan' },
   { id:'b17', name:'RIZ',    note:'Rizal' },
-  { id:'b18', name:'TAC',    note:'Tacloban' },
-  { id:'b19', name:'TAG',    note:'Tagum' },
-  { id:'b20', name:'ZAM',    note:'Zamboanga' },
+  { id:'b18', name:'TAC',    note:'Leyte' },
+  { id:'b19', name:'TAG',    note:'Davao del Norte' },
+  { id:'b20', name:'ZAM',    note:'Zamboanga del Sur' },
 ]

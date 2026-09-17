@@ -584,8 +584,8 @@
     <div class="modal-body">
       <label class="fld">Branch name</label>
       <input type="text" class="txt" id="newBranchName" placeholder="e.g. SM City Baguio">
-      <label class="fld" style="margin-top:10px">Location / note (optional)</label>
-      <input type="text" class="txt" id="newBranchNote" placeholder="e.g. North Luzon">
+      <label class="fld" style="margin-top:10px">Province / Location (optional)</label>
+      <input type="text" class="txt" id="newBranchNote" placeholder="e.g. Benguet / Nueva Ecija">
     </div>
     <div class="modal-foot"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="addBranchConfirm">Add branch</button></div>
   </div>
@@ -624,26 +624,26 @@ let state = seedTemplate();
 
 function seedTemplate() {
   const branches = [
-    { id:"b1", name:"BAC", note:"Bacolod" },
+    { id:"b1", name:"BAC", note:"Negros Occidental" },
     { id:"b2", name:"BUK", note:"Bukidnon" },
-    { id:"b3", name:"BUT", note:"Butuan" },
-    { id:"b4", name:"CAB", note:"Cabanatuan" },
+    { id:"b3", name:"BUT", note:"Agusan del Norte" },
+    { id:"b4", name:"CAB", note:"Nueva Ecija" },
     { id:"b5", name:"CAMSUR", note:"Camarines Sur" },
     { id:"b6", name:"CAV", note:"Cavite" },
-    { id:"b7", name:"CDO", note:"Cagayan De Oro" },
+    { id:"b7", name:"CDO", note:"Misamis Oriental" },
     { id:"b8", name:"CEB", note:"Cebu" },
-    { id:"b9", name:"DAV", note:"Davao" },
-    { id:"b10", name:"GENSAN", note:"General Santos" },
+    { id:"b9", name:"DAV", note:"Davao del Sur" },
+    { id:"b10", name:"GENSAN", note:"South Cotabato" },
     { id:"b11", name:"ILO", note:"Iloilo" },
     { id:"b12", name:"ISA", note:"Isabela" },
-    { id:"b13", name:"MAK", note:"Makati" },
-    { id:"b14", name:"PAG", note:"Pagadian" },
+    { id:"b13", name:"MAK", note:"Metro Manila" },
+    { id:"b14", name:"PAG", note:"Zamboanga del Sur" },
     { id:"b15", name:"PAL", note:"Palawan" },
     { id:"b16", name:"PANG", note:"Pangasinan" },
     { id:"b17", name:"RIZ", note:"Rizal" },
-    { id:"b18", name:"TAC", note:"Tacloban" },
-    { id:"b19", name:"TAG", note:"Tagum" },
-    { id:"b20", name:"ZAM", note:"Zamboanga" },
+    { id:"b18", name:"TAC", note:"Leyte" },
+    { id:"b19", name:"TAG", note:"Davao del Norte" },
+    { id:"b20", name:"ZAM", note:"Zamboanga del Sur" },
   ];
   const staff = [
     { id:"s1", name:"Aguilar, Kennemark Magbanua", role:"senior", homeBranchId:"b1" },

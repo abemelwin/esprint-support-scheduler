@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd } from '../lib/dates'
-import { ROLES, ROLE_ORDER, TYPES, STATUS } from '../lib/constants'
+import { ROLES, ROLE_ORDER, TYPES, STATUS, formatBranchSummary, getBranchRegion } from '../lib/constants'
 
 export default function AvailabilityPanel({ currentMonth }) {
   const { jobs, inScope, visibleStaff, branches, appUsers, loadStaff, loadAppUsers, loadJobs } = useApp()
@@ -75,49 +75,53 @@ export default function AvailabilityPanel({ currentMonth }) {
         ? matchedUser.view_branch_ids
         : (!uCanEdit ? (matchedUser.branch_ids || []) : [])
 
-      const editNames = uEditBranches.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
-      const viewNames = uViews.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
       const allIds = Array.from(new Set([...(matchedUser.branch_ids || []), ...uEditBranches, ...uViews]))
+      const editLabel = formatBranchSummary(uEditBranches, branches)
+      const viewLabel = formatBranchSummary(uViews, branches)
 
-      if (editNames.length > 0 && viewNames.length > 0) {
+      if (uEditBranches.length > 0 && uViews.length > 0) {
         return {
-          label: `✏️ ${editNames.join(', ')} · 📍 ${viewNames.join(', ')}`,
+          label: `✏️ ${editLabel} · 📍 ${viewLabel}`,
           isAll: false,
           branchIds: allIds,
         }
       }
 
-      if (editNames.length > 0) {
+      if (uEditBranches.length > 0) {
         return {
-          label: editNames.length === 1 ? `🏢 ${editNames[0]}` : `✏️ ${editNames.join(', ')}`,
+          label: uEditBranches.length === 1 ? `🏢 ${editLabel}` : `✏️ ${editLabel}`,
           isAll: false,
           branchIds: allIds,
         }
       }
 
-      if (viewNames.length > 0) {
+      if (uViews.length > 0) {
         return {
-          label: `📍 ${viewNames.join(', ')}`,
+          label: `📍 ${viewLabel}`,
           isAll: false,
           branchIds: allIds,
         }
       }
 
       const uBranches = matchedUser.branch_ids || []
-      if (branches.length > 0 && branches.every(b => uBranches.includes(b.id))) {
-        return { label: `🌐 All Branches (${branches.length})`, isAll: true, branchIds: uBranches }
+      const sumLabel = formatBranchSummary(uBranches, branches)
+      return {
+        label: sumLabel !== '—' ? `🏢 ${sumLabel}` : '—',
+        isAll: sumLabel === 'All Branches',
+        branchIds: uBranches,
       }
-      const bNames = uBranches
-        .map(id => branches.find(b => b.id === id)?.name || id)
-        .filter(Boolean)
-      return { label: bNames.length > 0 ? bNames.join(', ') : '—', isAll: false, branchIds: uBranches }
     }
 
     const homeB = branches.find(b => b.id === s.home_branch_id)
+    if (!homeB) {
+      return { label: '—', isAll: false, branchIds: [] }
+    }
+    const reg = getBranchRegion(homeB.name)
+    const label = reg ? `${homeB.name} (${reg})` : homeB.name
     return {
-      label: homeB ? homeB.name : '—',
+      label: `🏢 ${label}`,
       isAll: false,
-      branchIds: s.home_branch_id ? [s.home_branch_id] : [],
+      branchIds: [homeB.id],
     }
   }
 

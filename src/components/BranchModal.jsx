@@ -31,8 +31,8 @@ export default function BranchModal({ onClose }) {
           <label className="fld">Branch name</label>
           <input type="text" className="txt" placeholder="e.g. SM City Baguio"
             value={name} onChange={e => setName(e.target.value)} />
-          <label className="fld" style={{ marginTop:10 }}>Location / note (optional)</label>
-          <input type="text" className="txt" placeholder="e.g. North Luzon"
+          <label className="fld" style={{ marginTop:10 }}>Province / Location (optional)</label>
+          <input type="text" className="txt" placeholder="e.g. Benguet / Nueva Ecija"
             value={note} onChange={e => setNote(e.target.value)} />
           <button className="btn primary" style={{ marginTop:12 }} onClick={handleAdd} disabled={busy}>
             ＋ Add branch
