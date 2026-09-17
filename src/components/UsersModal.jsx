@@ -6,10 +6,10 @@ const ROLE_OPTIONS = [
   { value: 'admin',                  label: 'Admin'                   },
   { value: 'service_manager',        label: 'Service Manager'         },
   { value: 'service_coordinator',    label: 'Service Coordinator'     },
+  { value: 'branch',                 label: 'Branch User'             },
   { value: 'senior_fse',             label: 'Senior FSE'             },
   { value: 'junior_fse',             label: 'Junior FSE'             },
   { value: 'trainee',                label: 'Trainee'                },
-  { value: 'branch',                 label: 'Branch User'             },
 ]
 
 const ROLE_LABEL = {
