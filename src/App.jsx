@@ -56,7 +56,7 @@ export default function App() {
   const isBranch               = currentUser?.role === 'branch'
   const isAdmin                = currentUser?.role === 'admin'
   const isReadOnlyUser         = currentUser?.role !== 'admin' && (isEmployee || currentUser?.can_edit === false)
-  const canViewOverview        = !isBranch && (isAdmin || isArnold || isServiceManager || isServiceCoordinator || isSeniorFSE || isJuniorFSE || isTrainee || isEmployee)
+  const canViewOverview        = !isBranch && (isAdmin || isArnold || isServiceManager || isServiceCoordinator)
 
   // Reset to calendar whenever a non-overview user logs in
   useEffect(() => {

@@ -325,6 +325,7 @@ select.sel { cursor: pointer; }
 
 /* ── Main Layout & Panels ────────────────────────────────────────── */
 .layout { display: grid; grid-template-columns: 1fr 310px; gap: 16px; align-items: start; }
+.layout.full-width { grid-template-columns: 1fr; }
 @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } }
 
 .panel {

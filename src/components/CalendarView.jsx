@@ -4,7 +4,12 @@ import { TYPES, STATUS, DOW } from '../lib/constants'
 import AvailabilityPanel from './AvailabilityPanel'
 
 export default function CalendarView({ currentMonth, setCurrentMonth, filters, setFilters, onOpenJob }) {
-  const { jobs, branches, staff, inScope } = useApp()
+  const { jobs, branches, staff, inScope, currentUser } = useApp()
+
+  const isFieldStaff = currentUser?.role === 'senior_fse' ||
+                       currentUser?.role === 'junior_fse' ||
+                       currentUser?.role === 'field_service_engineer' ||
+                       currentUser?.role === 'trainee'
 
   function prevMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
   function nextMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)) }
@@ -52,44 +57,49 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
           <button className="btn sm" onClick={nextMonth}>▶</button>
         </div>
         <button className="btn sm" onClick={goToday}>Today</button>
-        <div className="sep" />
-        <div className="fl">
-          <label>Branch</label>
-          <select className="sel" value={filters.branch} onChange={e => setFilters(f => ({...f, branch: e.target.value}))}>
-            <option value="">All</option>
-            {visibleBranches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-        </div>
-        <div className="fl">
-          <label>Employee</label>
-          <select className="sel" value={filters.emp} onChange={e => setFilters(f => ({...f, emp: e.target.value}))}>
-            <option value="">All</option>
-            {visibleStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-        </div>
-        <div className="fl">
-          <label>Type</label>
-          <select className="sel" value={filters.type} onChange={e => setFilters(f => ({...f, type: e.target.value}))}>
-            <option value="">All</option>
-            <option value="installation">Installation</option>
-            <option value="onsite">Onsite</option>
-            <option value="hotline">Hotline</option>
-            <option value="others">Others</option>
-          </select>
-        </div>
-        <div className="fl">
-          <label>Status</label>
-          <select className="sel" value={filters.status} onChange={e => setFilters(f => ({...f, status: e.target.value}))}>
-            <option value="">All</option>
-            <option value="pending">Pending</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="success">Successful</option>
-            <option value="fail">Not successful</option>
-          </select>
-        </div>
+
+        {!isFieldStaff && (
+          <>
+            <div className="sep" />
+            <div className="fl">
+              <label>Branch</label>
+              <select className="sel" value={filters.branch} onChange={e => setFilters(f => ({...f, branch: e.target.value}))}>
+                <option value="">All</option>
+                {visibleBranches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+            <div className="fl">
+              <label>Employee</label>
+              <select className="sel" value={filters.emp} onChange={e => setFilters(f => ({...f, emp: e.target.value}))}>
+                <option value="">All</option>
+                {visibleStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="fl">
+              <label>Type</label>
+              <select className="sel" value={filters.type} onChange={e => setFilters(f => ({...f, type: e.target.value}))}>
+                <option value="">All</option>
+                <option value="installation">Installation</option>
+                <option value="onsite">Onsite</option>
+                <option value="hotline">Hotline</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
+            <div className="fl">
+              <label>Status</label>
+              <select className="sel" value={filters.status} onChange={e => setFilters(f => ({...f, status: e.target.value}))}>
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="success">Successful</option>
+                <option value="fail">Not successful</option>
+              </select>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="layout">
+      <div className={`layout${isFieldStaff ? ' full-width' : ''}`}>
         {/* Calendar panel */}
         <div className="panel">
           <div className="panel-head">
@@ -147,7 +157,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
         </div>
 
         {/* Availability panel */}
-        <AvailabilityPanel currentMonth={currentMonth} />
+        {!isFieldStaff && <AvailabilityPanel currentMonth={currentMonth} />}
       </div>
     </div>
   )
