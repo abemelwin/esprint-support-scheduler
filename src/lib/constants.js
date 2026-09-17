@@ -66,38 +66,32 @@ export function formatBranchSummary(branchIds, allBranches = []) {
 
   if (branchCodes.length === 0) return '—'
 
-  // Check if all Luzon
-  const luzonCodes = [...(REGIONS['North Luzon'] || []), ...(REGIONS['South Luzon'] || [])]
-  if (luzonCodes.every(c => branchCodes.includes(c)) && branchCodes.length === luzonCodes.length) {
+  // If only 1 branch, display the branch code directly
+  if (branchCodes.length === 1) {
+    return branchCodes[0]
+  }
+
+  // If multiple branches, display ONLY the region(s)
+  const uniqueRegions = Array.from(
+    new Set(branchCodes.map(code => getBranchRegion(code)).filter(Boolean))
+  )
+
+  // Check if it spans all of Luzon
+  const hasNorthLuzon = uniqueRegions.includes('North Luzon')
+  const hasSouthLuzon = uniqueRegions.includes('South Luzon')
+  if (hasNorthLuzon && hasSouthLuzon && uniqueRegions.length === 2) {
     return 'Luzon'
   }
 
-  // Check if all Mindanao
-  const minCodes = [...(REGIONS['North Mindanao'] || []), ...(REGIONS['South Mindanao'] || [])]
-  if (minCodes.every(c => branchCodes.includes(c)) && branchCodes.length === minCodes.length) {
+  // Check if it spans all of Mindanao
+  const hasNorthMindanao = uniqueRegions.includes('North Mindanao')
+  const hasSouthMindanao = uniqueRegions.includes('South Mindanao')
+  if (hasNorthMindanao && hasSouthMindanao && uniqueRegions.length === 2) {
     return 'Mindanao'
   }
 
-  // Check matching individual regions
-  const matchedRegions = []
-  let remainingCodes = [...branchCodes]
-
-  for (const [region, codes] of Object.entries(REGIONS)) {
-    if (codes.length > 0 && codes.every(c => branchCodes.includes(c))) {
-      matchedRegions.push(region)
-      remainingCodes = remainingCodes.filter(c => !codes.includes(c))
-    }
-  }
-
-  if (matchedRegions.length > 0) {
-    if (remainingCodes.length === 0) {
-      return matchedRegions.join(', ')
-    }
-    return `${matchedRegions.join(', ')}, ${remainingCodes.join(', ')}`
-  }
-
-  if (branchCodes.length === 1) {
-    return branchCodes[0]
+  if (uniqueRegions.length > 0) {
+    return uniqueRegions.join(', ')
   }
 
   return branchCodes.join(', ')
