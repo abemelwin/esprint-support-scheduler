@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
 import { TYPES, STATUS, DOW } from '../lib/constants'
@@ -28,10 +29,48 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
 
   const today = new Date()
 
+  const staffById   = id => staff.find(s => s.id === id)
+  const branchById  = id => branches.find(b => b.id === id)
+
+  // Find matching staff record(s) for currently logged in field staff
+  const myStaffIds = useMemo(() => {
+    if (!currentUser) return []
+    const uName = currentUser.name?.trim().toLowerCase() || ''
+    if (!uName) return []
+    const uTokens = uName.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(t => t.length > 1)
+
+    const matched = staff.filter(s => {
+      const sName = s.name.trim().toLowerCase()
+      if (sName === uName) return true
+      if (sName.includes(uName) || uName.includes(sName)) return true
+      const sTokens = sName.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(t => t.length > 1)
+      const commonTokens = uTokens.filter(t => sTokens.includes(t))
+      return commonTokens.length >= 2 || (uTokens.length === 1 && commonTokens.length === 1)
+    })
+    return matched.map(s => s.id)
+  }, [currentUser, staff])
+
+  function isJobAssignedToMe(j) {
+    if (!currentUser) return false
+    if (myStaffIds.includes(j.staff_id)) return true
+    const s = staffById(j.staff_id)
+    if (!s) return false
+    const uName = currentUser.name?.trim().toLowerCase() || ''
+    const sName = s.name.trim().toLowerCase()
+    if (sName === uName || sName.includes(uName) || uName.includes(sName)) return true
+    const uTokens = uName.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(t => t.length > 1)
+    const sTokens = sName.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(t => t.length > 1)
+    const matchedTokens = uTokens.filter(t => sTokens.includes(t))
+    return matchedTokens.length >= 2 || (uTokens.length === 1 && matchedTokens.length === 1)
+  }
+
   function filteredJobs(dateKey) {
     return jobs.filter(j => {
       if (!inScope(j)) return false
       if (j.date !== dateKey) return false
+      if (isFieldStaff) {
+        return isJobAssignedToMe(j)
+      }
       if (filters.branch && j.branch_id !== filters.branch) return false
       if (filters.emp    && j.staff_id  !== filters.emp)    return false
       if (filters.type   && j.type      !== filters.type)   return false
@@ -39,9 +78,6 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
       return true
     })
   }
-
-  const staffById   = id => staff.find(s => s.id === id)
-  const branchById  = id => branches.find(b => b.id === id)
 
   // filter dropdowns
   const visibleBranches = branches
@@ -128,13 +164,31 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                   <div
                     key={dateKey}
                     className={`cell${isOther ? ' other' : ''}${isToday ? ' today' : ''}`}
-                    onClick={() => onOpenJob({ date: dateKey })}
+                    style={{ cursor: isFieldStaff ? 'default' : 'pointer' }}
+                    onClick={isFieldStaff ? undefined : () => onOpenJob({ date: dateKey })}
                   >
                     <span className="dnum">{cell.getDate()}</span>
                     <div className="jobs">
                       {dayJobs.map(j => {
                         const s = staffById(j.staff_id)
                         const cls = TYPES[j.type]?.cls || ''
+                        const jtText = j.jt_no || ((j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : '—')
+
+                        if (isFieldStaff) {
+                          return (
+                            <div
+                              key={j.id}
+                              className={`jchip ${cls}`}
+                              style={{ cursor: 'default', transform: 'none' }}
+                              onClick={e => e.stopPropagation()}
+                              title={`Netsuite #: ${j.jt_no || '—'}`}
+                            >
+                              <span className={`st ${STATUS[j.status]?.dot || ''}`} />
+                              <span className="jn">{jtText}</span>
+                            </div>
+                          )
+                        }
+
                         return (
                           <div
                             key={j.id}
@@ -148,7 +202,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                         )
                       })}
                     </div>
-                    <span className="addhint">＋</span>
+                    {!isFieldStaff && <span className="addhint">＋</span>}
                   </div>
                 )
               })}
