@@ -97,9 +97,7 @@ export function formatBranchSummary(branchIds, allBranches = []) {
   }
 
   if (branchCodes.length === 1) {
-    const code = branchCodes[0]
-    const reg = getBranchRegion(code)
-    return reg || code
+    return branchCodes[0]
   }
 
   return branchCodes.join(', ')

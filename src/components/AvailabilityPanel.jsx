@@ -116,10 +116,8 @@ export default function AvailabilityPanel({ currentMonth }) {
     if (!homeB) {
       return { label: '—', isAll: false, branchIds: [] }
     }
-    const reg = getBranchRegion(homeB.name)
-    const label = reg || homeB.name
     return {
-      label: `🏢 ${label}`,
+      label: `🏢 ${homeB.name}`,
       isAll: false,
       branchIds: [homeB.id],
     }
