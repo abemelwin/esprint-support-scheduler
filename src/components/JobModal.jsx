@@ -3,7 +3,15 @@ import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { TYPE_KEYS, ABSENCE_KEYS, TYPES } from '../lib/constants'
 
-const EMPTY = { jt_no:'', staff_id:'', branch_id:'', customer:'', location:'', machine:'', serial_no:'', type:'', type_other:'', status:'pending', status_note:'' }
+const EMPTY = { jt_no:'', jt_url:'', staff_id:'', branch_id:'', customer:'', location:'', machine:'', serial_no:'', type:'', type_other:'', status:'pending', status_note:'' }
+
+// Extract the first hyperlink URL from pasted HTML (e.g. a NetSuite cell copied
+// from the browser carries the record link inside an <a href="…"> tag).
+function extractHrefFromHtml(html) {
+  if (!html) return ''
+  const match = html.match(/<a[^>]+href=["']([^"']+)["']/i)
+  return match ? match[1] : ''
+}
 
 // ── Searchable staff picker ───────────────────────────────────────────────────
 function StaffPicker({ staffList, value, onChange }) {
@@ -90,6 +98,7 @@ export default function JobModal({ payload, onClose }) {
       const j = payload.job
       setForm({
         jt_no:       j.jt_no       || '',
+        jt_url:      j.jt_url      || '',
         staff_id:    j.staff_id    || '',
         branch_id:   j.branch_id   || '',
         customer:    j.customer    || '',
@@ -137,6 +146,7 @@ export default function JobModal({ payload, onClose }) {
     const row = {
       date:        payload.job?.date || payload.date,
       jt_no:       isAbsence ? '' : form.jt_no.trim(),
+      jt_url:      isAbsence ? '' : form.jt_url.trim(),
       staff_id:    form.staff_id,
       branch_id:   form.branch_id,
       customer:    isAbsence ? '' : form.customer.trim(),
@@ -227,7 +237,18 @@ export default function JobModal({ payload, onClose }) {
               <input type="text" className="txt" value={payload.job?.date || payload.date} disabled />
             </div>
             <div>
-              <label className="fld">Netsuite# {jtRequired && <span className="req">*</span>}</label>
+              <label className="fld">
+                Netsuite# {jtRequired && <span className="req">*</span>}
+                {form.jt_url && (
+                  <a
+                    href={form.jt_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ns-link-badge"
+                    title={form.jt_url}
+                  >🔗 linked</a>
+                )}
+              </label>
               <input
                 type="text"
                 className="txt"
@@ -235,6 +256,15 @@ export default function JobModal({ payload, onClose }) {
                 value={form.jt_no}
                 disabled={!canEditJob}
                 onChange={e => set('jt_no', e.target.value)}
+                onPaste={e => {
+                  if (!canEditJob) return
+                  const html = e.clipboardData?.getData('text/html')
+                  const url = extractHrefFromHtml(html)
+                  if (url) {
+                    // capture the link; let the plain-text number fill in normally
+                    setForm(f => ({ ...f, jt_url: url }))
+                  }
+                }}
               />
             </div>
             <div>

@@ -189,6 +189,9 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                           )
                         }
 
+                        const isAbsence = j.type === 'leave' || j.type === 'absent'
+                        const jtLabel = isAbsence ? TYPES[j.type]?.label : j.jt_no
+
                         return (
                           <div
                             key={j.id}
@@ -196,7 +199,18 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                             onClick={e => { e.stopPropagation(); onOpenJob({ date: dateKey, job: j }) }}
                           >
                             <span className={`st ${STATUS[j.status]?.dot || ''}`} />
-                            <span className="jn">{(j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : j.jt_no}</span>
+                            {j.jt_url && !isAbsence ? (
+                              <a
+                                className="jn jn-link"
+                                href={j.jt_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                title={`Open in NetSuite: ${j.jt_url}`}
+                              >{jtLabel}</a>
+                            ) : (
+                              <span className="jn">{jtLabel}</span>
+                            )}
                             <span className="who">{s?.name?.split(',')[0] || '—'}</span>
                           </div>
                         )

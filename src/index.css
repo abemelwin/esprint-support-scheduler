@@ -423,6 +423,12 @@ select.sel { cursor: pointer; }
 .jchip .st.ongoing { background: var(--st-ongoing); }
 .jchip .st.fail { background: var(--st-fail); }
 .jchip .jn { font-weight: 700; color: var(--ink-1); }
+.jchip .jn-link { color: var(--senior); text-decoration: underline; cursor: pointer; }
+.jchip .jn-link:hover { filter: brightness(1.1); }
+.ns-link-badge { margin-left: 8px; font-size: 10px; font-weight: 600; color: var(--senior);
+  text-decoration: none; padding: 1px 6px; border-radius: 5px;
+  background: color-mix(in srgb, var(--senior) 14%, transparent); }
+.ns-link-badge:hover { filter: brightness(1.08); }
 .jchip .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
 
 /* ── Availability Panel ──────────────────────────────────────────── */
