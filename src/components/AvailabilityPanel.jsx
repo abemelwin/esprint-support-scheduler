@@ -3,9 +3,25 @@ import { useApp } from '../lib/AppContext'
 import { ymd } from '../lib/dates'
 import { ROLES, ROLE_ORDER, TYPES, STATUS, formatBranchSummary, getBranchRegion } from '../lib/constants'
 
-// Designated Manager assignments per branch specified by company structure
+// Designated Manager and Coordinator assignments per branch specified by company structure
+const ALL_BRANCH_CODES = ['BAC','BUK','BUT','CAB','CAMSUR','CAV','CDO','CEB','DAV','GENSAN','ILO','ISA','MAK','PAG','PAL','PANG','RIZ','TAC','TAG','ZAM']
+
 const DESIGNATED_MANAGERS = [
   // Service Managers
+  {
+    nameKey: 'rioja',
+    fullName: 'Arnold Rioja',
+    role: 'manager',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Admin)',
+  },
+  {
+    nameKey: 'danilo',
+    fullName: 'Danilo Carangan',
+    role: 'manager',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Admin)',
+  },
   {
     nameKey: 'eina',
     fullName: 'Ricky Eina',
@@ -56,6 +72,56 @@ const DESIGNATED_MANAGERS = [
     role: 'bsm',
     branchCodes: ['TAG', 'DAV', 'GENSAN'],
     label: '✏️ South Mindanao',
+  },
+  // Service Coordinators
+  {
+    nameKey: 'venus',
+    fullName: 'Venus Liloan',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'angelie',
+    fullName: 'Angelie Tamondong',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'arianne',
+    fullName: 'Arianne Espinosa',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'philip',
+    fullName: 'June Philip Garcia',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'sioco',
+    fullName: 'John Trent Sioco',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'natan',
+    fullName: 'Dennis Natan',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'yumang',
+    fullName: 'Don Alexander Yumang',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
   },
 ]
 
@@ -246,15 +312,38 @@ export default function AvailabilityPanel({ currentMonth }) {
 
     const roster = [...visibleStaff()]
 
+    // Integrate all designated managers and coordinators with their official roles
+    DESIGNATED_MANAGERS.forEach(des => {
+      const idx = roster.findIndex(s => {
+        const sNorm = s.name.trim().toLowerCase()
+        if (des.filterMatch) return des.filterMatch(sNorm)
+        return sNorm.includes(des.nameKey)
+      })
+      if (idx >= 0) {
+        roster[idx] = { ...roster[idx], role: des.role, _displayLabel: des.label }
+      } else {
+        roster.push({
+          id: 'des-' + des.nameKey,
+          name: des.fullName,
+          role: des.role,
+          _displayLabel: des.label,
+        })
+      }
+    })
+
     // Also include any appUsers with service_coordinator or coordinator role that may not be in staff table yet
     ;(appUsers || []).forEach(u => {
       if (!u.name || u.email?.toLowerCase().includes('eileen')) return
       const uNorm = u.name.trim().toLowerCase()
-      const alreadyExists = roster.some(s => {
+      const existingIdx = roster.findIndex(s => {
         const sNorm = s.name.trim().toLowerCase()
         return sNorm === uNorm || sNorm.includes(uNorm) || uNorm.includes(sNorm)
       })
-      if (!alreadyExists && (u.role === 'service_coordinator' || u.role === 'coordinator' || u.role === 'service_manager')) {
+      if (existingIdx >= 0) {
+        if (u.role === 'service_coordinator' || u.role === 'coordinator') {
+          roster[existingIdx] = { ...roster[existingIdx], role: 'coordinator' }
+        }
+      } else if (u.role === 'service_coordinator' || u.role === 'coordinator' || u.role === 'service_manager') {
         roster.push({
           id: u.id,
           name: u.name,
