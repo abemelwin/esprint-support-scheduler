@@ -280,7 +280,13 @@ function BranchDetail({ branch, dateFilter, jobs, staff, onOpenJob, readOnly }) 
       </div>
 
       {ROLE_ORDER.map(role => {
-        const group = branchStaff.filter(s => s.role === role)
+        const group = branchStaff.filter(s => {
+          if (role === 'coordinator') return s.role === 'coordinator' || s.role === 'service_coordinator'
+          if (role === 'manager') return s.role === 'manager' || s.role === 'service_manager'
+          if (role === 'senior') return s.role === 'senior' || s.role === 'senior_fse'
+          if (role === 'junior') return s.role === 'junior' || s.role === 'junior_fse' || s.role === 'field_service_engineer'
+          return s.role === role
+        })
         if (!group.length) return null
         return (
           <RoleGroup

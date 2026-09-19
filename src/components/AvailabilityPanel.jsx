@@ -244,7 +244,26 @@ export default function AvailabilityPanel({ currentMonth }) {
       })
     }
 
-    const roster = visibleStaff()
+    const roster = [...visibleStaff()]
+
+    // Also include any appUsers with service_coordinator or coordinator role that may not be in staff table yet
+    ;(appUsers || []).forEach(u => {
+      if (!u.name || u.email?.toLowerCase().includes('eileen')) return
+      const uNorm = u.name.trim().toLowerCase()
+      const alreadyExists = roster.some(s => {
+        const sNorm = s.name.trim().toLowerCase()
+        return sNorm === uNorm || sNorm.includes(uNorm) || uNorm.includes(sNorm)
+      })
+      if (!alreadyExists && (u.role === 'service_coordinator' || u.role === 'coordinator' || u.role === 'service_manager')) {
+        roster.push({
+          id: u.id,
+          name: u.name,
+          role: u.role === 'service_coordinator' ? 'coordinator' : u.role === 'service_manager' ? 'manager' : u.role,
+          home_branch_id: u.main_branch_id || u.branch_ids?.[0] || '',
+        })
+      }
+    })
+
     return roster.filter(s => {
       if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
       if (branchFilter) {
@@ -257,9 +276,15 @@ export default function AvailabilityPanel({ currentMonth }) {
   }, [isFieldStaff, myBranchCodes, staff, visibleStaff, searchTerm, branchFilter, branches, appUsers])
 
   // group by role
-  const activeRoles = isFieldStaff ? ['manager', 'bsm'] : ROLE_ORDER
+  const activeRoles = isFieldStaff ? ['manager', 'bsm', 'coordinator'] : ROLE_ORDER
   const grouped = activeRoles.reduce((acc, r) => {
-    acc[r] = filteredRoster.filter(s => s.role === r)
+    acc[r] = filteredRoster.filter(s => {
+      if (r === 'coordinator') return s.role === 'coordinator' || s.role === 'service_coordinator'
+      if (r === 'manager') return s.role === 'manager' || s.role === 'service_manager'
+      if (r === 'senior') return s.role === 'senior' || s.role === 'senior_fse'
+      if (r === 'junior') return s.role === 'junior' || s.role === 'junior_fse' || s.role === 'field_service_engineer'
+      return s.role === r
+    })
     return acc
   }, {})
 

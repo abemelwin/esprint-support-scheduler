@@ -1,11 +1,12 @@
 export const ROLES = {
-  manager: { label: 'Service Manager',        short: 'Svc Mgr',    color: 'var(--sm-mgr)' },
-  bsm:     { label: 'Branch Service Manager', short: 'Branch Mgr', color: 'var(--role-bsm)' },
-  senior:  { label: 'Senior FSE',             short: 'Senior',     color: 'var(--senior)' },
-  junior:  { label: 'Junior FSE',             short: 'Junior',     color: 'var(--junior)' },
-  trainee: { label: 'Trainee',                short: 'Trainee',    color: 'var(--trainee)' },
+  manager:     { label: 'Service Manager',        short: 'Svc Mgr',     color: 'var(--sm-mgr)' },
+  bsm:         { label: 'Branch Service Manager', short: 'Branch Mgr',  color: 'var(--role-bsm)' },
+  coordinator: { label: 'Service Coordinator',    short: 'Coord',       color: '#0284c7' },
+  senior:      { label: 'Senior FSE',             short: 'Senior',      color: 'var(--senior)' },
+  junior:      { label: 'Junior FSE',             short: 'Junior',      color: 'var(--junior)' },
+  trainee:     { label: 'Trainee',                short: 'Trainee',     color: 'var(--trainee)' },
 }
-export const ROLE_ORDER = ['manager','bsm','senior','junior','trainee']
+export const ROLE_ORDER = ['manager','bsm','coordinator','senior','junior','trainee']
 
 export const TYPES = {
   installation: { label: 'Installation', cls: 't-install' },

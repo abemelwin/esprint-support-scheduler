@@ -169,7 +169,13 @@ export default function StaffModal({ onClose }) {
   })
 
   const grouped = ROLE_ORDER.reduce((acc, r) => {
-    acc[r] = filteredStaff.filter(s => s.role === r)
+    acc[r] = filteredStaff.filter(s => {
+      if (r === 'coordinator') return s.role === 'coordinator' || s.role === 'service_coordinator'
+      if (r === 'manager') return s.role === 'manager' || s.role === 'service_manager'
+      if (r === 'senior') return s.role === 'senior' || s.role === 'senior_fse'
+      if (r === 'junior') return s.role === 'junior' || s.role === 'junior_fse' || s.role === 'field_service_engineer'
+      return s.role === r
+    })
     return acc
   }, {})
 
