@@ -261,21 +261,6 @@ export default function JobModal({ payload, onClose }) {
                   }
                 }}
               />
-              {form.jt_url && (
-                <div className="ns-link-row">
-                  <a href={cleanNetsuiteUrl(form.jt_url)} target="_blank" rel="noopener noreferrer" className="ns-link-url" title={cleanNetsuiteUrl(form.jt_url)}>
-                    {cleanNetsuiteUrl(form.jt_url)}
-                  </a>
-                  {canEditJob && (
-                    <button
-                      type="button"
-                      className="ns-link-clear"
-                      title="Remove link"
-                      onClick={() => setForm(f => ({ ...f, jt_url: '' }))}
-                    >✕</button>
-                  )}
-                </div>
-              )}
             </div>
             <div>
               <label className="fld">Employee <span className="req">*</span></label>
