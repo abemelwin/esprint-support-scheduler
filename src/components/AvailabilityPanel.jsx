@@ -138,6 +138,8 @@ export default function AvailabilityPanel({ currentMonth }) {
                        currentUser?.role === 'field_service_engineer' ||
                        currentUser?.role === 'trainee'
 
+  const isServiceManager = currentUser?.role === 'service_manager' || currentUser?.role === 'branch'
+
   async function handleRefresh() {
     setRefreshing(true)
     await Promise.all([loadStaff?.(), loadAppUsers?.(), loadJobs?.()])
@@ -310,6 +312,25 @@ export default function AvailabilityPanel({ currentMonth }) {
       })
     }
 
+    if (isServiceManager) {
+      // Service Manager & Branch: strictly show senior, junior, and trainee under their branch
+      const roster = visibleStaff().filter(s => {
+        const r = (s.role || '').toLowerCase()
+        return r === 'senior' || r === 'senior_fse' || r === 'junior' || r === 'junior_fse' || r === 'field_service_engineer' || r === 'trainee'
+      })
+
+      return roster.filter(s => {
+        if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
+        if (branchFilter) {
+          const info = getStaffBranchInfo(s)
+          if (info.isAll) return true
+          if (!info.branchIds.includes(branchFilter)) return false
+        }
+        return true
+      })
+    }
+
+    // Admin & Service Coordinator: full roster including designated managers & coordinators
     const roster = [...visibleStaff()]
 
     // Integrate all designated managers and coordinators with their official roles
@@ -362,10 +383,14 @@ export default function AvailabilityPanel({ currentMonth }) {
       }
       return true
     })
-  }, [isFieldStaff, myBranchCodes, staff, visibleStaff, searchTerm, branchFilter, branches, appUsers])
+  }, [isFieldStaff, isServiceManager, myBranchCodes, staff, visibleStaff, searchTerm, branchFilter, branches, appUsers])
 
   // group by role
-  const activeRoles = isFieldStaff ? ['manager', 'bsm', 'coordinator'] : ROLE_ORDER
+  const activeRoles = isFieldStaff
+    ? ['manager', 'bsm', 'coordinator']
+    : isServiceManager
+      ? ['senior', 'junior', 'trainee']
+      : ROLE_ORDER
   const grouped = activeRoles.reduce((acc, r) => {
     acc[r] = filteredRoster.filter(s => {
       if (r === 'coordinator') return s.role === 'coordinator' || s.role === 'service_coordinator'
