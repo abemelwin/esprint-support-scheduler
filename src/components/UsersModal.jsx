@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase, supabaseSignup } from '../lib/supabase'
+import ConfirmModal from './ConfirmModal'
 
 const ROLE_OPTIONS = [
   { value: 'admin',                  label: 'Admin'                   },
@@ -492,8 +493,16 @@ export default function UsersModal({ onClose }) {
     showSuccess(`✓ User "${u.name}" ${next ? 'activated' : 'deactivated'}.`)
   }
 
-  async function handleDelete(id, authId, email, name) {
-    if (!confirm(`Remove user "${name || email}" permanently?`)) return
+  const [deleteTarget, setDeleteTarget] = useState(null)
+
+  function handleDelete(id, authId, email, name) {
+    setDeleteTarget({ id, authId, email, name })
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return
+    const { id, authId, email, name } = deleteTarget
+    setBusy(true)
     // Also delete the pending_registrations record so the email can re-register
     if (email) {
       await supabase.from('pending_registrations').delete().eq('email', email)
@@ -505,6 +514,8 @@ export default function UsersModal({ onClose }) {
       await supabase.from('app_users').delete().eq('id', id)
     }
     await Promise.all([loadAppUsers(), loadStaff()])
+    setDeleteTarget(null)
+    setBusy(false)
     showSuccess(`✓ User "${name || email}" removed.`)
   }
 
@@ -1225,6 +1236,17 @@ export default function UsersModal({ onClose }) {
           <button className="btn ghost" onClick={onClose}>Done</button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Remove User Permanently?"
+        message={`Are you sure you want to permanently remove user "${deleteTarget?.name || deleteTarget?.email}"? This user will no longer be able to log in.`}
+        confirmText="Remove User"
+        confirmVariant="danger"
+        isBusy={busy}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }

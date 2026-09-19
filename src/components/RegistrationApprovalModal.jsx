@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase, supabaseSignup } from '../lib/supabase'
+import ConfirmModal from './ConfirmModal'
 
 const ROLE_LABEL = {
   admin:                  'Admin',
@@ -167,7 +168,7 @@ function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggl
 
 // ── Main modal ────────────────────────────────────────────────────────────────
 export default function RegistrationApprovalModal({ onClose }) {
-  const { pendingRegs, branches, appUsers, loadPendingRegs, loadAppUsers } = useApp()
+  const { pendingRegs, branches, appUsers, loadPendingRegs, loadAppUsers, loadStaff } = useApp()
   const [busy,       setBusy]       = useState(null)
   const [rejectId,   setRejectId]   = useState(null)
   const [rejectNote, setRejectNote] = useState('')
@@ -346,12 +347,32 @@ export default function RegistrationApprovalModal({ onClose }) {
       }
     }
 
-    // 3. Remove from pending_registrations once approved
+    // 3. Ensure staff table has a matching record for this employee
+    const { data: existingStaff } = await supabase.from('staff').select('id, name').ilike('name', reg.name.trim()).maybeSingle()
+    if (!existingStaff) {
+      let mappedStaffRole = 'junior'
+      const r = (finalRole || '').toLowerCase()
+      if (r.includes('senior') || r === 'senior_fse') mappedStaffRole = 'senior'
+      else if (r.includes('trainee') || r === 'trainee') mappedStaffRole = 'trainee'
+      else if (r.includes('manager') || r === 'service_manager') mappedStaffRole = 'manager'
+      else if (r.includes('bsm')) mappedStaffRole = 'bsm'
+
+      await supabase.from('staff').insert({
+        name: reg.name.trim(),
+        role: mappedStaffRole,
+        home_branch_id: mainBranch || (combinedBranches && combinedBranches[0]) || null,
+        hotline: false,
+      })
+    }
+
+    // 4. Remove from pending_registrations once approved
     await supabase.from('pending_registrations').delete().eq('id', reg.id)
 
-    await Promise.all([loadPendingRegs(), loadAppUsers()])
+    await Promise.all([loadPendingRegs(), loadAppUsers(), loadStaff ? loadStaff() : Promise.resolve()])
     setBusy(null)
   }
+
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   async function handleReject(id) {
     setBusy(id); setErr('')
@@ -360,10 +381,17 @@ export default function RegistrationApprovalModal({ onClose }) {
     setRejectId(null); setRejectNote(''); setBusy(null)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Remove this registration request?')) return
-    await supabase.from('pending_registrations').delete().eq('id', id)
+  function handleDelete(id) {
+    setDeleteTarget(id)
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return
+    setBusy(deleteTarget)
+    await supabase.from('pending_registrations').delete().eq('id', deleteTarget)
     await loadPendingRegs()
+    setDeleteTarget(null)
+    setBusy(null)
   }
 
   const pending = pendingRegs.filter(r => r.status === 'pending')
@@ -478,6 +506,17 @@ export default function RegistrationApprovalModal({ onClose }) {
           <button className="btn ghost" onClick={onClose}>Close</button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Remove Registration Request?"
+        message="Are you sure you want to remove this pending registration request?"
+        confirmText="Remove Request"
+        confirmVariant="danger"
+        isBusy={!!busy}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }

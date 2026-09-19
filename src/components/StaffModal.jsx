@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { ROLES, ROLE_ORDER } from '../lib/constants'
+import ConfirmModal from './ConfirmModal'
 
 export default function StaffModal({ onClose }) {
   const { staff, branches, appUsers, loadStaff, loadAppUsers } = useApp()
@@ -10,13 +11,14 @@ export default function StaffModal({ onClose }) {
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState('')
 
-  // Edit state
-  const [editId,      setEditId]      = useState(null)
-  const [editForm,    setEditForm]    = useState({ name: '', role: 'senior', home_branch_id: '', hotline: false })
-  const [editBusy,    setEditBusy]    = useState(false)
-  const [editErr,     setEditErr]     = useState('')
-  const [search,      setSearch]      = useState('')
-  const [successMsg,  setSuccessMsg]  = useState('')
+  // Edit & Delete state
+  const [editId,        setEditId]        = useState(null)
+  const [editForm,      setEditForm]      = useState({ name: '', role: 'senior', home_branch_id: '', hotline: false })
+  const [editBusy,      setEditBusy]      = useState(false)
+  const [editErr,       setEditErr]       = useState('')
+  const [search,        setSearch]        = useState('')
+  const [successMsg,    setSuccessMsg]    = useState('')
+  const [deleteTarget,  setDeleteTarget]  = useState(null)
 
   useEffect(() => {
     loadAppUsers()
@@ -143,10 +145,17 @@ export default function StaffModal({ onClose }) {
     showSuccess(`✓ Staff "${editForm.name.trim()}" updated successfully!`)
   }
 
-  async function handleDelete(id, name) {
-    if (!confirm(`Remove staff member "${name || 'this staff'}"?`)) return
-    await supabase.from('staff').delete().eq('id', id)
+  function handleDelete(id, name) {
+    setDeleteTarget({ id, name })
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return
+    setBusy(true)
+    await supabase.from('staff').delete().eq('id', deleteTarget.id)
     await loadStaff()
+    setDeleteTarget(null)
+    setBusy(false)
     showSuccess(`✓ Staff member removed.`)
   }
 
@@ -381,6 +390,17 @@ export default function StaffModal({ onClose }) {
           <button className="btn ghost" onClick={onClose}>Done</button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Remove Staff Member?"
+        message={`Are you sure you want to remove "${deleteTarget?.name}" from staff?`}
+        confirmText="Remove Staff"
+        confirmVariant="danger"
+        isBusy={busy}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }
