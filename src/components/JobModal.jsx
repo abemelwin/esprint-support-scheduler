@@ -2,17 +2,12 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { TYPE_KEYS, ABSENCE_KEYS, TYPES } from '../lib/constants'
+import { extractHrefFromHtml, cleanNetsuiteUrl } from '../lib/netsuite'
 
 const EMPTY = { jt_no:'', jt_url:'', staff_id:'', branch_id:'', customer:'', location:'', machine:'', serial_no:'', type:'', type_other:'', status:'pending', status_note:'' }
 
 // Extract the first hyperlink URL from pasted HTML (e.g. a NetSuite cell copied
 // from the browser carries the record link inside an <a href="…"> tag).
-function extractHrefFromHtml(html) {
-  if (!html) return ''
-  const match = html.match(/<a[^>]+href=["']([^"']+)["']/i)
-  return match ? match[1] : ''
-}
-
 // ── Searchable staff picker ───────────────────────────────────────────────────
 function StaffPicker({ staffList, value, onChange }) {
   const [open,   setOpen]   = useState(false)
@@ -146,7 +141,7 @@ export default function JobModal({ payload, onClose }) {
     const row = {
       date:        payload.job?.date || payload.date,
       jt_no:       isAbsence ? '' : form.jt_no.trim(),
-      jt_url:      isAbsence ? '' : form.jt_url.trim(),
+      jt_url:      isAbsence ? '' : cleanNetsuiteUrl(form.jt_url),
       staff_id:    form.staff_id,
       branch_id:   form.branch_id,
       customer:    isAbsence ? '' : form.customer.trim(),
@@ -241,11 +236,11 @@ export default function JobModal({ payload, onClose }) {
                 Netsuite# {jtRequired && <span className="req">*</span>}
                 {form.jt_url && (
                   <a
-                    href={form.jt_url}
+                    href={cleanNetsuiteUrl(form.jt_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="ns-link-badge"
-                    title={form.jt_url}
+                    title={cleanNetsuiteUrl(form.jt_url)}
                   >🔗 linked</a>
                 )}
               </label>
@@ -266,6 +261,21 @@ export default function JobModal({ payload, onClose }) {
                   }
                 }}
               />
+              {form.jt_url && (
+                <div className="ns-link-row">
+                  <a href={cleanNetsuiteUrl(form.jt_url)} target="_blank" rel="noopener noreferrer" className="ns-link-url" title={cleanNetsuiteUrl(form.jt_url)}>
+                    {cleanNetsuiteUrl(form.jt_url)}
+                  </a>
+                  {canEditJob && (
+                    <button
+                      type="button"
+                      className="ns-link-clear"
+                      title="Remove link"
+                      onClick={() => setForm(f => ({ ...f, jt_url: '' }))}
+                    >✕</button>
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label className="fld">Employee <span className="req">*</span></label>

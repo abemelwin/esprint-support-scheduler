@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
 import { TYPES, STATUS, DOW } from '../lib/constants'
+import { cleanNetsuiteUrl } from '../lib/netsuite'
 import AvailabilityPanel from './AvailabilityPanel'
 
 export default function CalendarView({ currentMonth, setCurrentMonth, filters, setFilters, onOpenJob }) {
@@ -210,11 +211,11 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                             {j.jt_url && !isAbsence ? (
                               <a
                                 className="jn jn-link"
-                                href={j.jt_url}
+                                href={cleanNetsuiteUrl(j.jt_url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
-                                title={`Open in NetSuite: ${j.jt_url}`}
+                                title={`Open in NetSuite: ${cleanNetsuiteUrl(j.jt_url)}`}
                               >{jtLabel}</a>
                             ) : (
                               <span className="jn">{jtLabel}</span>
