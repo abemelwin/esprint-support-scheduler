@@ -342,11 +342,6 @@ export default function AvailabilityPanel({ currentMonth }) {
 
       return roster.filter(s => {
         if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
-        if (branchFilter) {
-          const info = getStaffBranchInfo(s)
-          if (info.isAll) return true
-          if (!info.branchIds.includes(branchFilter)) return false
-        }
         return true
       })
     }
@@ -443,7 +438,7 @@ export default function AvailabilityPanel({ currentMonth }) {
             {dayOptions.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
           </select>
         )}
-        {/* Search staff & Branch filter (only for non-field staff) */}
+        {/* Search staff & Branch filter (only for non-field staff, branch filter hidden for service managers) */}
         {!isFieldStaff && (
           <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
             <div className="ovl-role-search" style={{ flex: 1, margin: 0 }}>
@@ -458,18 +453,20 @@ export default function AvailabilityPanel({ currentMonth }) {
                 <span className="ovl-role-search-clear" onClick={() => setSearch('')}>✕</span>
               )}
             </div>
-            <select
-              className="sel"
-              style={{ width: 'auto', minWidth: 90, fontSize: 12, padding: '4px 6px' }}
-              value={branchFilter}
-              onChange={e => setBranchFilter(e.target.value)}
-              title="Filter by branch"
-            >
-              <option value="">All Branches</option>
-              {branches.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
+            {!isServiceManager && (
+              <select
+                className="sel"
+                style={{ width: 'auto', minWidth: 90, fontSize: 12, padding: '4px 6px' }}
+                value={branchFilter}
+                onChange={e => setBranchFilter(e.target.value)}
+                title="Filter by branch"
+              >
+                <option value="">All Branches</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            )}
           </div>
         )}
       </div>
