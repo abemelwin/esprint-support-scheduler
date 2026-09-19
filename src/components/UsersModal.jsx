@@ -989,6 +989,19 @@ export default function UsersModal({ onClose }) {
                                       </div>
                                     </div>
                                     <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                                      <label style={{ padding: '8px 10px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', fontWeight: 700, position: 'sticky', top: 0, zIndex: 2 }}>
+                                        <input
+                                          type="checkbox"
+                                          style={{ width: 17, height: 17, cursor: 'pointer' }}
+                                          checked={branches.length > 0 && editEditBranches.length === branches.length}
+                                          ref={el => { if (el) el.indeterminate = editEditBranches.length > 0 && editEditBranches.length < branches.length }}
+                                          onChange={e => {
+                                            if (e.target.checked) setEditEditBranches(branches.map(b => b.id))
+                                            else setEditEditBranches([])
+                                          }}
+                                        />
+                                        <span style={{ color: 'var(--ink-1)' }}>✓ Select All Branches ({branches.length})</span>
+                                      </label>
                                       {branches.map(b => (
                                         <label key={b.id} style={{ padding: '7px 9px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                                           <input
@@ -1080,6 +1093,19 @@ export default function UsersModal({ onClose }) {
                                       </div>
                                     </div>
                                     <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                                      <label style={{ padding: '8px 10px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', fontWeight: 700, position: 'sticky', top: 0, zIndex: 2 }}>
+                                        <input
+                                          type="checkbox"
+                                          style={{ width: 17, height: 17, cursor: 'pointer' }}
+                                          checked={branches.length > 0 && editViewBranches.length === branches.length}
+                                          ref={el => { if (el) el.indeterminate = editViewBranches.length > 0 && editViewBranches.length < branches.length }}
+                                          onChange={e => {
+                                            if (e.target.checked) setEditViewBranches(branches.map(b => b.id))
+                                            else setEditViewBranches([])
+                                          }}
+                                        />
+                                        <span style={{ color: 'var(--ink-1)' }}>🌐 Select All Branches ({branches.length}) - View Only</span>
+                                      </label>
                                       {branches.map(b => {
                                         const isAlreadyEdit = editEditBranches.includes(b.id)
                                         return (
@@ -1322,6 +1348,19 @@ export default function UsersModal({ onClose }) {
                           </div>
                         </div>
                         <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                          <label style={{ padding: '8px 10px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', fontWeight: 700, position: 'sticky', top: 0, zIndex: 2 }}>
+                            <input
+                              type="checkbox"
+                              style={{ width: 17, height: 17, cursor: 'pointer' }}
+                              checked={branches.length > 0 && (form.edit_branch_ids || []).length === branches.length}
+                              ref={el => { if (el) el.indeterminate = (form.edit_branch_ids || []).length > 0 && (form.edit_branch_ids || []).length < branches.length }}
+                              onChange={e => {
+                                if (e.target.checked) setForm(f => ({ ...f, edit_branch_ids: branches.map(b => b.id) }))
+                                else setForm(f => ({ ...f, edit_branch_ids: [] }))
+                              }}
+                            />
+                            <span style={{ color: 'var(--ink-1)' }}>✓ Select All Branches ({branches.length})</span>
+                          </label>
                           {branches.map(b => (
                             <label key={b.id} style={{ padding: '7px 9px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                               <input
@@ -1429,6 +1468,19 @@ export default function UsersModal({ onClose }) {
                           </div>
                         </div>
                         <div className="branch-check" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                          <label style={{ padding: '8px 10px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', fontWeight: 700, position: 'sticky', top: 0, zIndex: 2 }}>
+                            <input
+                              type="checkbox"
+                              style={{ width: 17, height: 17, cursor: 'pointer' }}
+                              checked={branches.length > 0 && (form.view_branch_ids || []).length === branches.length}
+                              ref={el => { if (el) el.indeterminate = (form.view_branch_ids || []).length > 0 && (form.view_branch_ids || []).length < branches.length }}
+                              onChange={e => {
+                                if (e.target.checked) setForm(f => ({ ...f, view_branch_ids: branches.map(b => b.id) }))
+                                else setForm(f => ({ ...f, view_branch_ids: [] }))
+                              }}
+                            />
+                            <span style={{ color: 'var(--ink-1)' }}>🌐 Select All Branches ({branches.length}) - View Only</span>
+                          </label>
                           {branches.map(b => {
                             const isAlreadyEdit = (form.edit_branch_ids || []).includes(b.id)
                             return (

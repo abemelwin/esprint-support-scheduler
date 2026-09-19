@@ -157,6 +157,18 @@ function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggl
             </div>
           </div>
           <div className="branch-check" style={{ maxHeight: 150, overflowY: 'auto' }}>
+            <label style={{ padding: '6px 8px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', fontWeight: 700, position: 'sticky', top: 0, zIndex: 2 }}>
+              <input
+                type="checkbox"
+                checked={branches.length > 0 && editBranches.length === branches.length}
+                ref={el => { if (el) el.indeterminate = editBranches.length > 0 && editBranches.length < branches.length }}
+                onChange={e => {
+                  if (e.target.checked) onSetEditBranches(allIds)
+                  else onSetEditBranches([])
+                }}
+              />
+              <span style={{ color: 'var(--ink-1)' }}>✓ Select All Branches ({branches.length})</span>
+            </label>
             {branches.map(b => (
               <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', cursor: 'pointer' }}>
                 <input
@@ -234,6 +246,18 @@ function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggl
             </div>
           </div>
           <div className="branch-check" style={{ maxHeight: 150, overflowY: 'auto' }}>
+            <label style={{ padding: '6px 8px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', fontWeight: 700, position: 'sticky', top: 0, zIndex: 2 }}>
+              <input
+                type="checkbox"
+                checked={branches.length > 0 && viewBranches.length === branches.length}
+                ref={el => { if (el) el.indeterminate = viewBranches.length > 0 && viewBranches.length < branches.length }}
+                onChange={e => {
+                  if (e.target.checked) onSetViewBranches(allIds)
+                  else onSetViewBranches([])
+                }}
+              />
+              <span style={{ color: 'var(--ink-1)' }}>🌐 Select All Branches ({branches.length}) - View Only</span>
+            </label>
             {branches.map(b => {
               const isAlreadyEdit = editBranches.includes(b.id)
               return (
