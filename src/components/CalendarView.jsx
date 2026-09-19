@@ -5,12 +5,17 @@ import { TYPES, STATUS, DOW } from '../lib/constants'
 import AvailabilityPanel from './AvailabilityPanel'
 
 export default function CalendarView({ currentMonth, setCurrentMonth, filters, setFilters, onOpenJob }) {
-  const { jobs, branches, staff, inScope, currentUser } = useApp()
+  const { jobs, branches, staff, inScope, currentUser, isAdmin, canEditBranch } = useApp()
 
   const isFieldStaff = currentUser?.role === 'senior_fse' ||
                        currentUser?.role === 'junior_fse' ||
                        currentUser?.role === 'field_service_engineer' ||
                        currentUser?.role === 'trainee'
+
+  // Service Coordinator (and other view-only roles) keep the full calendar
+  // view + filters, but must NOT be able to open the New/Edit Job Ticket
+  // modal — same as field staff, clicking a day or chip does nothing.
+  const canOpenJobModal = isAdmin || canEditBranch()
 
   function prevMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
   function nextMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)) }
@@ -164,8 +169,8 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                   <div
                     key={dateKey}
                     className={`cell${isOther ? ' other' : ''}${isToday ? ' today' : ''}`}
-                    style={{ cursor: isFieldStaff ? 'default' : 'pointer' }}
-                    onClick={isFieldStaff ? undefined : () => onOpenJob({ date: dateKey })}
+                    style={{ cursor: (isFieldStaff || !canOpenJobModal) ? 'default' : 'pointer' }}
+                    onClick={(isFieldStaff || !canOpenJobModal) ? undefined : () => onOpenJob({ date: dateKey })}
                   >
                     <span className="dnum">{cell.getDate()}</span>
                     <div className="jobs">
@@ -196,7 +201,10 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                           <div
                             key={j.id}
                             className={`jchip ${cls}`}
-                            onClick={e => { e.stopPropagation(); onOpenJob({ date: dateKey, job: j }) }}
+                            style={{ cursor: canOpenJobModal ? 'pointer' : 'default' }}
+                            onClick={canOpenJobModal
+                              ? e => { e.stopPropagation(); onOpenJob({ date: dateKey, job: j }) }
+                              : e => e.stopPropagation()}
                           >
                             <span className={`st ${STATUS[j.status]?.dot || ''}`} />
                             {j.jt_url && !isAbsence ? (
@@ -216,7 +224,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                         )
                       })}
                     </div>
-                    {!isFieldStaff && <span className="addhint">＋</span>}
+                    {!isFieldStaff && canOpenJobModal && <span className="addhint">＋</span>}
                   </div>
                 )
               })}

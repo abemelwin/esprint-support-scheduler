@@ -55,7 +55,7 @@ export default function App() {
   const isEmployee             = currentUser?.role === 'employee'
   const isBranch               = currentUser?.role === 'branch'
   const isAdmin                = currentUser?.role === 'admin'
-  const isReadOnlyUser         = currentUser?.role !== 'admin' && (isEmployee || currentUser?.can_edit === false)
+  const isReadOnlyUser         = currentUser?.role !== 'admin' && (isEmployee || isServiceCoordinator || isSeniorFSE || isJuniorFSE || isTrainee || currentUser?.can_edit === false)
   const canViewOverview        = !isBranch && (isAdmin || isArnold || isServiceManager || isServiceCoordinator)
 
   // Reset to calendar whenever a non-overview user logs in
@@ -120,7 +120,13 @@ export default function App() {
             currentMonth={currentMonth}
             setCurrentMonth={setCurrentMonth}
             onOpenJob={payload => setJobModal(payload)}
-            scopedBranchIds={(isServiceManager || isBranch || isReadOnlyUser) ? (currentUser?.branch_ids || []) : null}
+            scopedBranchIds={
+              (isAdmin || isServiceCoordinator)
+                ? null
+                : (isServiceManager || isBranch || isReadOnlyUser)
+                  ? (currentUser?.branch_ids || [])
+                  : null
+            }
             readOnly={isReadOnlyUser}
           />
         )}
