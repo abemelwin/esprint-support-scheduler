@@ -261,6 +261,42 @@ export default function JobModal({ payload, onClose }) {
     return list.sort((a, b) => a.name.localeCompare(b.name))
   }, [staff, appUsers])
 
+  const handleStaffChange = (staffId) => {
+    if (!canEditJob) return
+    if (!staffId) {
+      setForm(f => ({ ...f, staff_id: '' }))
+      return
+    }
+
+    const staffMember = staffList.find(s => s.id === staffId) || (staff || []).find(s => s.id === staffId)
+    const matchingAppUser = (appUsers || []).find(u =>
+      u.id === staffId ||
+      (staffMember?.name && u.name?.trim().toLowerCase() === staffMember.name.trim().toLowerCase())
+    )
+
+    const homeBranch =
+      staffMember?.home_branch_id ||
+      staffMember?.main_branch_id ||
+      matchingAppUser?.main_branch_id ||
+      matchingAppUser?.branch_ids?.[0]
+
+    setForm(f => {
+      const branchExists = homeBranch && branches.some(b => b.id === homeBranch)
+      return {
+        ...f,
+        staff_id: staffId,
+        ...(branchExists ? { branch_id: homeBranch } : {})
+      }
+    })
+  }
+
+  const displayedBranches = useMemo(() => {
+    if (!form.branch_id) return availableBranches
+    if (availableBranches.some(b => b.id === form.branch_id)) return availableBranches
+    const extraBranch = branches.find(b => b.id === form.branch_id)
+    return extraBranch ? [...availableBranches, extraBranch] : availableBranches
+  }, [availableBranches, branches, form.branch_id])
+
   const showStatusNote = form.status === 'fail' || form.status === 'ongoing'
   const currentBranchObj = branches.find(b => b.id === (form.branch_id || payload.job?.branch_id))
   const assignedStaffObj = staffList.find(s => s.id === form.staff_id)
@@ -357,7 +393,7 @@ export default function JobModal({ payload, onClose }) {
                   <StaffPicker
                     staffList={staffList}
                     value={form.staff_id}
-                    onChange={v => set('staff_id', v)}
+                    onChange={handleStaffChange}
                   />
                 ) : (
                   <input
@@ -378,7 +414,7 @@ export default function JobModal({ payload, onClose }) {
                   onChange={e => set('branch_id', e.target.value)}
                 >
                   <option value="">Select Branch…</option>
-                  {availableBranches.map(b => (
+                  {displayedBranches.map(b => (
                     <option key={b.id} value={b.id}>{b.name} · {b.note}</option>
                   ))}
                 </select>
