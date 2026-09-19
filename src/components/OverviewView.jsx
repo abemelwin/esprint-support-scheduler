@@ -209,6 +209,11 @@ function StaffRow({ person, tasks, onOpenJob, readOnly }) {
 // ── Branch detail: list all its staff grouped by role ────────────────────────
 function RoleGroup({ role, group, tasksFor, onOpenJob, searchTerm, readOnly }) {
   const busy    = group.filter(p => tasksFor(p.id).filter(j => j.type !== 'leave' && j.type !== 'absent').length > 0)
+  // Total number of work tasks held by everyone in this role group
+  const taskCount = group.reduce(
+    (sum, p) => sum + tasksFor(p.id).filter(j => j.type !== 'leave' && j.type !== 'absent').length,
+    0
+  )
   const filtered = searchTerm
     ? group.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     : group
@@ -225,7 +230,7 @@ function RoleGroup({ role, group, tasksFor, onOpenJob, searchTerm, readOnly }) {
         {ROLES[role]?.label}
         <span className="ovl-role-cnt">{group.length}</span>
         <div style={{ flex: 1 }} />
-        {busy.length > 0 && <span className="ovl-role-busy">{busy.length} busy</span>}
+        {taskCount > 0 && <span className="ovl-role-busy">{taskCount} task{taskCount !== 1 ? 's' : ''}</span>}
         {!searchTerm && <span className="ovl-chevron" style={{ fontSize: 10, marginLeft: 6 }}>{open ? '▲' : '▼'}</span>}
       </div>
       {isOpen && filtered.map(person => (

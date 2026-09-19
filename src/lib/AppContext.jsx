@@ -80,8 +80,11 @@ export function AppProvider({ children }) {
   // ── Realtime subscriptions ────────────────────────────────────
   useEffect(() => {
     if (!currentUser) return
+
+    // Unique channel name per session avoids a stale/duplicate channel
+    // silently failing to (re)subscribe after hot reloads or re-logins.
     const ch = supabase
-      .channel('db-changes')
+      .channel(`db-changes-${currentUser.id}-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' },                   () => loadJobs())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' },                  () => loadStaff())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'branches' },               () => loadBranches())
@@ -89,8 +92,25 @@ export function AppProvider({ children }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_registrations' },  () => {
         if (currentUser.role === 'admin') loadPendingRegs()
       })
-      .subscribe()
-    return () => supabase.removeChannel(ch)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Re-pull once on (re)connect so we never show stale data
+          // after a dropped socket / tab wake-up.
+          loadJobs()
+        }
+      })
+
+    // Safety net: when the tab regains focus or comes back online,
+    // refresh jobs in case a realtime event was missed while hidden.
+    const refreshOnWake = () => { if (document.visibilityState === 'visible') loadJobs() }
+    document.addEventListener('visibilitychange', refreshOnWake)
+    window.addEventListener('online', refreshOnWake)
+
+    return () => {
+      supabase.removeChannel(ch)
+      document.removeEventListener('visibilitychange', refreshOnWake)
+      window.removeEventListener('online', refreshOnWake)
+    }
   }, [currentUser])
 
   // ── Account management helpers (admin only) ───────────────────
@@ -133,6 +153,9 @@ export function AppProvider({ children }) {
   // ── Permissions helpers ───────────────────────────────────────
   const isAdmin          = currentUser?.role === 'admin'
   const isServiceManager = currentUser?.role === 'service_manager'
+  // Roles that can view job tickets but must never create/edit them.
+  const VIEW_ONLY_ROLES  = ['service_coordinator', 'senior_fse', 'junior_fse', 'field_service_engineer', 'trainee', 'employee']
+  const isViewOnlyRole   = VIEW_ONLY_ROLES.includes(currentUser?.role)
 
   // All branches accessible (Main + Assigned + View-only)
   const scopedBranchIds = isAdmin
@@ -146,7 +169,7 @@ export function AppProvider({ children }) {
   // Branch IDs where the user has edit/create permissions
   const editableBranchIds = isAdmin
     ? null
-    : currentUser?.can_edit === false
+    : (isViewOnlyRole || currentUser?.can_edit === false)
       ? []
       : currentUser?.main_branch_id
         ? Array.from(new Set([
@@ -158,6 +181,7 @@ export function AppProvider({ children }) {
   function canEditBranch(branchId) {
     if (!currentUser) return false
     if (isAdmin) return true
+    if (isViewOnlyRole) return false
     if (currentUser.can_edit === false) return false
     if (!branchId) return (editableBranchIds === null || editableBranchIds.length > 0)
     if (editableBranchIds === null) return true
