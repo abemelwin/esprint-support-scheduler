@@ -36,7 +36,7 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill }) {
 
   return (
     <div className="kpis">
-      <KpiCard reportKind="job-today" label="Job Tickets Today" value={todayJobs.length}
+      <KpiCard reportKind="job-today" label="Ongoing Today" value={todayJobs.length}
         foot={<>▸ {todayLbl} · per branch</>}
         onDrill={onDrill} />
       <KpiCard reportKind="success" label="Successful (mo.)" value={success}

@@ -24,7 +24,7 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
 
   if (kind === 'job-today') {
     const todayJobs = jobs.filter(j => inScope(j) && j.date === todayKey)
-    title = 'Job Tickets Today — per Branch'
+    title = 'Ongoing Today — per Branch'
     sub   = `${todayLbl} · ${todayJobs.length} job ticket(s)`
     const tot = {}; TYPE_KEYS.forEach(k => tot[k] = 0)
     const rows = branchList.map(b => {
