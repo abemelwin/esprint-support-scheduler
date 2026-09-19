@@ -157,11 +157,12 @@ export function AppProvider({ children }) {
   const VIEW_ONLY_ROLES  = ['service_coordinator', 'senior_fse', 'junior_fse', 'field_service_engineer', 'trainee', 'employee']
   const isViewOnlyRole   = VIEW_ONLY_ROLES.includes(currentUser?.role)
 
-  // All branches accessible (Main + Assigned + View-only)
+  // All branches accessible (Main + Assigned + View-only + Edit)
   const scopedBranchIds = isAdmin
     ? null
     : Array.from(new Set([
         ...(currentUser?.main_branch_id ? [currentUser.main_branch_id] : []),
+        ...(currentUser?.edit_branch_ids || []),
         ...(currentUser?.branch_ids || []),
         ...(currentUser?.view_branch_ids || []),
       ]))
@@ -171,12 +172,17 @@ export function AppProvider({ children }) {
     ? null
     : (isViewOnlyRole || currentUser?.can_edit === false)
       ? []
-      : currentUser?.main_branch_id
+      : (currentUser?.edit_branch_ids && currentUser.edit_branch_ids.length > 0)
         ? Array.from(new Set([
-            currentUser.main_branch_id,
-            ...(currentUser.branch_ids || []).filter(id => !(currentUser.view_branch_ids || []).includes(id)),
+            ...(currentUser.main_branch_id ? [currentUser.main_branch_id] : []),
+            ...currentUser.edit_branch_ids,
           ]))
-        : (currentUser?.branch_ids || []).filter(id => !(currentUser?.view_branch_ids || []).includes(id))
+        : currentUser?.main_branch_id
+          ? Array.from(new Set([
+              currentUser.main_branch_id,
+              ...(currentUser.branch_ids || []).filter(id => !(currentUser.view_branch_ids || []).includes(id)),
+            ]))
+          : (currentUser?.branch_ids || []).filter(id => !(currentUser?.view_branch_ids || []).includes(id))
 
   function canEditBranch(branchId) {
     if (!currentUser) return false

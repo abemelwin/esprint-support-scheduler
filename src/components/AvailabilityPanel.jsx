@@ -126,7 +126,7 @@ const DESIGNATED_MANAGERS = [
 ]
 
 export default function AvailabilityPanel({ currentMonth }) {
-  const { jobs, inScope, visibleStaff, branches, staff, appUsers, currentUser, loadStaff, loadAppUsers, loadJobs } = useApp()
+  const { jobs, inScope, visibleStaff, branches, staff, appUsers, currentUser, editableBranchIds, scopedBranchIds, loadStaff, loadAppUsers, loadJobs } = useApp()
   const [mode,         setMode]         = useState('month')   // 'month' | 'day'
   const [availDay,     setAvailDay]     = useState(ymd(new Date()))
   const [search,       setSearch]       = useState('')
@@ -166,6 +166,7 @@ export default function AvailabilityPanel({ currentMonth }) {
     if (!currentUser) return []
     const ids = [
       ...(currentUser.main_branch_id ? [currentUser.main_branch_id] : []),
+      ...(currentUser.edit_branch_ids || []),
       ...(currentUser.branch_ids || []),
       ...(currentUser.view_branch_ids || []),
     ]
@@ -173,7 +174,7 @@ export default function AvailabilityPanel({ currentMonth }) {
     if (myStaffObj?.home_branch_id && !ids.includes(myStaffObj.home_branch_id)) {
       ids.push(myStaffObj.home_branch_id)
     }
-    return ids.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)
+    return Array.from(new Set(ids.map(id => branches.find(b => b.id === id)?.name).filter(Boolean)))
   }, [currentUser, staff, branches])
 
   // tasks for the selected period
@@ -194,19 +195,8 @@ export default function AvailabilityPanel({ currentMonth }) {
   // Helper to get complete branch info for a staff member
   function getStaffBranchInfo(s) {
     const sNameNorm = s.name.trim().toLowerCase()
-    const desMgr = DESIGNATED_MANAGERS.find(m => {
-      if (m.filterMatch) return m.filterMatch(sNameNorm)
-      return sNameNorm.includes(m.nameKey)
-    })
-    if (desMgr) {
-      const bIds = desMgr.branchCodes.map(c => branches.find(b => b.name === c)?.id).filter(Boolean)
-      return {
-        label: desMgr.label,
-        isAll: false,
-        branchIds: bIds,
-      }
-    }
 
+    // 1. Check if user exists in appUsers with custom branch permissions
     const matchedUser = appUsers?.find(u => {
       const uNameNorm = u.name?.trim().toLowerCase() || ''
       if (!uNameNorm) return false
@@ -220,12 +210,21 @@ export default function AvailabilityPanel({ currentMonth }) {
         return { label: '🌐 All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
       }
       const uCanEdit = matchedUser.can_edit !== false
-      const uEditBranches = uCanEdit
-        ? (matchedUser.branch_ids || []).filter(b => !(matchedUser.view_branch_ids || []).includes(b))
-        : []
-      if (uCanEdit && matchedUser.main_branch_id && !uEditBranches.includes(matchedUser.main_branch_id) && !(matchedUser.view_branch_ids || []).includes(matchedUser.main_branch_id)) {
-        uEditBranches.unshift(matchedUser.main_branch_id)
+      let uEditBranches = []
+      if (uCanEdit) {
+        if (matchedUser.edit_branch_ids && matchedUser.edit_branch_ids.length > 0) {
+          uEditBranches = [...matchedUser.edit_branch_ids]
+          if (matchedUser.main_branch_id && !uEditBranches.includes(matchedUser.main_branch_id)) {
+            uEditBranches.unshift(matchedUser.main_branch_id)
+          }
+        } else {
+          uEditBranches = (matchedUser.branch_ids || []).filter(b => !(matchedUser.view_branch_ids || []).includes(b))
+          if (matchedUser.main_branch_id && !uEditBranches.includes(matchedUser.main_branch_id) && !(matchedUser.view_branch_ids || []).includes(matchedUser.main_branch_id)) {
+            uEditBranches.unshift(matchedUser.main_branch_id)
+          }
+        }
       }
+
       const uViews = matchedUser.view_branch_ids?.length > 0
         ? matchedUser.view_branch_ids
         : (!uCanEdit ? (matchedUser.branch_ids || []) : [])
@@ -264,6 +263,20 @@ export default function AvailabilityPanel({ currentMonth }) {
         label: sumLabel !== '—' ? `🏢 ${sumLabel}` : '—',
         isAll: sumLabel === 'All Branches',
         branchIds: uBranches,
+      }
+    }
+
+    // 2. Check designated manager mapping
+    const desMgr = DESIGNATED_MANAGERS.find(m => {
+      if (m.filterMatch) return m.filterMatch(sNameNorm)
+      return sNameNorm.includes(m.nameKey)
+    })
+    if (desMgr) {
+      const bIds = desMgr.branchCodes.map(c => branches.find(b => b.name === c)?.id).filter(Boolean)
+      return {
+        label: desMgr.label,
+        isAll: false,
+        branchIds: bIds,
       }
     }
 
@@ -313,10 +326,18 @@ export default function AvailabilityPanel({ currentMonth }) {
     }
 
     if (isServiceManager) {
-      // Service Manager & Branch: strictly show senior, junior, and trainee under their branch
-      const roster = visibleStaff().filter(s => {
+      // Service Manager & Branch: strictly show senior, junior, and trainee under their managed/editable branches
+      const myManagedBranchIds = (editableBranchIds && editableBranchIds.length > 0)
+        ? editableBranchIds
+        : (scopedBranchIds || [])
+
+      const roster = (staff || []).filter(s => {
+        if (s.name?.toLowerCase().includes('eileen')) return false
         const r = (s.role || '').toLowerCase()
-        return r === 'senior' || r === 'senior_fse' || r === 'junior' || r === 'junior_fse' || r === 'field_service_engineer' || r === 'trainee'
+        const isTech = r === 'senior' || r === 'senior_fse' || r === 'junior' || r === 'junior_fse' || r === 'field_service_engineer' || r === 'trainee'
+        if (!isTech) return false
+        if (myManagedBranchIds.length > 0 && !myManagedBranchIds.includes(s.home_branch_id)) return false
+        return true
       })
 
       return roster.filter(s => {

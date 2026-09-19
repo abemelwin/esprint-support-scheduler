@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase, supabaseSignup } from '../lib/supabase'
 import ConfirmModal from './ConfirmModal'
+import { REGIONS } from '../lib/constants'
 
 const ROLE_LABEL = {
   admin:                  'Admin',
@@ -24,16 +25,25 @@ const ROLE_OPTIONS = [
   { value: 'trainee',             label: 'Trainee'             },
 ]
 
+function getLuzonBranchIds(allBranches) {
+  const codes = [...(REGIONS['North Luzon'] || []), ...(REGIONS['South Luzon'] || [])]
+  return allBranches.filter(b => codes.includes(b.name)).map(b => b.id)
+}
+
+function getMindanaoBranchIds(allBranches) {
+  const codes = [...(REGIONS['North Mindanao'] || []), ...(REGIONS['South Mindanao'] || [])]
+  return allBranches.filter(b => codes.includes(b.name)).map(b => b.id)
+}
+
+function getVisayasBranchIds(allBranches) {
+  const codes = REGIONS['Visayas'] || []
+  return allBranches.filter(b => codes.includes(b.name)).map(b => b.id)
+}
+
 // ── Segmented Branch Selector (Can Edit vs View Only) ────────────────────────
-function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggleEdit, onToggleView, onSelectAllEdit, onSelectAllView }) {
+function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggleEdit, onToggleView, onSetEditBranches, onSetViewBranches }) {
   const [tab, setTab] = useState('edit') // 'edit' | 'view'
   const allIds = branches.map(b => b.id)
-
-  const allEditChecked  = allIds.length > 0 && allIds.every(id => editBranches.includes(id))
-  const someEditChecked = !allEditChecked && editBranches.length > 0
-
-  const allViewChecked  = allIds.length > 0 && allIds.every(id => viewBranches.includes(id))
-  const someViewChecked = !allViewChecked && viewBranches.length > 0
 
   return (
     <div style={{ marginTop: 10 }}>
@@ -95,21 +105,60 @@ function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggl
 
       {tab === 'edit' ? (
         <div>
-          <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 6 }}>
-            Select branches where this user can <strong>create, edit, and update tickets</strong>:
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 4 }}>
+            <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+              Full Edit Access:
+            </span>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetEditBranches(allIds)}
+              >
+                All ({branches.length})
+              </button>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetEditBranches(Array.from(new Set([...editBranches, ...getLuzonBranchIds(branches)])))}
+              >
+                + Luzon
+              </button>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetEditBranches(Array.from(new Set([...editBranches, ...getVisayasBranchIds(branches)])))}
+              >
+                + Visayas
+              </button>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetEditBranches(Array.from(new Set([...editBranches, ...getMindanaoBranchIds(branches)])))}
+              >
+                + Mindanao
+              </button>
+              <span style={{ color: 'var(--border)' }}>|</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetEditBranches([])}
+              >
+                Clear
+              </button>
+            </div>
           </div>
-          <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-            <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
-              <input
-                type="checkbox"
-                checked={allEditChecked}
-                ref={el => { if (el) el.indeterminate = someEditChecked }}
-                onChange={e => onSelectAllEdit(e.target.checked ? allIds : [])}
-              />
-              Select All (Can Edit)
-            </label>
+          <div className="branch-check" style={{ maxHeight: 150, overflowY: 'auto' }}>
             {branches.map(b => (
-              <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 4px' }}>
+              <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={editBranches.includes(b.id)}
@@ -118,47 +167,93 @@ function BranchAssignmentSection({ branches, editBranches, viewBranches, onToggl
                 <span style={{ fontWeight: editBranches.includes(b.id) ? 600 : 400 }}>
                   {b.name} · {b.note}
                 </span>
-                {viewBranches.includes(b.id) && (
-                  <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 'auto' }}>
-                    (currently view only)
-                  </span>
-                )}
               </label>
             ))}
           </div>
         </div>
       ) : (
         <div>
-          <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 6 }}>
-            Select branches this user can <strong>view schedules & reports only</strong> (no editing):
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 4 }}>
+            <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+              Read-Only Access:
+            </span>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent, #2a78d6)' }}
+                onClick={() => onSetViewBranches(allIds)}
+              >
+                🌐 View All (20)
+              </button>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetViewBranches(branches.filter(b => !editBranches.includes(b.id)).map(b => b.id))}
+              >
+                Remaining ({branches.filter(b => !editBranches.includes(b.id)).length})
+              </button>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetViewBranches(Array.from(new Set([...viewBranches, ...getLuzonBranchIds(branches)])))}
+              >
+                + Luzon
+              </button>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetViewBranches(Array.from(new Set([...viewBranches, ...getVisayasBranchIds(branches)])))}
+              >
+                + Visayas
+              </button>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetViewBranches(Array.from(new Set([...viewBranches, ...getMindanaoBranchIds(branches)])))}
+              >
+                + Mindanao
+              </button>
+              <span style={{ color: 'var(--border)' }}>|</span>
+              <button
+                type="button"
+                className="btn-link"
+                style={{ fontSize: 11 }}
+                onClick={() => onSetViewBranches([])}
+              >
+                Clear
+              </button>
+            </div>
           </div>
-          <div className="branch-check" style={{ maxHeight: 130, overflowY: 'auto' }}>
-            <label style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4, fontWeight: 600 }}>
-              <input
-                type="checkbox"
-                checked={allViewChecked}
-                ref={el => { if (el) el.indeterminate = someViewChecked }}
-                onChange={e => onSelectAllView(e.target.checked ? allIds : [])}
-              />
-              Select All (View Only)
-            </label>
-            {branches.map(b => (
-              <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 4px' }}>
-                <input
-                  type="checkbox"
-                  checked={viewBranches.includes(b.id)}
-                  onChange={() => onToggleView(b.id)}
-                />
-                <span style={{ fontWeight: viewBranches.includes(b.id) ? 600 : 400 }}>
-                  {b.name} · {b.note}
-                </span>
-                {editBranches.includes(b.id) && (
-                  <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 'auto' }}>
-                    (currently can edit)
+          <div className="branch-check" style={{ maxHeight: 150, overflowY: 'auto' }}>
+            {branches.map(b => {
+              const isAlreadyEdit = editBranches.includes(b.id)
+              return (
+                <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={viewBranches.includes(b.id)}
+                    onChange={() => onToggleView(b.id)}
+                  />
+                  <span style={{ fontWeight: viewBranches.includes(b.id) ? 600 : 400 }}>
+                    {b.name} · {b.note}
                   </span>
-                )}
-              </label>
-            ))}
+                  {isAlreadyEdit && (
+                    <span style={{ fontSize: 10, color: 'var(--senior)', background: 'color-mix(in srgb, var(--senior) 12%, transparent)', padding: '1px 6px', borderRadius: 6, marginLeft: 'auto' }}>
+                      ✏️ Edit access
+                    </span>
+                  )}
+                </label>
+              )
+            })}
           </div>
         </div>
       )}
@@ -198,10 +293,6 @@ export default function RegistrationApprovalModal({ onClose }) {
       const next = cur.includes(branchId) ? cur.filter(b => b !== branchId) : [...cur, branchId]
       return { ...m, [regId]: next }
     })
-    setViewBranchesMap(m => {
-      const cur = m[regId] || []
-      return { ...m, [regId]: cur.filter(b => b !== branchId) }
-    })
   }
 
   function toggleViewBranch(regId, branchId) {
@@ -210,24 +301,14 @@ export default function RegistrationApprovalModal({ onClose }) {
       const next = cur.includes(branchId) ? cur.filter(b => b !== branchId) : [...cur, branchId]
       return { ...m, [regId]: next }
     })
-    setEditBranchesMap(m => {
-      const cur = m[regId] || []
-      return { ...m, [regId]: cur.filter(b => b !== branchId) }
-    })
   }
 
-  function selectAllEditBranches(regId, ids) {
+  function setEditBranches(regId, ids) {
     setEditBranchesMap(m => ({ ...m, [regId]: ids }))
-    if (ids.length > 0) {
-      setViewBranchesMap(m => ({ ...m, [regId]: [] }))
-    }
   }
 
-  function selectAllViewBranches(regId, ids) {
+  function setViewBranches(regId, ids) {
     setViewBranchesMap(m => ({ ...m, [regId]: ids }))
-    if (ids.length > 0) {
-      setEditBranchesMap(m => ({ ...m, [regId]: [] }))
-    }
   }
 
   async function handleApprove(reg) {
@@ -256,6 +337,7 @@ export default function RegistrationApprovalModal({ onClose }) {
         name:            reg.name.trim(),
         role:            finalRole,
         main_branch_id:  finalRole !== 'admin' ? mainBranch : null,
+        edit_branch_ids: finalRole !== 'admin' ? editBranches : [],
         view_branch_ids: finalRole !== 'admin' ? viewBranches : [],
         branch_ids:      finalRole !== 'admin' ? combinedBranches : [],
         can_edit:        finalCanEdit,
@@ -267,7 +349,7 @@ export default function RegistrationApprovalModal({ onClose }) {
         .update(updatePayload)
         .eq('id', existingAppUser.id)
 
-      if (updErr && (updErr.message?.includes('main_branch_id') || updErr.message?.includes('view_branch_ids'))) {
+      if (updErr && (updErr.message?.includes('edit_branch_ids') || updErr.message?.includes('main_branch_id') || updErr.message?.includes('view_branch_ids'))) {
         await supabase.from('app_users').update({
           name:        reg.name.trim(),
           role:        finalRole,
@@ -300,6 +382,7 @@ export default function RegistrationApprovalModal({ onClose }) {
         email:           reg.email.trim().toLowerCase(),
         role:            finalRole,
         main_branch_id:  finalRole !== 'admin' ? mainBranch : null,
+        edit_branch_ids: finalRole !== 'admin' ? editBranches : [],
         view_branch_ids: finalRole !== 'admin' ? viewBranches : [],
         branch_ids:      finalRole !== 'admin' ? combinedBranches : [],
         can_edit:        finalCanEdit,
@@ -310,7 +393,7 @@ export default function RegistrationApprovalModal({ onClose }) {
       let insertError = null
       const { error: insertErr1 } = await supabase.from('app_users').insert(fullPayload)
       if (insertErr1) {
-        if (insertErr1.message?.includes('main_branch_id') || insertErr1.message?.includes('view_branch_ids')) {
+        if (insertErr1.message?.includes('edit_branch_ids') || insertErr1.message?.includes('main_branch_id') || insertErr1.message?.includes('view_branch_ids')) {
           const fallbackPayload = {
             auth_id:     uid,
             name:        reg.name.trim(),
@@ -329,6 +412,7 @@ export default function RegistrationApprovalModal({ onClose }) {
             name:            reg.name.trim(),
             role:            finalRole,
             main_branch_id:  finalRole !== 'admin' ? mainBranch : null,
+            edit_branch_ids: finalRole !== 'admin' ? editBranches : [],
             view_branch_ids: finalRole !== 'admin' ? viewBranches : [],
             branch_ids:      finalRole !== 'admin' ? combinedBranches : [],
             can_edit:        finalCanEdit,
@@ -489,8 +573,8 @@ export default function RegistrationApprovalModal({ onClose }) {
                     viewBranches={viewBranches}
                     onToggleEdit={bId => toggleEditBranch(reg.id, bId)}
                     onToggleView={bId => toggleViewBranch(reg.id, bId)}
-                    onSelectAllEdit={ids => selectAllEditBranches(reg.id, ids)}
-                    onSelectAllView={ids => selectAllViewBranches(reg.id, ids)}
+                    onSetEditBranches={ids => setEditBranches(reg.id, ids)}
+                    onSetViewBranches={ids => setViewBranches(reg.id, ids)}
                   />
                 ) : (
                   <div style={{ marginTop: 10, fontSize: 12, color: 'var(--senior)', background: 'color-mix(in srgb, var(--senior) 10%, transparent)', padding: '8px 12px', borderRadius: 8, border: '1px solid color-mix(in srgb, var(--senior) 25%, transparent)' }}>
