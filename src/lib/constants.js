@@ -120,3 +120,15 @@ export const SEED_BRANCHES = [
   { id:'b19', name:'TAG',    note:'Davao del Norte' },
   { id:'b20', name:'ZAM',    note:'Zamboanga del Sur' },
 ]
+
+export function namesMatch(n1, n2) {
+  if (!n1 || !n2) return false
+  const s1 = n1.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim()
+  const s2 = n2.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim()
+  if (s1 === s2 || s1.includes(s2) || s2.includes(s1)) return true
+  const words1 = s1.split(/\s+/).filter(w => w.length > 2)
+  const words2 = s2.split(/\s+/).filter(w => w.length > 2)
+  const matches = words1.filter(w => words2.includes(w))
+  return matches.length >= 2 || (words1.length === 1 && words2.includes(words1[0])) || (words2.length === 1 && words1.includes(words2[0]))
+}
+

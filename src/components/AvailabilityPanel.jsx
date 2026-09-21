@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd } from '../lib/dates'
-import { ROLES, ROLE_ORDER, TYPES, STATUS, formatBranchSummary, getBranchRegion } from '../lib/constants'
+import { ROLES, ROLE_ORDER, TYPES, STATUS, formatBranchSummary, getBranchRegion, namesMatch } from '../lib/constants'
 
 // Designated Manager and Coordinator assignments per branch specified by company structure
 const ALL_BRANCH_CODES = ['BAC','BUK','BUT','CAB','CAMSUR','CAV','CDO','CEB','DAV','GENSAN','ILO','ISA','MAK','PAG','PAL','PANG','RIZ','TAC','TAG','ZAM']
@@ -143,7 +143,9 @@ export default function AvailabilityPanel({ currentMonth }) {
   const isFieldStaff = currentUser?.role === 'senior_fse' ||
                        currentUser?.role === 'junior_fse' ||
                        currentUser?.role === 'field_service_engineer' ||
-                       currentUser?.role === 'trainee'
+                       currentUser?.role === 'trainee' ||
+                       currentUser?.role === 'senior' ||
+                       currentUser?.role === 'junior'
 
   const isServiceManager = currentUser?.role === 'service_manager' || currentUser?.role === 'branch'
 
@@ -322,15 +324,14 @@ export default function AvailabilityPanel({ currentMonth }) {
     // 1. Check designated managers list for coordinator role
     const desMgr = DESIGNATED_MANAGERS.find(m => {
       if (m.filterMatch) return m.filterMatch(sNameNorm)
-      return sNameNorm.includes(m.nameKey)
+      return sNameNorm.includes(m.nameKey) || (m.fullName && namesMatch(m.fullName, s.name))
     })
     if (desMgr && desMgr.role === 'coordinator') return true
 
     // 2. Check app_users for service_coordinator or coordinator role
     const matchedUser = appUsers?.find(u => {
-      const uNameNorm = u.name?.trim().toLowerCase() || ''
-      if (!uNameNorm) return false
-      return uNameNorm === sNameNorm || sNameNorm.includes(uNameNorm) || uNameNorm.includes(sNameNorm)
+      if (!u.name) return false
+      return namesMatch(u.name, s.name)
     })
     if (matchedUser && (matchedUser.role === 'service_coordinator' || matchedUser.role === 'coordinator')) {
       return true
@@ -354,7 +355,7 @@ export default function AvailabilityPanel({ currentMonth }) {
         const found = staff?.find(s => {
           const sNorm = s.name.trim().toLowerCase()
           if (desMgr.filterMatch) return desMgr.filterMatch(sNorm)
-          return sNorm.includes(desMgr.nameKey)
+          return sNorm.includes(desMgr.nameKey) || (desMgr.fullName && namesMatch(desMgr.fullName, s.name))
         })
 
         if (found) {
@@ -382,7 +383,7 @@ export default function AvailabilityPanel({ currentMonth }) {
 
       const roster = (staff || []).filter(s => {
         if (s.name?.toLowerCase().includes('eileen')) return false
-        if (!isAdmin && isPersonCoordinator(s)) return false
+        if (!isAdmin && (isPersonCoordinator(s) || s.role === 'coordinator' || s.role === 'service_coordinator')) return false
         const r = (s.role || '').toLowerCase()
         const isTech = r === 'senior' || r === 'senior_fse' || r === 'junior' || r === 'junior_fse' || r === 'field_service_engineer' || r === 'trainee'
         if (!isTech) return false
@@ -406,7 +407,7 @@ export default function AvailabilityPanel({ currentMonth }) {
       const idx = roster.findIndex(s => {
         const sNorm = s.name.trim().toLowerCase()
         if (des.filterMatch) return des.filterMatch(sNorm)
-        return sNorm.includes(des.nameKey)
+        return sNorm.includes(des.nameKey) || (des.fullName && namesMatch(des.fullName, s.name))
       })
       if (idx >= 0) {
         roster[idx] = { ...roster[idx], role: des.role, _displayLabel: des.label }
@@ -426,11 +427,7 @@ export default function AvailabilityPanel({ currentMonth }) {
       const isCoord = u.role === 'service_coordinator' || u.role === 'coordinator'
       if (isCoord && !isAdmin) return
 
-      const uNorm = u.name.trim().toLowerCase()
-      const existingIdx = roster.findIndex(s => {
-        const sNorm = s.name.trim().toLowerCase()
-        return sNorm === uNorm || sNorm.includes(uNorm) || uNorm.includes(sNorm)
-      })
+      const existingIdx = roster.findIndex(s => namesMatch(s.name, u.name))
       if (existingIdx >= 0) {
         if (isCoord && isAdmin) {
           roster[existingIdx] = {
@@ -451,7 +448,11 @@ export default function AvailabilityPanel({ currentMonth }) {
     })
 
     if (!isAdmin) {
-      roster = roster.filter(s => !isPersonCoordinator(s))
+      roster = roster.filter(s => {
+        if (isPersonCoordinator(s)) return false
+        const r = (s.role || '').toLowerCase()
+        return r !== 'coordinator' && r !== 'service_coordinator'
+      })
     }
 
     return roster.filter(s => {
@@ -476,9 +477,12 @@ export default function AvailabilityPanel({ currentMonth }) {
 
   const grouped = activeRoles.reduce((acc, r) => {
     acc[r] = filteredRoster.filter(s => {
-      const isCoord = isPersonCoordinator(s)
-      if (r === 'coordinator') return isCoord
-      if (isCoord) return false
+      const isCoord = isPersonCoordinator(s) || s.role === 'coordinator' || s.role === 'service_coordinator'
+      if (isCoord) {
+        if (!isAdmin) return false
+        return r === 'coordinator'
+      }
+      if (r === 'coordinator') return false
       if (r === 'manager') return s.role === 'manager' || s.role === 'service_manager'
       if (r === 'senior') return s.role === 'senior' || s.role === 'senior_fse'
       if (r === 'junior') return s.role === 'junior' || s.role === 'junior_fse' || s.role === 'field_service_engineer'

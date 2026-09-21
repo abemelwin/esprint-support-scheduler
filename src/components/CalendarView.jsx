@@ -2,12 +2,12 @@ import { useState, useMemo, useRef } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
-import { TYPES, STATUS, DOW } from '../lib/constants'
+import { TYPES, STATUS, DOW, namesMatch } from '../lib/constants'
 import { cleanNetsuiteUrl } from '../lib/netsuite'
 import AvailabilityPanel from './AvailabilityPanel'
 
 export default function CalendarView({ currentMonth, setCurrentMonth, filters, setFilters, onOpenJob }) {
-  const { jobs, branches, staff, inScope, currentUser, isAdmin, canEditBranch, setJobs, loadJobs } = useApp()
+  const { jobs, branches, staff, appUsers, inScope, currentUser, isAdmin, canEditBranch, setJobs, loadJobs } = useApp()
   const [draggedJob, setDraggedJob] = useState(null)
   const [dragOverDate, setDragOverDate] = useState(null)
   const dragJustEndedRef = useRef(false)
@@ -102,10 +102,12 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
       if (!isAdmin) {
         const r = (s.role || '').toLowerCase()
         if (r === 'coordinator' || r === 'service_coordinator') return false
+        const matchedUser = appUsers?.find(u => namesMatch(u.name, s.name))
+        if (matchedUser && (matchedUser.role === 'coordinator' || matchedUser.role === 'service_coordinator')) return false
       }
       return true
     })
-  }, [staff, isAdmin])
+  }, [staff, isAdmin, appUsers])
 
   return (
     <div>

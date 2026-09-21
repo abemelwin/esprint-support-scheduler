@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { monthName, weekNumber, mondayOf, addDays, ymd } from '../lib/dates'
-import { TYPES, TYPE_KEYS, STATUS, ROLES, ROLE_ORDER } from '../lib/constants'
+import { TYPES, TYPE_KEYS, STATUS, ROLES, ROLE_ORDER, namesMatch } from '../lib/constants'
 
 function esc(s) { return String(s || '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])) }
 
 export default function ReportsView({ reportMonth, setReportMonth, rFilters, setRFilters }) {
-  const { jobs, staff, branches, inScope, isAdmin } = useApp()
+  const { jobs, staff, appUsers, branches, inScope, isAdmin } = useApp()
 
   function prevMonth() { setReportMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
   function nextMonth() { setReportMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)) }
@@ -21,10 +21,12 @@ export default function ReportsView({ reportMonth, setReportMonth, rFilters, set
       if (!isAdmin) {
         const r = (s.role || '').toLowerCase()
         if (r === 'coordinator' || r === 'service_coordinator') return false
+        const matchedUser = appUsers?.find(u => namesMatch(u.name, s.name))
+        if (matchedUser && (matchedUser.role === 'coordinator' || matchedUser.role === 'service_coordinator')) return false
       }
       return true
     })
-  }, [staff, isAdmin])
+  }, [staff, isAdmin, appUsers])
 
   const monthJobs = useMemo(() => jobs.filter(j => {
     if (!inScope(j)) return false

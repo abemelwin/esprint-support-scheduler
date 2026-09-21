@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
-import { TYPE_KEYS, ABSENCE_KEYS, TYPES } from '../lib/constants'
+import { TYPE_KEYS, ABSENCE_KEYS, TYPES, namesMatch } from '../lib/constants'
 import { extractHrefFromHtml, cleanNetsuiteUrl } from '../lib/netsuite'
 import ConfirmModal from './ConfirmModal'
 
@@ -261,7 +261,10 @@ export default function JobModal({ payload, onClose }) {
     if (!isAdmin) {
       list = list.filter(s => {
         const r = (s.role || '').toLowerCase()
-        return r !== 'coordinator' && r !== 'service_coordinator'
+        if (r === 'coordinator' || r === 'service_coordinator') return false
+        const matchedUser = appUsers?.find(u => namesMatch(u.name, s.name))
+        if (matchedUser && (matchedUser.role === 'coordinator' || matchedUser.role === 'service_coordinator')) return false
+        return true
       })
     }
 
