@@ -1,29 +1,47 @@
 import { useApp } from '../lib/AppContext'
 import { ymd, fmtD } from '../lib/dates'
 
-export default function KpiRow({ view, currentMonth, reportMonth, onDrill }) {
+export default function KpiRow({ view, currentMonth, reportMonth, onDrill, filters }) {
   const { jobs, staff, inScope, visibleStaff, isAdmin, isServiceManager } = useApp()
 
   const isAbsence = j => j.type === 'leave' || j.type === 'absent'
 
+  // Apply calendar filters to KPI computation when filters are active
+  function matchesFilter(j) {
+    if (!filters) return true
+    if (filters.branch && j.branch_id !== filters.branch) return false
+    if (filters.emp    && j.staff_id  !== filters.emp)    return false
+    if (filters.type   && j.type      !== filters.type)   return false
+    if (filters.status && j.status    !== filters.status) return false
+    return true
+  }
+
   const m = view === 'reports' ? reportMonth : currentMonth
   const monthJobs = jobs.filter(j => {
     if (!inScope(j)) return false
-    if (isAbsence(j)) return false   // absences are not job tickets
+    if (isAbsence(j)) return false
+    if (!matchesFilter(j)) return false
     const d = new Date(j.date + 'T00:00:00')
     return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear()
   })
 
-  const roster    = visibleStaff()
+  // For staff/availability counts, filter by branch if branch filter is set
+  const roster = visibleStaff().filter(s => {
+    if (!filters?.branch) return true
+    return s.home_branch_id === filters.branch
+  })
   const total     = roster.length
   const rosterIds = new Set(roster.map(s => s.id))
 
   const todayKey  = ymd(new Date())
   const todayLbl  = fmtD(new Date())
-  // Job tickets today (excludes absences)
-  const todayJobs = jobs.filter(j => inScope(j) && !isAbsence(j) && j.date === todayKey)
-  // Anyone with a job OR marked absent/on-leave today is unavailable
-  const todayBusy = jobs.filter(j => inScope(j) && j.date === todayKey)
+  const todayJobs = jobs.filter(j => {
+    if (!inScope(j)) return false
+    if (isAbsence(j)) return false
+    if (!matchesFilter(j)) return false
+    return j.date === todayKey
+  })
+  const todayBusy = jobs.filter(j => inScope(j) && j.date === todayKey && matchesFilter(j))
   const todayAssigned = new Set(todayBusy.map(j => j.staff_id))
   const availToday = total - [...todayAssigned].filter(id => rosterIds.has(id)).length
 

@@ -98,6 +98,7 @@ export default function App() {
           currentMonth={currentMonth}
           reportMonth={reportMonth}
           onDrill={kind => setKpiDrill({ kind })}
+          filters={view === 'calendar' ? filters : null}
         />
 
         {view === 'calendar' || (view === 'overview' && !canViewOverview) ? (
