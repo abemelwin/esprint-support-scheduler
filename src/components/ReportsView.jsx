@@ -76,26 +76,39 @@ export default function ReportsView({ reportMonth, setReportMonth, rFilters, set
     <div>
       {/* Toolbar */}
       <div className="toolbar">
-        <div className="month-nav">
-          <button className="btn sm" onClick={prevMonth}>◀</button>
-          <div className="month-label">{monthName(reportMonth)}</div>
-          <button className="btn sm" onClick={nextMonth}>▶</button>
+        <div className="toolbar-nav-group">
+          <div className="month-nav">
+            <button className="btn sm" onClick={prevMonth}>◀</button>
+            <div className="month-label">{monthName(reportMonth)}</div>
+            <button className="btn sm" onClick={nextMonth}>▶</button>
+          </div>
+          <button className="btn sm today-btn" onClick={goToday}>Today</button>
         </div>
-        <button className="btn sm" onClick={goToday}>Today</button>
         <div className="sep" />
-        <div className="fl">
-          <label>Branch</label>
-          <select className="sel" value={rFilters.branch} onChange={e => setRFilters(f=>({...f,branch:e.target.value}))}>
-            <option value="">All</option>
-            {branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-        </div>
-        <div className="fl">
-          <label>Employee</label>
-          <select className="sel" value={rFilters.emp} onChange={e => setRFilters(f=>({...f,emp:e.target.value}))}>
-            <option value="">All</option>
-            {staff.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+        <div className="toolbar-filters">
+          <div className="fl">
+            <label>Branch</label>
+            <select className="sel" value={rFilters.branch} onChange={e => setRFilters(f=>({...f,branch:e.target.value}))}>
+              <option value="">All Branches</option>
+              {branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </div>
+          <div className="fl">
+            <label>Employee</label>
+            <select className="sel" value={rFilters.emp} onChange={e => setRFilters(f=>({...f,emp:e.target.value}))}>
+              <option value="">All Staff</option>
+              {staff.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          {(rFilters.branch || rFilters.emp) && (
+            <button
+              className="btn sm ghost clear-filter-btn"
+              onClick={() => setRFilters({ branch: '', emp: '' })}
+              title="Reset report filters"
+            >
+              ✕ Reset
+            </button>
+          )}
         </div>
       </div>
 

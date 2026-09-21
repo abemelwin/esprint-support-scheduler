@@ -102,49 +102,62 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
     <div>
       {/* toolbar */}
       <div className="toolbar">
-        <div className="month-nav">
-          <button className="btn sm" onClick={prevMonth}>◀</button>
-          <div className="month-label">{monthName(currentMonth)}</div>
-          <button className="btn sm" onClick={nextMonth}>▶</button>
+        <div className="toolbar-nav-group">
+          <div className="month-nav">
+            <button className="btn sm" onClick={prevMonth}>◀</button>
+            <div className="month-label">{monthName(currentMonth)}</div>
+            <button className="btn sm" onClick={nextMonth}>▶</button>
+          </div>
+          <button className="btn sm today-btn" onClick={goToday}>Today</button>
         </div>
-        <button className="btn sm" onClick={goToday}>Today</button>
 
         {!isFieldStaff && (
           <>
             <div className="sep" />
-            <div className="fl">
-              <label>Branch</label>
-              <select className="sel" value={filters.branch} onChange={e => setFilters(f => ({...f, branch: e.target.value}))}>
-                <option value="">All</option>
-                {visibleBranches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-            </div>
-            <div className="fl">
-              <label>Employee</label>
-              <select className="sel" value={filters.emp} onChange={e => setFilters(f => ({...f, emp: e.target.value}))}>
-                <option value="">All</option>
-                {visibleStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div className="fl">
-              <label>Type</label>
-              <select className="sel" value={filters.type} onChange={e => setFilters(f => ({...f, type: e.target.value}))}>
-                <option value="">All</option>
-                <option value="installation">Installation</option>
-                <option value="onsite">Onsite</option>
-                <option value="hotline">Hotline</option>
-                <option value="others">Others</option>
-              </select>
-            </div>
-            <div className="fl">
-              <label>Status</label>
-              <select className="sel" value={filters.status} onChange={e => setFilters(f => ({...f, status: e.target.value}))}>
-                <option value="">All</option>
-                <option value="pending">Pending</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="success">Successful</option>
-                <option value="fail">Not successful</option>
-              </select>
+            <div className="toolbar-filters">
+              <div className="fl">
+                <label>Branch</label>
+                <select className="sel" value={filters.branch} onChange={e => setFilters(f => ({...f, branch: e.target.value}))}>
+                  <option value="">All Branches</option>
+                  {visibleBranches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+              <div className="fl">
+                <label>Employee</label>
+                <select className="sel" value={filters.emp} onChange={e => setFilters(f => ({...f, emp: e.target.value}))}>
+                  <option value="">All Staff</option>
+                  {visibleStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="fl">
+                <label>Type</label>
+                <select className="sel" value={filters.type} onChange={e => setFilters(f => ({...f, type: e.target.value}))}>
+                  <option value="">All Types</option>
+                  <option value="installation">Installation</option>
+                  <option value="onsite">Onsite</option>
+                  <option value="hotline">Hotline</option>
+                  <option value="others">Others</option>
+                </select>
+              </div>
+              <div className="fl">
+                <label>Status</label>
+                <select className="sel" value={filters.status} onChange={e => setFilters(f => ({...f, status: e.target.value}))}>
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="success">Successful</option>
+                  <option value="fail">Not successful</option>
+                </select>
+              </div>
+              {(filters.branch || filters.emp || filters.type || filters.status) && (
+                <button
+                  className="btn sm ghost clear-filter-btn"
+                  onClick={() => setFilters({ branch: '', emp: '', type: '', status: '' })}
+                  title="Reset all filters"
+                >
+                  ✕ Reset
+                </button>
+              )}
             </div>
           </>
         )}

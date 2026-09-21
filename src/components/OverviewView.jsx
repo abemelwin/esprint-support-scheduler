@@ -445,43 +445,47 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
   return (
     <div className="ovl-root">
       <div className="toolbar">
-        <div className="month-nav">
-          <button className="btn sm" onClick={prevMonth}>◀</button>
-          <div className="month-label">{monthName(currentMonth)}</div>
-          <button className="btn sm" onClick={nextMonth}>▶</button>
+        <div className="toolbar-nav-group">
+          <div className="month-nav">
+            <button className="btn sm" onClick={prevMonth}>◀</button>
+            <div className="month-label">{monthName(currentMonth)}</div>
+            <button className="btn sm" onClick={nextMonth}>▶</button>
+          </div>
+          <button className="btn sm today-btn" onClick={goToday}>Today</button>
         </div>
-        <button className="btn sm" onClick={goToday}>Today</button>
         <div className="sep" />
-        {/* Date filter toggle */}
-        <div className="seg-toggle" style={{ flexShrink: 0 }}>
-          <button className={viewMode === 'month' ? 'active' : ''} onClick={() => setViewMode('month')}>This month</button>
-          <button className={viewMode === 'day'   ? 'active' : ''} onClick={() => setViewMode('day')}>Specific day</button>
+        <div className="toolbar-filters ovl-toolbar-controls">
+          {/* Date filter toggle */}
+          <div className="seg-toggle" style={{ flexShrink: 0 }}>
+            <button className={viewMode === 'month' ? 'active' : ''} onClick={() => setViewMode('month')}>This month</button>
+            <button className={viewMode === 'day'   ? 'active' : ''} onClick={() => setViewMode('day')}>Specific day</button>
+          </div>
+          {viewMode === 'day' && (
+            <DatePickerPopup
+              value={specificDay}
+              onChange={day => {
+                setSpecificDay(day)
+                // sync the month nav to match the picked date
+                const d = new Date(day + 'T00:00:00')
+                setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+              }}
+            />
+          )}
+          {readOnly && (
+            <span style={{
+              marginLeft: 'auto',
+              fontSize: 11,
+              color: 'var(--muted)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              padding: '2px 8px',
+              whiteSpace: 'nowrap',
+            }}>
+              🔒 View only
+            </span>
+          )}
         </div>
-        {viewMode === 'day' && (
-          <DatePickerPopup
-            value={specificDay}
-            onChange={day => {
-              setSpecificDay(day)
-              // sync the month nav to match the picked date
-              const d = new Date(day + 'T00:00:00')
-              setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1))
-            }}
-          />
-        )}
-        {readOnly && (
-          <span style={{
-            marginLeft: 'auto',
-            fontSize: 11,
-            color: 'var(--muted)',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            padding: '2px 8px',
-            whiteSpace: 'nowrap',
-          }}>
-            🔒 View only
-          </span>
-        )}
       </div>
 
       <div className="ovl-region-cols">
