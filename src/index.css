@@ -455,12 +455,68 @@ select.sel { cursor: pointer; }
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
 }
 .cell .dnum {
-  font-size: 12px; font-weight: 650; color: var(--ink-2); margin-bottom: 4px;
+  font-size: 12px; font-weight: 650; color: var(--ink-2);
   align-self: flex-start; padding: 1px;
 }
 .cell .jobs { display: flex; flex-direction: column; gap: 3.5px; overflow-y: auto; max-height: 132px; }
-.cell .addhint { color: var(--senior); font-size: 16px; position: absolute; right: 8px; top: 4px; opacity: 0; font-weight: 700; }
-.cell:hover .addhint { opacity: 0.85; }
+
+/* ── Cell Top Bar & Quick Add Button ─────────────────────────────── */
+.cell-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--surface-1);
+  padding: 1px 0;
+}
+.cell.today .cell-top-bar {
+  background: transparent;
+}
+.cell-add-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--senior);
+  font-size: 13px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all .15s ease;
+  padding: 0;
+  line-height: 1;
+}
+.cell-add-btn:hover {
+  background: var(--senior);
+  color: #fff;
+  border-color: var(--senior);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+.cell-bottom-add-btn {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px dashed color-mix(in srgb, var(--senior) 50%, var(--border));
+  background: color-mix(in srgb, var(--senior) 6%, var(--surface-2));
+  color: var(--senior);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: all .12s ease;
+  text-align: center;
+}
+.cell-bottom-add-btn:hover {
+  background: color-mix(in srgb, var(--senior) 16%, var(--surface-2));
+  border-color: var(--senior);
+  transform: translateY(-1px);
+}
 
 .cell.drag-over {
   background: color-mix(in srgb, #2563eb 12%, var(--surface-1)) !important;

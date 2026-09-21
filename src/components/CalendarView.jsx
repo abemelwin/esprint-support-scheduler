@@ -120,6 +120,17 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
             <button className="btn sm" onClick={nextMonth}>▶</button>
           </div>
           <button className="btn sm today-btn" onClick={goToday}>Today</button>
+          {canOpenJobModal && (
+            <button
+              type="button"
+              className="btn primary sm"
+              style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, padding: '5px 12px', borderRadius: 7 }}
+              onClick={() => onOpenJob({ date: ymd(new Date()) })}
+              title="Create a new job ticket"
+            >
+              ＋ New Ticket
+            </button>
+          )}
         </div>
 
         {!isFieldStaff && (
@@ -258,7 +269,22 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                       }
                     }}
                   >
-                    <span className="dnum">{cell.getDate()}</span>
+                    <div className="cell-top-bar">
+                      <span className="dnum">{cell.getDate()}</span>
+                      {!isFieldStaff && canOpenJobModal && (
+                        <button
+                          type="button"
+                          className="cell-add-btn"
+                          title={`Add new ticket on ${dateKey}`}
+                          onClick={e => {
+                            e.stopPropagation()
+                            onOpenJob({ date: dateKey })
+                          }}
+                        >
+                          ＋
+                        </button>
+                      )}
+                    </div>
                     <div className="jobs">
                       {dayJobs.map(j => {
                         const s = staffById(j.staff_id)
@@ -329,8 +355,20 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                           </div>
                         )
                       })}
+                      {!isFieldStaff && canOpenJobModal && dayJobs.length >= 3 && (
+                        <button
+                          type="button"
+                          className="cell-bottom-add-btn"
+                          title={`Add new ticket on ${dateKey}`}
+                          onClick={e => {
+                            e.stopPropagation()
+                            onOpenJob({ date: dateKey })
+                          }}
+                        >
+                          ＋ Add Ticket
+                        </button>
+                      )}
                     </div>
-                    {!isFieldStaff && canOpenJobModal && <span className="addhint">＋</span>}
                   </div>
                 )
               })}
