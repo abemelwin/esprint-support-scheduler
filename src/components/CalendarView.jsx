@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useRef } from 'react'
+﻿﻿import { useState, useMemo, useRef } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
@@ -21,7 +21,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
 
   // Service Coordinator (and other view-only roles) keep the full calendar
   // view + filters, but must NOT be able to open the New/Edit Job Ticket
-  // modal â€” same as field staff, clicking a day or chip does nothing.
+  // modal - same as field staff, clicking a day or chip does nothing.
   const canOpenJobModal = isAdmin || canEditBranch()
 
   function canDragJob(j) {
@@ -117,9 +117,9 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
       <div className="toolbar">
         <div className="toolbar-nav-group">
           <div className="month-nav">
-            <button className="btn sm" onClick={prevMonth}>â—€</button>
+            <button className="btn sm" onClick={prevMonth}>&#9664;</button>
             <div className="month-label">{monthName(currentMonth)}</div>
-            <button className="btn sm" onClick={nextMonth}>â–¶</button>
+            <button className="btn sm" onClick={nextMonth}>&#9654;</button>
           </div>
           <button className="btn sm today-btn" onClick={goToday}>Today</button>
           {canOpenJobModal && (
@@ -179,7 +179,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                   onClick={() => setFilters({ branch: '', emp: '', type: '', status: '' })}
                   title="Reset all filters"
                 >
-                  âœ• Reset
+                  x Reset
                 </button>
               )}
             </div>
@@ -291,7 +291,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                       {dayJobs.slice(0, 3).map(j => {
                         const s = staffById(j.staff_id)
                         const cls = TYPES[j.type]?.cls || ''
-                        const jtText = j.jt_no || ((j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : 'â€”')
+                        const jtText = j.jt_no || ((j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : '--')
                         const isAbsence = j.type === 'leave' || j.type === 'absent'
                         const jtLabel = isAbsence ? TYPES[j.type]?.label : j.jt_no
 
@@ -302,7 +302,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                               className={`jchip ${cls}`}
                               style={{ cursor: 'default', transform: 'none' }}
                               onClick={e => e.stopPropagation()}
-                              title={`Netsuite #: ${j.jt_no || 'â€”'}`}
+                              title={`Netsuite #: ${j.jt_no || '--'}`}
                             >
                               <span className={`st ${STATUS[j.status]?.dot || ''}`} />
                               <span className="jn">{jtText}</span>
@@ -330,7 +330,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                             } : undefined}
                             className={`jchip ${cls}${isDraggingThis ? ' is-dragging' : ''}${draggable ? ' is-draggable' : ''}`}
                             style={{ cursor: draggable ? 'grab' : (canOpenJobModal ? 'pointer' : 'default') }}
-                            title={draggable ? `Drag to reschedule â€¢ NetSuite #: ${jtLabel || 'â€”'}` : undefined}
+                            title={draggable ? `Drag to reschedule - NetSuite #: ${jtLabel || '--'}` : undefined}
                             onClick={canOpenJobModal
                               ? e => {
                                   e.stopPropagation()
@@ -353,7 +353,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                             ) : (
                               <span className="jn">{jtLabel}</span>
                             )}
-                            <span className="who">{s?.name?.split(',')[0] || 'â€”'}</span>
+                            <span className="who">{s?.name?.split(',')[0] || '--'}</span>
                           </div>
                         )
                       })}
