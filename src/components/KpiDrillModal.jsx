@@ -1,9 +1,58 @@
+import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, fmtD, monthName } from '../lib/dates'
-import { TYPES, TYPE_KEYS, ROLES, ROLE_ORDER, STATUS } from '../lib/constants'
+import { TYPES, TYPE_KEYS, ROLES, ROLE_ORDER, STATUS, namesMatch } from '../lib/constants'
+
+function AvailableNamesDropdown({ staffList }) {
+  const [selected, setSelected] = useState('')
+
+  if (!staffList || staffList.length === 0) {
+    return <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>— none —</span>
+  }
+
+  return (
+    <div style={{ minWidth: 220, maxWidth: 300, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <select
+        className="sel"
+        value={selected}
+        onChange={e => setSelected(e.target.value)}
+        style={{
+          width: '100%',
+          fontSize: 12,
+          padding: '4px 8px',
+          borderRadius: 6,
+          background: 'var(--surface-2)',
+          cursor: 'pointer',
+          fontWeight: selected ? 600 : 500,
+        }}
+        title="Click to view all available staff"
+      >
+        <option value="">
+          👥 {staffList.length} Available Staff (Click to view)
+        </option>
+        {staffList.map((s, idx) => (
+          <option key={s.id || idx} value={s.id || s.name}>
+            {idx + 1}. {s.name} {s.hotline ? '☎ Hotline' : ''}
+          </option>
+        ))}
+      </select>
+      {selected && (
+        <button
+          type="button"
+          onClick={() => setSelected('')}
+          className="btn ghost sm"
+          style={{ padding: '2px 6px', fontSize: 11, color: 'var(--muted)', flexShrink: 0 }}
+          title="Reset selection"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  )
+}
 
 export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, onClose }) {
-  const { jobs, staff, branches, inScope, scopedBranches, visibleStaff } = useApp()
+  const { jobs, staff, appUsers, branches, inScope, scopedBranches, visibleStaff, isAdmin, scopedBranchIds } = useApp()
   const m = view === 'reports' ? reportMonth : currentMonth
   const todayKey = ymd(new Date())
   const todayLbl = fmtD(new Date())
@@ -11,6 +60,24 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
 
   const staffById  = id => staff.find(s => s.id === id)
   const branchById = id => branches.find(b => b.id === id)
+
+  const activeStaffList = (staff || []).filter(s => {
+    if (s.name?.toLowerCase().includes('eileen')) return false
+    if (!isAdmin) {
+      const r = (s.role || '').toLowerCase()
+      if (r === 'coordinator' || r === 'service_coordinator') return false
+      const matchedUser = appUsers?.find(u => namesMatch(u.name, s.name))
+      if (matchedUser && (matchedUser.role === 'coordinator' || matchedUser.role === 'service_coordinator')) return false
+    }
+    return true
+  })
+
+  function getBranchHomedStaff(branchId) {
+    return activeStaffList.filter(s => {
+      if (!scopedBranchIds) return s.home_branch_id === branchId
+      return s.home_branch_id === branchId && scopedBranchIds.includes(s.home_branch_id)
+    })
+  }
 
   function monthJobs() {
     return jobs.filter(j => {
@@ -53,7 +120,7 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
     title = 'Available Today — per Branch'
     let freeCount = 0
     const rows = branchList.map(b => {
-      const homed = visibleStaff().filter(s => s.home_branch_id === b.id); if (!homed.length) return null
+      const homed = getBranchHomedStaff(b.id); if (!homed.length) return null
       const free = homed.filter(s => !assigned.has(s.id)); freeCount += free.length
       return { b, homed, free }
     }).filter(Boolean)
@@ -69,7 +136,7 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
               <td className="num"><b>{free.length}</b></td>
               <td className="num">{homed.length - free.length}</td>
               <td className="num">{homed.length}</td>
-              <td>{free.length ? free.map(s => s.name + (s.hotline?' ☎':'')).join(', ') : <span style={{color:'var(--muted)'}}>— none —</span>}</td>
+              <td><AvailableNamesDropdown staffList={free} /></td>
             </tr>
           ))}
         </tbody>
@@ -81,7 +148,7 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
     title = 'Total Staff — per Branch'
     const tot = {}; ROLE_ORDER.forEach(r => tot[r] = 0); let totH = 0, totAll = 0
     const rows = branchList.map(b => {
-      const homed = visibleStaff().filter(s => s.home_branch_id === b.id); if (!homed.length) return null
+      const homed = getBranchHomedStaff(b.id); if (!homed.length) return null
       const c = {}; ROLE_ORDER.forEach(r => { c[r] = homed.filter(s => s.role === r).length; tot[r] += c[r] })
       const h = homed.filter(s => s.hotline).length; totH += h; totAll += homed.length
       return { b, homed, c, h }
@@ -156,7 +223,7 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
 
   return (
     <div className="modal-bg open">
-      <div className="modal" style={{ width:'min(680px,96vw)' }}>
+      <div className="modal" style={{ width:'min(780px,96vw)' }}>
         <div className="modal-head"><h3>{title}</h3><div className="spacer" /></div>
         <div className="modal-body">
           <p className="empty-note" style={{ textAlign:'left', padding:'0 0 12px', margin:0 }}>{sub}</p>
