@@ -291,6 +291,35 @@ export default function AvailabilityPanel({ currentMonth }) {
     }
   }
 
+  // Helper to accurately identify if a person is a Service Coordinator
+  function isPersonCoordinator(s) {
+    if (!s) return false
+    const r = (s.role || '').toLowerCase()
+    if (r === 'coordinator' || r === 'service_coordinator') return true
+
+    const sNameNorm = (s.name || '').trim().toLowerCase()
+    if (!sNameNorm) return false
+
+    // 1. Check designated managers list for coordinator role
+    const desMgr = DESIGNATED_MANAGERS.find(m => {
+      if (m.filterMatch) return m.filterMatch(sNameNorm)
+      return sNameNorm.includes(m.nameKey)
+    })
+    if (desMgr && desMgr.role === 'coordinator') return true
+
+    // 2. Check app_users for service_coordinator or coordinator role
+    const matchedUser = appUsers?.find(u => {
+      const uNameNorm = u.name?.trim().toLowerCase() || ''
+      if (!uNameNorm) return false
+      return uNameNorm === sNameNorm || sNameNorm.includes(uNameNorm) || uNameNorm.includes(sNameNorm)
+    })
+    if (matchedUser && (matchedUser.role === 'service_coordinator' || matchedUser.role === 'coordinator')) {
+      return true
+    }
+
+    return false
+  }
+
   // filter by search term and branch
   const searchTerm = search.trim().toLowerCase()
   const filteredRoster = useMemo(() => {
@@ -334,6 +363,7 @@ export default function AvailabilityPanel({ currentMonth }) {
 
       const roster = (staff || []).filter(s => {
         if (s.name?.toLowerCase().includes('eileen')) return false
+        if (!isAdmin && isPersonCoordinator(s)) return false
         const r = (s.role || '').toLowerCase()
         const isTech = r === 'senior' || r === 'senior_fse' || r === 'junior' || r === 'junior_fse' || r === 'field_service_engineer' || r === 'trainee'
         if (!isTech) return false
@@ -397,10 +427,7 @@ export default function AvailabilityPanel({ currentMonth }) {
     })
 
     if (!isAdmin) {
-      roster = roster.filter(s => {
-        const r = (s.role || '').toLowerCase()
-        return r !== 'coordinator' && r !== 'service_coordinator'
-      })
+      roster = roster.filter(s => !isPersonCoordinator(s))
     }
 
     return roster.filter(s => {
@@ -425,7 +452,9 @@ export default function AvailabilityPanel({ currentMonth }) {
 
   const grouped = activeRoles.reduce((acc, r) => {
     acc[r] = filteredRoster.filter(s => {
-      if (r === 'coordinator') return s.role === 'coordinator' || s.role === 'service_coordinator'
+      const isCoord = isPersonCoordinator(s)
+      if (r === 'coordinator') return isCoord
+      if (isCoord) return false
       if (r === 'manager') return s.role === 'manager' || s.role === 'service_manager'
       if (r === 'senior') return s.role === 'senior' || s.role === 'senior_fse'
       if (r === 'junior') return s.role === 'junior' || s.role === 'junior_fse' || s.role === 'field_service_engineer'
