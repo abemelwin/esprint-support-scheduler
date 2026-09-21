@@ -86,6 +86,7 @@ export default function JobModal({ payload, onClose }) {
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showUrlField, setShowUrlField] = useState(false)
 
   // Check if current user has edit permission for this job
   const canEditJob = isEdit
@@ -370,9 +371,9 @@ export default function JobModal({ payload, onClose }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ns-link-badge"
-                      title={cleanNetsuiteUrl(form.jt_url)}
+                      title={`Open in NetSuite: ${cleanNetsuiteUrl(form.jt_url)}`}
                     >
-                      🔗 Open Link
+                      🔗 Open in NetSuite
                     </a>
                   )}
                 </label>
@@ -389,18 +390,78 @@ export default function JobModal({ payload, onClose }) {
                       if (!canEditJob) return
                       const html      = e.clipboardData?.getData('text/html')
                       const plainText = e.clipboardData?.getData('text/plain') || ''
-                      // TEMP DEBUG: inspect what NetSuite actually put on the clipboard.
-                      // Open browser console (F12) after pasting to see this.
-                      console.log('[NetSuite paste] plainText =', JSON.stringify(plainText))
-                      console.log('[NetSuite paste] html =', html)
+
+                      // If user pastes a full URL directly into jt_no box
+                      if (/^https?:\/\//i.test(plainText.trim()) || /netsuite\.com/i.test(plainText.trim())) {
+                        const directUrl = cleanNetsuiteUrl(plainText.trim())
+                        setForm(f => ({ ...f, jt_url: directUrl }))
+                        return
+                      }
+
                       const url = extractHrefFromHtml(html, plainText.trim())
-                      console.log('[NetSuite paste] chosen url =', url)
-                      // Always reset jt_url on a fresh paste so a previous
-                      // link is never carried over onto a different number.
-                      setForm(f => ({ ...f, jt_url: url || '' }))
+                      setForm(f => ({ ...f, jt_url: url ? cleanNetsuiteUrl(url) : '' }))
                     }}
                   />
                 </div>
+
+                {/* NetSuite URL helper & preview toolbar */}
+                {canEditJob && (
+                  <div style={{ marginTop: 5, fontSize: 11.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                    {form.jt_url ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
+                        <span style={{ color: 'var(--st-success-ink, #059669)', fontWeight: 650, whiteSpace: 'nowrap' }}>✓ Link saved</span>
+                        <a
+                          href={cleanNetsuiteUrl(form.jt_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'var(--senior)', textDecoration: 'underline', fontWeight: 600, whiteSpace: 'nowrap' }}
+                          title={cleanNetsuiteUrl(form.jt_url)}
+                        >
+                          🔗 Test link
+                        </a>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--muted)', fontSize: 11 }}>Tip: Copying from NetSuite automatically captures link</span>
+                    )}
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      style={{ padding: '1px 6px', fontSize: 11, whiteSpace: 'nowrap' }}
+                      onClick={() => setShowUrlField(v => !v)}
+                    >
+                      {showUrlField ? '▴ Hide URL' : form.jt_url ? '✎ Edit URL' : '＋ Add URL manually'}
+                    </button>
+                  </div>
+                )}
+
+                {showUrlField && canEditJob && (
+                  <div style={{ marginTop: 6, background: 'var(--surface-2)', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>
+                      NetSuite Record URL
+                    </label>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        type="text"
+                        className="txt sm"
+                        style={{ fontSize: 11.5, flex: 1 }}
+                        placeholder="https://system.netsuite.com/app/crm/support/supportcase.nl?id=..."
+                        value={form.jt_url}
+                        onChange={e => set('jt_url', cleanNetsuiteUrl(e.target.value))}
+                      />
+                      {form.jt_url && (
+                        <button
+                          type="button"
+                          className="btn ghost sm"
+                          style={{ color: 'var(--st-fail)', padding: '2px 8px', fontSize: 11 }}
+                          onClick={() => set('jt_url', '')}
+                          title="Remove URL"
+                        >
+                          ✕ Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
