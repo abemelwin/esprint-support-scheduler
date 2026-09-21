@@ -367,19 +367,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                           }}
                         >+{dayJobs.length - 3} more</button>
                       )}
-                      {!isFieldStaff && canOpenJobModal && dayJobs.length >= 3 && (
-                        <button
-                          type="button"
-                          className="cell-bottom-add-btn"
-                          title={`Add new ticket on ${dateKey}`}
-                          onClick={e => {
-                            e.stopPropagation()
-                            onOpenJob({ date: dateKey })
-                          }}
-                        >
-                          + Add Ticket
-                        </button>
-                      )}
+
                     </div>
                   </div>
                 )
