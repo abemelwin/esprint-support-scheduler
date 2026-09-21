@@ -387,11 +387,17 @@ export default function JobModal({ payload, onClose }) {
                     onChange={e => set('jt_no', e.target.value)}
                     onPaste={e => {
                       if (!canEditJob) return
-                      const html = e.clipboardData?.getData('text/html')
-                      const url = extractHrefFromHtml(html)
-                      if (url) {
-                        setForm(f => ({ ...f, jt_url: url }))
-                      }
+                      const html      = e.clipboardData?.getData('text/html')
+                      const plainText = e.clipboardData?.getData('text/plain') || ''
+                      // TEMP DEBUG: inspect what NetSuite actually put on the clipboard.
+                      // Open browser console (F12) after pasting to see this.
+                      console.log('[NetSuite paste] plainText =', JSON.stringify(plainText))
+                      console.log('[NetSuite paste] html =', html)
+                      const url = extractHrefFromHtml(html, plainText.trim())
+                      console.log('[NetSuite paste] chosen url =', url)
+                      // Always reset jt_url on a fresh paste so a previous
+                      // link is never carried over onto a different number.
+                      setForm(f => ({ ...f, jt_url: url || '' }))
                     }}
                   />
                 </div>
