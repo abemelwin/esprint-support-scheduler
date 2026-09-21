@@ -1,12 +1,16 @@
-import { useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useApp } from '../lib/AppContext'
+import { supabase } from '../lib/supabase'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
 import { TYPES, STATUS, DOW } from '../lib/constants'
 import { cleanNetsuiteUrl } from '../lib/netsuite'
 import AvailabilityPanel from './AvailabilityPanel'
 
 export default function CalendarView({ currentMonth, setCurrentMonth, filters, setFilters, onOpenJob }) {
-  const { jobs, branches, staff, inScope, currentUser, isAdmin, canEditBranch } = useApp()
+  const { jobs, branches, staff, inScope, currentUser, isAdmin, canEditBranch, setJobs, loadJobs } = useApp()
+  const [draggedJob, setDraggedJob] = useState(null)
+  const [dragOverDate, setDragOverDate] = useState(null)
+  const dragJustEndedRef = useRef(false)
 
   const isFieldStaff = currentUser?.role === 'senior_fse' ||
                        currentUser?.role === 'junior_fse' ||
@@ -17,6 +21,11 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
   // view + filters, but must NOT be able to open the New/Edit Job Ticket
   // modal — same as field staff, clicking a day or chip does nothing.
   const canOpenJobModal = isAdmin || canEditBranch()
+
+  function canDragJob(j) {
+    if (isFieldStaff || !canOpenJobModal) return false
+    return isAdmin || canEditBranch(j.branch_id)
+  }
 
   function prevMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
   function nextMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)) }
@@ -162,16 +171,68 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
             <div className="cal">
               {DOW.map(d => <div key={d} className="dow">{d}</div>)}
               {cells.map(cell => {
-                const isOther  = cell.getMonth() !== currentMonth.getMonth()
-                const isToday  = sameYMD(cell, today)
-                const dateKey  = ymd(cell)
-                const dayJobs  = filteredJobs(dateKey)
+                const isOther     = cell.getMonth() !== currentMonth.getMonth()
+                const isToday     = sameYMD(cell, today)
+                const dateKey     = ymd(cell)
+                const dayJobs     = filteredJobs(dateKey)
+                const isDragOver  = dragOverDate === dateKey && draggedJob && draggedJob.date !== dateKey
+
                 return (
                   <div
                     key={dateKey}
-                    className={`cell${isOther ? ' other' : ''}${isToday ? ' today' : ''}`}
+                    className={`cell${isOther ? ' other' : ''}${isToday ? ' today' : ''}${isDragOver ? ' drag-over' : ''}`}
                     style={{ cursor: (isFieldStaff || !canOpenJobModal) ? 'default' : 'pointer' }}
-                    onClick={(isFieldStaff || !canOpenJobModal) ? undefined : () => onOpenJob({ date: dateKey })}
+                    onClick={(isFieldStaff || !canOpenJobModal) ? undefined : () => {
+                      if (dragJustEndedRef.current) return
+                      onOpenJob({ date: dateKey })
+                    }}
+                    onDragOver={e => {
+                      if (!draggedJob || !canDragJob(draggedJob)) return
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = 'move'
+                      if (dragOverDate !== dateKey) {
+                        setDragOverDate(dateKey)
+                      }
+                    }}
+                    onDragEnter={e => {
+                      if (!draggedJob || !canDragJob(draggedJob)) return
+                      e.preventDefault()
+                      setDragOverDate(dateKey)
+                    }}
+                    onDragLeave={e => {
+                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                        if (dragOverDate === dateKey) {
+                          setDragOverDate(null)
+                        }
+                      }
+                    }}
+                    onDrop={async e => {
+                      e.preventDefault()
+                      setDragOverDate(null)
+                      const jobToMove = draggedJob
+                      setDraggedJob(null)
+
+                      if (!jobToMove || !canDragJob(jobToMove)) return
+                      if (jobToMove.date === dateKey) return
+
+                      // Optimistic UI update
+                      setJobs(prev => prev.map(item => item.id === jobToMove.id ? { ...item, date: dateKey } : item))
+
+                      try {
+                        const { error } = await supabase
+                          .from('jobs')
+                          .update({ date: dateKey })
+                          .eq('id', jobToMove.id)
+
+                        if (error) {
+                          console.error('Error rescheduling ticket:', error)
+                        }
+                        await loadJobs()
+                      } catch (err) {
+                        console.error('Error rescheduling ticket:', err)
+                        await loadJobs()
+                      }
+                    }}
                   >
                     <span className="dnum">{cell.getDate()}</span>
                     <div className="jobs">
@@ -179,6 +240,8 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                         const s = staffById(j.staff_id)
                         const cls = TYPES[j.type]?.cls || ''
                         const jtText = j.jt_no || ((j.type === 'leave' || j.type === 'absent') ? TYPES[j.type]?.label : '—')
+                        const isAbsence = j.type === 'leave' || j.type === 'absent'
+                        const jtLabel = isAbsence ? TYPES[j.type]?.label : j.jt_no
 
                         if (isFieldStaff) {
                           return (
@@ -195,16 +258,33 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                           )
                         }
 
-                        const isAbsence = j.type === 'leave' || j.type === 'absent'
-                        const jtLabel = isAbsence ? TYPES[j.type]?.label : j.jt_no
+                        const draggable = canDragJob(j)
+                        const isDraggingThis = draggedJob?.id === j.id
 
                         return (
                           <div
                             key={j.id}
-                            className={`jchip ${cls}`}
-                            style={{ cursor: canOpenJobModal ? 'pointer' : 'default' }}
+                            draggable={draggable}
+                            onDragStart={draggable ? e => {
+                              e.dataTransfer.effectAllowed = 'move'
+                              e.dataTransfer.setData('text/plain', j.id)
+                              setDraggedJob(j)
+                            } : undefined}
+                            onDragEnd={draggable ? () => {
+                              setDraggedJob(null)
+                              setDragOverDate(null)
+                              dragJustEndedRef.current = true
+                              setTimeout(() => { dragJustEndedRef.current = false }, 120)
+                            } : undefined}
+                            className={`jchip ${cls}${isDraggingThis ? ' is-dragging' : ''}${draggable ? ' is-draggable' : ''}`}
+                            style={{ cursor: draggable ? 'grab' : (canOpenJobModal ? 'pointer' : 'default') }}
+                            title={draggable ? `Drag to reschedule • NetSuite #: ${jtLabel || '—'}` : undefined}
                             onClick={canOpenJobModal
-                              ? e => { e.stopPropagation(); onOpenJob({ date: dateKey, job: j }) }
+                              ? e => {
+                                  e.stopPropagation()
+                                  if (dragJustEndedRef.current) return
+                                  onOpenJob({ date: dateKey, job: j })
+                                }
                               : e => e.stopPropagation()}
                           >
                             <span className={`st ${STATUS[j.status]?.dot || ''}`} />
@@ -214,6 +294,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                                 href={cleanNetsuiteUrl(j.jt_url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                draggable={false}
                                 onClick={e => e.stopPropagation()}
                                 title={`Open in NetSuite: ${cleanNetsuiteUrl(j.jt_url)}`}
                               >{jtLabel}</a>
