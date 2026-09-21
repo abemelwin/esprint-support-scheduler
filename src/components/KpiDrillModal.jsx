@@ -101,15 +101,44 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
     }).filter(Boolean)
     content = (
       <table className="rt">
-        <thead><tr><th>Branch</th>{TYPE_KEYS.map(k=><th key={k} className="num">{TYPES[k].label}</th>)}<th className="num">Total</th></tr></thead>
+        <thead>
+          <tr>
+            <th style={{ minWidth: 170, paddingLeft: 18 }}>Branch</th>
+            {TYPE_KEYS.map(k => (
+              <th key={k} className="num" style={{ minWidth: 70, padding: '9px 10px' }}>{TYPES[k].label}</th>
+            ))}
+            <th className="num" style={{ minWidth: 54, paddingRight: 18 }}>Total</th>
+          </tr>
+        </thead>
         <tbody>
-          {rows.length === 0 && <tr><td colSpan={TYPE_KEYS.length+2} className="empty-note">No tickets today.</td></tr>}
+          {rows.length === 0 && <tr><td colSpan={TYPE_KEYS.length + 2} className="empty-note">No tickets today.</td></tr>}
           {rows.map(({ b, bj, c }) => (
-            <tr key={b.id}><td>{b.name} <span style={{color:'var(--muted)'}}>{b.note}</span></td>
-              {TYPE_KEYS.map(k=><td key={k} className="num">{c[k]||''}</td>)}
-              <td className="num"><b>{bj.length}</b></td></tr>
+            <tr key={b.id}>
+              <td style={{ minWidth: 170, paddingLeft: 18 }}>
+                <span style={{ fontWeight: 750, color: 'var(--ink-1)' }}>{b.name}</span>
+                <span style={{ color: 'var(--muted)', fontSize: 11.5, marginLeft: 6 }}>· {b.note}</span>
+              </td>
+              {TYPE_KEYS.map(k => (
+                <td key={k} className="num" style={{ padding: '9px 10px' }}>
+                  {c[k] > 0 ? <span style={{ fontWeight: 600, color: 'var(--ink-1)' }}>{c[k]}</span> : <span style={{ color: 'var(--muted)', opacity: 0.35 }}>—</span>}
+                </td>
+              ))}
+              <td className="num" style={{ paddingRight: 18 }}>
+                <b style={{ color: 'var(--senior)', fontSize: 13 }}>{bj.length}</b>
+              </td>
+            </tr>
           ))}
-          {rows.length > 0 && <tr className="tot"><td>ALL BRANCHES</td>{TYPE_KEYS.map(k=><td key={k} className="num">{tot[k]}</td>)}<td className="num">{todayJobs.length}</td></tr>}
+          {rows.length > 0 && (
+            <tr className="tot">
+              <td style={{ paddingLeft: 18 }}><b>ALL BRANCHES</b></td>
+              {TYPE_KEYS.map(k => (
+                <td key={k} className="num" style={{ padding: '9px 10px' }}>
+                  {tot[k] > 0 ? <b>{tot[k]}</b> : <span style={{ color: 'var(--muted)', opacity: 0.4 }}>—</span>}
+                </td>
+              ))}
+              <td className="num" style={{ paddingRight: 18 }}><b style={{ fontSize: 13.5 }}>{todayJobs.length}</b></td>
+            </tr>
+          )}
         </tbody>
       </table>
     )
@@ -127,16 +156,29 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
     sub = `${todayLbl} · ${freeCount} staff with no task today`
     content = (
       <table className="rt">
-        <thead><tr><th>Branch</th><th className="num">Free</th><th className="num">Assigned</th><th className="num">Staff</th><th>Available names</th></tr></thead>
+        <thead>
+          <tr>
+            <th style={{ minWidth: 170, paddingLeft: 18 }}>Branch</th>
+            <th className="num" style={{ minWidth: 50, padding: '9px 10px' }}>Free</th>
+            <th className="num" style={{ minWidth: 65, padding: '9px 10px' }}>Assigned</th>
+            <th className="num" style={{ minWidth: 50, padding: '9px 10px' }}>Staff</th>
+            <th style={{ minWidth: 240, paddingRight: 18 }}>Available names</th>
+          </tr>
+        </thead>
         <tbody>
           {rows.length === 0 && <tr><td colSpan={5} className="empty-note">No staff yet.</td></tr>}
           {rows.map(({ b, homed, free }) => (
             <tr key={b.id}>
-              <td>{b.name} <span style={{color:'var(--muted)'}}>{b.note}</span></td>
-              <td className="num"><b>{free.length}</b></td>
-              <td className="num">{homed.length - free.length}</td>
-              <td className="num">{homed.length}</td>
-              <td><AvailableNamesDropdown staffList={free} /></td>
+              <td style={{ minWidth: 170, paddingLeft: 18 }}>
+                <span style={{ fontWeight: 750, color: 'var(--ink-1)' }}>{b.name}</span>
+                <span style={{ color: 'var(--muted)', fontSize: 11.5, marginLeft: 6 }}>· {b.note}</span>
+              </td>
+              <td className="num" style={{ padding: '9px 10px' }}>
+                <b style={{ color: free.length > 0 ? 'var(--st-success-ink, #059669)' : 'var(--muted)' }}>{free.length}</b>
+              </td>
+              <td className="num" style={{ padding: '9px 10px' }}>{homed.length - free.length}</td>
+              <td className="num" style={{ padding: '9px 10px' }}><b>{homed.length}</b></td>
+              <td style={{ paddingRight: 18 }}><AvailableNamesDropdown staffList={free} /></td>
             </tr>
           ))}
         </tbody>
@@ -146,24 +188,64 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
 
   else if (kind === 'staff') {
     title = 'Total Staff — per Branch'
-    const tot = {}; ROLE_ORDER.forEach(r => tot[r] = 0); let totH = 0, totAll = 0
+    const activeRoles = isAdmin ? ROLE_ORDER : ROLE_ORDER.filter(r => r !== 'coordinator')
+    const tot = {}; activeRoles.forEach(r => tot[r] = 0); let totH = 0, totAll = 0
     const rows = branchList.map(b => {
       const homed = getBranchHomedStaff(b.id); if (!homed.length) return null
-      const c = {}; ROLE_ORDER.forEach(r => { c[r] = homed.filter(s => s.role === r).length; tot[r] += c[r] })
+      const c = {}; activeRoles.forEach(r => { c[r] = homed.filter(s => s.role === r).length; tot[r] += c[r] })
       const h = homed.filter(s => s.hotline).length; totH += h; totAll += homed.length
       return { b, homed, c, h }
     }).filter(Boolean)
     sub = `${totAll} staff across ${branchList.length} branch(es)`
     content = (
       <table className="rt">
-        <thead><tr><th>Branch</th>{ROLE_ORDER.map(r=><th key={r} className="num">{ROLES[r].short}</th>)}<th className="num">☎</th><th className="num">Total</th></tr></thead>
+        <thead>
+          <tr>
+            <th style={{ minWidth: 170, paddingLeft: 18 }}>Branch</th>
+            {activeRoles.map(r => (
+              <th key={r} className="num" style={{ minWidth: 56, padding: '9px 10px' }}>
+                <span title={ROLES[r].label}>{ROLES[r].short}</span>
+              </th>
+            ))}
+            <th className="num" style={{ minWidth: 44, padding: '9px 10px' }} title="Hotline Team">☎</th>
+            <th className="num" style={{ minWidth: 54, paddingRight: 18 }}>Total</th>
+          </tr>
+        </thead>
         <tbody>
+          {rows.length === 0 && <tr><td colSpan={activeRoles.length + 3} className="empty-note">No staff found.</td></tr>}
           {rows.map(({ b, homed, c, h }) => (
-            <tr key={b.id}><td>{b.name} <span style={{color:'var(--muted)'}}>{b.note}</span></td>
-              {ROLE_ORDER.map(r=><td key={r} className="num">{c[r]||''}</td>)}
-              <td className="num">{h||''}</td><td className="num"><b>{homed.length}</b></td></tr>
+            <tr key={b.id}>
+              <td style={{ minWidth: 170, paddingLeft: 18 }}>
+                <span style={{ fontWeight: 750, color: 'var(--ink-1)' }}>{b.name}</span>
+                <span style={{ color: 'var(--muted)', fontSize: 11.5, marginLeft: 6 }}>· {b.note}</span>
+              </td>
+              {activeRoles.map(r => (
+                <td key={r} className="num" style={{ padding: '9px 10px' }}>
+                  {c[r] > 0 ? <span style={{ fontWeight: 600, color: 'var(--ink-1)' }}>{c[r]}</span> : <span style={{ color: 'var(--muted)', opacity: 0.35 }}>—</span>}
+                </td>
+              ))}
+              <td className="num" style={{ padding: '9px 10px' }}>
+                {h > 0 ? <span style={{ fontWeight: 700, color: '#ec4899' }}>{h}</span> : <span style={{ color: 'var(--muted)', opacity: 0.35 }}>—</span>}
+              </td>
+              <td className="num" style={{ paddingRight: 18 }}>
+                <b style={{ color: 'var(--senior)', fontSize: 13 }}>{homed.length}</b>
+              </td>
+            </tr>
           ))}
-          {rows.length > 0 && <tr className="tot"><td>ALL BRANCHES</td>{ROLE_ORDER.map(r=><td key={r} className="num">{tot[r]}</td>)}<td className="num">{totH}</td><td className="num">{totAll}</td></tr>}
+          {rows.length > 0 && (
+            <tr className="tot">
+              <td style={{ paddingLeft: 18 }}><b>ALL BRANCHES</b></td>
+              {activeRoles.map(r => (
+                <td key={r} className="num" style={{ padding: '9px 10px' }}>
+                  {tot[r] > 0 ? <b>{tot[r]}</b> : <span style={{ color: 'var(--muted)', opacity: 0.4 }}>—</span>}
+                </td>
+              ))}
+              <td className="num" style={{ padding: '9px 10px' }}>
+                {totH > 0 ? <b style={{ color: '#ec4899' }}>{totH}</b> : <span style={{ color: 'var(--muted)', opacity: 0.4 }}>—</span>}
+              </td>
+              <td className="num" style={{ paddingRight: 18 }}><b style={{ fontSize: 13.5 }}>{totAll}</b></td>
+            </tr>
+          )}
         </tbody>
       </table>
     )
@@ -185,15 +267,38 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
       }).filter(Boolean)
       content = (
         <table className="rt">
-          <thead><tr><th>Branch</th><th className="num">Pending</th><th className="num">Ongoing</th><th className="num">Not successful</th><th className="num">Total</th></tr></thead>
+          <thead>
+            <tr>
+              <th style={{ minWidth: 170, paddingLeft: 18 }}>Branch</th>
+              <th className="num" style={{ minWidth: 65, padding: '9px 10px' }}>Pending</th>
+              <th className="num" style={{ minWidth: 65, padding: '9px 10px' }}>Ongoing</th>
+              <th className="num" style={{ minWidth: 90, padding: '9px 10px' }}>Not successful</th>
+              <th className="num" style={{ minWidth: 54, paddingRight: 18 }}>Total</th>
+            </tr>
+          </thead>
           <tbody>
-            {rows.length===0&&<tr><td colSpan={5} className="empty-note">Nothing open. 🎉</td></tr>}
-            {rows.map(({b,bj,p,o,f})=>(
-              <tr key={b.id}><td>{b.name} <span style={{color:'var(--muted)'}}>{b.note}</span></td>
-                <td className="num">{p||''}</td><td className="num">{o||''}</td><td className="num">{f||''}</td>
-                <td className="num"><b>{bj.length}</b></td></tr>
+            {rows.length === 0 && <tr><td colSpan={5} className="empty-note">Nothing open. 🎉</td></tr>}
+            {rows.map(({ b, bj, p, o, f }) => (
+              <tr key={b.id}>
+                <td style={{ minWidth: 170, paddingLeft: 18 }}>
+                  <span style={{ fontWeight: 750, color: 'var(--ink-1)' }}>{b.name}</span>
+                  <span style={{ color: 'var(--muted)', fontSize: 11.5, marginLeft: 6 }}>· {b.note}</span>
+                </td>
+                <td className="num" style={{ padding: '9px 10px' }}>{p > 0 ? <span style={{ fontWeight: 600 }}>{p}</span> : <span style={{ color: 'var(--muted)', opacity: 0.35 }}>—</span>}</td>
+                <td className="num" style={{ padding: '9px 10px' }}>{o > 0 ? <span style={{ fontWeight: 600, color: 'var(--st-ongoing)' }}>{o}</span> : <span style={{ color: 'var(--muted)', opacity: 0.35 }}>—</span>}</td>
+                <td className="num" style={{ padding: '9px 10px' }}>{f > 0 ? <span style={{ fontWeight: 600, color: 'var(--st-fail)' }}>{f}</span> : <span style={{ color: 'var(--muted)', opacity: 0.35 }}>—</span>}</td>
+                <td className="num" style={{ paddingRight: 18 }}><b>{bj.length}</b></td>
+              </tr>
             ))}
-            {rows.length>0&&<tr className="tot"><td>ALL</td><td className="num">{tp}</td><td className="num">{to}</td><td className="num">{tf}</td><td className="num">{filtered.length}</td></tr>}
+            {rows.length > 0 && (
+              <tr className="tot">
+                <td style={{ paddingLeft: 18 }}><b>ALL BRANCHES</b></td>
+                <td className="num" style={{ padding: '9px 10px' }}>{tp > 0 ? <b>{tp}</b> : <span style={{ color: 'var(--muted)', opacity: 0.4 }}>—</span>}</td>
+                <td className="num" style={{ padding: '9px 10px' }}>{to > 0 ? <b style={{ color: 'var(--st-ongoing)' }}>{to}</b> : <span style={{ color: 'var(--muted)', opacity: 0.4 }}>—</span>}</td>
+                <td className="num" style={{ padding: '9px 10px' }}>{tf > 0 ? <b style={{ color: 'var(--st-fail)' }}>{tf}</b> : <span style={{ color: 'var(--muted)', opacity: 0.4 }}>—</span>}</td>
+                <td className="num" style={{ paddingRight: 18 }}><b style={{ fontSize: 13.5 }}>{filtered.length}</b></td>
+              </tr>
+            )}
           </tbody>
         </table>
       )
@@ -206,15 +311,42 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
       }).filter(Boolean)
       content = (
         <table className="rt">
-          <thead><tr><th>Branch</th>{TYPE_KEYS.map(k=><th key={k} className="num">{TYPES[k].label}</th>)}<th className="num">Total</th></tr></thead>
+          <thead>
+            <tr>
+              <th style={{ minWidth: 170, paddingLeft: 18 }}>Branch</th>
+              {TYPE_KEYS.map(k => (
+                <th key={k} className="num" style={{ minWidth: 70, padding: '9px 10px' }}>{TYPES[k].label}</th>
+              ))}
+              <th className="num" style={{ minWidth: 54, paddingRight: 18 }}>Total</th>
+            </tr>
+          </thead>
           <tbody>
-            {rows.length===0&&<tr><td colSpan={TYPE_KEYS.length+2} className="empty-note">No successful tickets yet.</td></tr>}
-            {rows.map(({b,bj,c})=>(
-              <tr key={b.id}><td>{b.name} <span style={{color:'var(--muted)'}}>{b.note}</span></td>
-                {TYPE_KEYS.map(k=><td key={k} className="num">{c[k]||''}</td>)}
-                <td className="num"><b>{bj.length}</b></td></tr>
+            {rows.length === 0 && <tr><td colSpan={TYPE_KEYS.length + 2} className="empty-note">No successful tickets yet.</td></tr>}
+            {rows.map(({ b, bj, c }) => (
+              <tr key={b.id}>
+                <td style={{ minWidth: 170, paddingLeft: 18 }}>
+                  <span style={{ fontWeight: 750, color: 'var(--ink-1)' }}>{b.name}</span>
+                  <span style={{ color: 'var(--muted)', fontSize: 11.5, marginLeft: 6 }}>· {b.note}</span>
+                </td>
+                {TYPE_KEYS.map(k => (
+                  <td key={k} className="num" style={{ padding: '9px 10px' }}>
+                    {c[k] > 0 ? <span style={{ fontWeight: 600 }}>{c[k]}</span> : <span style={{ color: 'var(--muted)', opacity: 0.35 }}>—</span>}
+                  </td>
+                ))}
+                <td className="num" style={{ paddingRight: 18 }}><b style={{ color: 'var(--st-success-ink, #059669)', fontSize: 13 }}>{bj.length}</b></td>
+              </tr>
             ))}
-            {rows.length>0&&<tr className="tot"><td>ALL</td>{TYPE_KEYS.map(k=><td key={k} className="num">{tt[k]}</td>)}<td className="num">{filtered.length}</td></tr>}
+            {rows.length > 0 && (
+              <tr className="tot">
+                <td style={{ paddingLeft: 18 }}><b>ALL BRANCHES</b></td>
+                {TYPE_KEYS.map(k => (
+                  <td key={k} className="num" style={{ padding: '9px 10px' }}>
+                    {tt[k] > 0 ? <b>{tt[k]}</b> : <span style={{ color: 'var(--muted)', opacity: 0.4 }}>—</span>}
+                  </td>
+                ))}
+                <td className="num" style={{ paddingRight: 18 }}><b style={{ fontSize: 13.5 }}>{filtered.length}</b></td>
+              </tr>
+            )}
           </tbody>
         </table>
       )
@@ -223,10 +355,10 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
 
   return (
     <div className="modal-bg open">
-      <div className="modal" style={{ width:'min(780px,96vw)' }}>
+      <div className="modal" style={{ width:'min(860px,96vw)' }}>
         <div className="modal-head"><h3>{title}</h3><div className="spacer" /></div>
-        <div className="modal-body">
-          <p className="empty-note" style={{ textAlign:'left', padding:'0 0 12px', margin:0 }}>{sub}</p>
+        <div className="modal-body" style={{ padding: '16px 20px 20px' }}>
+          <p className="empty-note" style={{ textAlign:'left', padding:'0 0 12px', margin:0, fontSize: 13, color: 'var(--muted)' }}>{sub}</p>
           <div className="rtable-wrap">{content}</div>
         </div>
         <div className="modal-foot"><button className="btn ghost" onClick={onClose}>Close</button></div>
