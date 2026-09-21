@@ -239,7 +239,7 @@ export default function JobModal({ payload, onClose }) {
 
   // Combined staff list: all existing staff + app users (merged without duplicates)
   const staffList = useMemo(() => {
-    const list = [...(staff || [])]
+    let list = [...(staff || [])]
 
     ;(appUsers || []).forEach(u => {
       if (!u.name || u.email?.toLowerCase().includes('eileen')) return
@@ -258,8 +258,15 @@ export default function JobModal({ payload, onClose }) {
       }
     })
 
+    if (!isAdmin) {
+      list = list.filter(s => {
+        const r = (s.role || '').toLowerCase()
+        return r !== 'coordinator' && r !== 'service_coordinator'
+      })
+    }
+
     return list.sort((a, b) => a.name.localeCompare(b.name))
-  }, [staff, appUsers])
+  }, [staff, appUsers, isAdmin])
 
   const handleStaffChange = (staffId) => {
     if (!canEditJob) return

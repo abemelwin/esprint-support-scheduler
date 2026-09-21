@@ -96,7 +96,16 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
 
   // filter dropdowns
   const visibleBranches = branches
-  const visibleStaffList = staff
+  const visibleStaffList = useMemo(() => {
+    return (staff || []).filter(s => {
+      if (s.name?.toLowerCase().includes('eileen')) return false
+      if (!isAdmin) {
+        const r = (s.role || '').toLowerCase()
+        if (r === 'coordinator' || r === 'service_coordinator') return false
+      }
+      return true
+    })
+  }, [staff, isAdmin])
 
   return (
     <div>

@@ -6,7 +6,7 @@ import { TYPES, TYPE_KEYS, STATUS, ROLES, ROLE_ORDER } from '../lib/constants'
 function esc(s) { return String(s || '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])) }
 
 export default function ReportsView({ reportMonth, setReportMonth, rFilters, setRFilters }) {
-  const { jobs, staff, branches, inScope } = useApp()
+  const { jobs, staff, branches, inScope, isAdmin } = useApp()
 
   function prevMonth() { setReportMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
   function nextMonth() { setReportMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)) }
@@ -14,6 +14,17 @@ export default function ReportsView({ reportMonth, setReportMonth, rFilters, set
 
   const staffById  = id => staff.find(s => s.id === id)
   const branchById = id => branches.find(b => b.id === id)
+
+  const visibleStaffList = useMemo(() => {
+    return (staff || []).filter(s => {
+      if (s.name?.toLowerCase().includes('eileen')) return false
+      if (!isAdmin) {
+        const r = (s.role || '').toLowerCase()
+        if (r === 'coordinator' || r === 'service_coordinator') return false
+      }
+      return true
+    })
+  }, [staff, isAdmin])
 
   const monthJobs = useMemo(() => jobs.filter(j => {
     if (!inScope(j)) return false
@@ -97,7 +108,7 @@ export default function ReportsView({ reportMonth, setReportMonth, rFilters, set
             <label>Employee</label>
             <select className="sel" value={rFilters.emp} onChange={e => setRFilters(f=>({...f,emp:e.target.value}))}>
               <option value="">All Staff</option>
-              {staff.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+              {visibleStaffList.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           {(rFilters.branch || rFilters.emp) && (

@@ -247,6 +247,7 @@ function RoleGroup({ role, group, tasksFor, onOpenJob, searchTerm, readOnly }) {
 }
 
 function BranchDetail({ branch, dateFilter, jobs, staff, onOpenJob, readOnly }) {
+  const { isAdmin } = useApp()
   const branchStaff = staff.filter(s => s.home_branch_id === branch.id)
 
   // dateFilter: { mode: 'month', prefix: 'YYYY-MM' } | { mode: 'day', date: 'YYYY-MM-DD' }
@@ -262,6 +263,10 @@ function BranchDetail({ branch, dateFilter, jobs, staff, onOpenJob, readOnly }) 
   if (branchStaff.length === 0) {
     return <div className="ovl-empty-row">No staff assigned to {branch.name}.</div>
   }
+
+  const visibleRoles = isAdmin
+    ? ROLE_ORDER
+    : ROLE_ORDER.filter(role => role !== 'coordinator')
 
   return (
     <div className="ovl-branch-detail">
@@ -279,7 +284,7 @@ function BranchDetail({ branch, dateFilter, jobs, staff, onOpenJob, readOnly }) 
         )}
       </div>
 
-      {ROLE_ORDER.map(role => {
+      {visibleRoles.map(role => {
         const group = branchStaff.filter(s => {
           if (role === 'coordinator') return s.role === 'coordinator' || s.role === 'service_coordinator'
           if (role === 'manager') return s.role === 'manager' || s.role === 'service_manager'

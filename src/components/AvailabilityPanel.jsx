@@ -126,7 +126,7 @@ const DESIGNATED_MANAGERS = [
 ]
 
 export default function AvailabilityPanel({ currentMonth }) {
-  const { jobs, inScope, visibleStaff, branches, staff, appUsers, currentUser, editableBranchIds, scopedBranchIds, loadStaff, loadAppUsers, loadJobs } = useApp()
+  const { jobs, inScope, visibleStaff, branches, staff, appUsers, currentUser, editableBranchIds, scopedBranchIds, loadStaff, loadAppUsers, loadJobs, isAdmin } = useApp()
   const [mode,         setMode]         = useState('month')   // 'month' | 'day'
   const [availDay,     setAvailDay]     = useState(ymd(new Date()))
   const [search,       setSearch]       = useState('')
@@ -295,8 +295,9 @@ export default function AvailabilityPanel({ currentMonth }) {
   const searchTerm = search.trim().toLowerCase()
   const filteredRoster = useMemo(() => {
     if (isFieldStaff) {
-      // Find strictly designated managers for this field staff's branch
+      // Find strictly designated managers (exclude coordinators) for this field staff's branch
       const matchedDesManagers = DESIGNATED_MANAGERS.filter(desMgr => {
+        if (desMgr.role === 'coordinator') return false
         if (myBranchCodes.length === 0) return true
         return desMgr.branchCodes.some(code => myBranchCodes.includes(code))
       })
@@ -346,11 +347,13 @@ export default function AvailabilityPanel({ currentMonth }) {
       })
     }
 
-    // Admin & Service Coordinator: full roster including designated managers & coordinators
-    const roster = [...visibleStaff()]
+    // Admin & other roles:
+    // Only Admin can view service coordinators
+    let roster = [...visibleStaff()]
 
-    // Integrate all designated managers and coordinators with their official roles
+    // Integrate designated managers (and coordinators ONLY if admin)
     DESIGNATED_MANAGERS.forEach(des => {
+      if (des.role === 'coordinator' && !isAdmin) return
       const idx = roster.findIndex(s => {
         const sNorm = s.name.trim().toLowerCase()
         if (des.filterMatch) return des.filterMatch(sNorm)
@@ -368,27 +371,37 @@ export default function AvailabilityPanel({ currentMonth }) {
       }
     })
 
-    // Also include any appUsers with service_coordinator or coordinator role that may not be in staff table yet
+    // Also include any appUsers (include service_coordinator ONLY if admin)
     ;(appUsers || []).forEach(u => {
       if (!u.name || u.email?.toLowerCase().includes('eileen')) return
+      const isCoord = u.role === 'service_coordinator' || u.role === 'coordinator'
+      if (isCoord && !isAdmin) return
+
       const uNorm = u.name.trim().toLowerCase()
       const existingIdx = roster.findIndex(s => {
         const sNorm = s.name.trim().toLowerCase()
         return sNorm === uNorm || sNorm.includes(uNorm) || uNorm.includes(sNorm)
       })
       if (existingIdx >= 0) {
-        if (u.role === 'service_coordinator' || u.role === 'coordinator') {
+        if (isCoord && isAdmin) {
           roster[existingIdx] = { ...roster[existingIdx], role: 'coordinator' }
         }
-      } else if (u.role === 'service_coordinator' || u.role === 'coordinator' || u.role === 'service_manager') {
+      } else if (isCoord || u.role === 'service_manager') {
         roster.push({
           id: u.id,
           name: u.name,
-          role: u.role === 'service_coordinator' ? 'coordinator' : u.role === 'service_manager' ? 'manager' : u.role,
+          role: isCoord ? 'coordinator' : u.role === 'service_manager' ? 'manager' : u.role,
           home_branch_id: u.main_branch_id || u.branch_ids?.[0] || '',
         })
       }
     })
+
+    if (!isAdmin) {
+      roster = roster.filter(s => {
+        const r = (s.role || '').toLowerCase()
+        return r !== 'coordinator' && r !== 'service_coordinator'
+      })
+    }
 
     return roster.filter(s => {
       if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return false
@@ -399,14 +412,17 @@ export default function AvailabilityPanel({ currentMonth }) {
       }
       return true
     })
-  }, [isFieldStaff, isServiceManager, myBranchCodes, staff, visibleStaff, searchTerm, branchFilter, branches, appUsers])
+  }, [isFieldStaff, isServiceManager, myBranchCodes, staff, visibleStaff, searchTerm, branchFilter, branches, appUsers, isAdmin])
 
-  // group by role
+  // group by role: coordinator group only shown to admin
   const activeRoles = isFieldStaff
-    ? ['manager', 'bsm', 'coordinator']
+    ? ['manager', 'bsm']
     : isServiceManager
       ? ['senior', 'junior', 'trainee']
-      : ROLE_ORDER
+      : isAdmin
+        ? ROLE_ORDER
+        : ROLE_ORDER.filter(r => r !== 'coordinator')
+
   const grouped = activeRoles.reduce((acc, r) => {
     acc[r] = filteredRoster.filter(s => {
       if (r === 'coordinator') return s.role === 'coordinator' || s.role === 'service_coordinator'
