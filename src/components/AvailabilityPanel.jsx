@@ -123,6 +123,13 @@ const DESIGNATED_MANAGERS = [
     branchCodes: ALL_BRANCH_CODES,
     label: '🌐 All Branches (Coordinator)',
   },
+  {
+    nameKey: 'templa',
+    fullName: 'Marvin Jay Templa',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
 ]
 
 export default function AvailabilityPanel({ currentMonth }) {
@@ -194,7 +201,16 @@ export default function AvailabilityPanel({ currentMonth }) {
 
   // Helper to get complete branch info for a staff member
   function getStaffBranchInfo(s) {
-    const sNameNorm = s.name.trim().toLowerCase()
+    if (!s) return { label: '—', isAll: false, branchIds: [] }
+    const sNameNorm = (s.name || '').trim().toLowerCase()
+
+    // 0. Check if this person is a coordinator or admin
+    if (s.role === 'admin') {
+      return { label: '🌐 All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
+    }
+    if (isPersonCoordinator(s) || s.role === 'coordinator' || s.role === 'service_coordinator') {
+      return { label: '🌐 All Branches (Coordinator)', isAll: true, branchIds: branches.map(b => b.id) }
+    }
 
     // 1. Check if user exists in appUsers with custom branch permissions
     const matchedUser = appUsers?.find(u => {
@@ -208,6 +224,9 @@ export default function AvailabilityPanel({ currentMonth }) {
     if (matchedUser) {
       if (matchedUser.role === 'admin') {
         return { label: '🌐 All Branches (Admin)', isAll: true, branchIds: branches.map(b => b.id) }
+      }
+      if (matchedUser.role === 'service_coordinator' || matchedUser.role === 'coordinator') {
+        return { label: '🌐 All Branches (Coordinator)', isAll: true, branchIds: branches.map(b => b.id) }
       }
       const uCanEdit = matchedUser.can_edit !== false
       let uEditBranches = []
@@ -414,13 +433,18 @@ export default function AvailabilityPanel({ currentMonth }) {
       })
       if (existingIdx >= 0) {
         if (isCoord && isAdmin) {
-          roster[existingIdx] = { ...roster[existingIdx], role: 'coordinator' }
+          roster[existingIdx] = {
+            ...roster[existingIdx],
+            role: 'coordinator',
+            _displayLabel: '🌐 All Branches (Coordinator)',
+          }
         }
       } else if (isCoord || u.role === 'service_manager') {
         roster.push({
           id: u.id,
           name: u.name,
           role: isCoord ? 'coordinator' : u.role === 'service_manager' ? 'manager' : u.role,
+          _displayLabel: isCoord ? '🌐 All Branches (Coordinator)' : undefined,
           home_branch_id: u.main_branch_id || u.branch_ids?.[0] || '',
         })
       }
@@ -529,7 +553,13 @@ export default function AvailabilityPanel({ currentMonth }) {
               </h3>
               {grp.map(s => {
                 const tasks = tasksFor(s.id)
-                const branchInfo = s._displayLabel ? { label: s._displayLabel, isAll: false } : getStaffBranchInfo(s)
+                const isCoord = isPersonCoordinator(s) || s.role === 'coordinator' || s.role === 'service_coordinator'
+                const rawInfo = getStaffBranchInfo(s)
+                const branchInfo = isCoord
+                  ? { label: '🌐 All Branches (Coordinator)', isAll: true, branchIds: branches.map(b => b.id) }
+                  : s._displayLabel
+                    ? { label: s._displayLabel, isAll: s._displayLabel.includes('🌐') || s._displayLabel.includes('All Branches'), branchIds: rawInfo.branchIds }
+                    : rawInfo
                 return (
                   <div key={s.id} className={`person${tasks.length === 0 ? ' free' : ' busy-row'}`}>
                     <div className="person-main">
