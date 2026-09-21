@@ -130,7 +130,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
               onClick={() => onOpenJob({ date: ymd(new Date()) })}
               title="Create a new job ticket"
             >
-              ï¼‹ New Ticket
+              + New Ticket
             </button>
           )}
         </div>
@@ -283,7 +283,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                             onOpenJob({ date: dateKey })
                           }}
                         >
-                          ï¼‹
+                          +
                         </button>
                       )}
                     </div>
@@ -377,7 +377,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                             onOpenJob({ date: dateKey })
                           }}
                         >
-                          ï¼‹ Add Ticket
+                          + Add Ticket
                         </button>
                       )}
                     </div>
