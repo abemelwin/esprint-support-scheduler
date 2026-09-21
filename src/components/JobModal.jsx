@@ -392,14 +392,16 @@ export default function JobModal({ payload, onClose }) {
                       const plainText = e.clipboardData?.getData('text/plain') || ''
 
                       // If user pastes a full URL directly into jt_no box
-                      if (/^https?:\/\//i.test(plainText.trim()) || /netsuite\.com/i.test(plainText.trim())) {
+                      if (/^https?:\/\//i.test(plainText.trim()) || /netsuite\.com/i.test(plainText.trim()) || plainText.trim().startsWith('/app/')) {
                         const directUrl = cleanNetsuiteUrl(plainText.trim())
                         setForm(f => ({ ...f, jt_url: directUrl }))
                         return
                       }
 
                       const url = extractHrefFromHtml(html, plainText.trim())
-                      setForm(f => ({ ...f, jt_url: url ? cleanNetsuiteUrl(url) : '' }))
+                      if (url) {
+                        setForm(f => ({ ...f, jt_url: cleanNetsuiteUrl(url) }))
+                      }
                     }}
                   />
                 </div>
