@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { TYPE_KEYS, ABSENCE_KEYS, TYPES, namesMatch } from '../lib/constants'
-import { extractHrefFromHtml, cleanNetsuiteUrl } from '../lib/netsuite'
+import { extractHrefFromHtml, cleanNetsuiteUrl, buildNetsuiteUrl } from '../lib/netsuite'
 import ConfirmModal from './ConfirmModal'
 
 const EMPTY = { jt_no:'', jt_url:'', staff_id:'', branch_id:'', customer:'', location:'', machine:'', serial_no:'', type:'', type_other:'', status:'pending', status_note:'' }
@@ -365,13 +365,13 @@ export default function JobModal({ payload, onClose }) {
               <div>
                 <label className="fld">
                   <span>Netsuite# {jtRequired && <span className="req">*</span>}</span>
-                  {form.jt_url && (
+                  {(form.jt_no || form.jt_url) && (
                     <a
-                      href={cleanNetsuiteUrl(form.jt_url)}
+                      href={form.jt_no ? buildNetsuiteUrl(form.jt_no) : cleanNetsuiteUrl(form.jt_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ns-link-badge"
-                      title={`Open in NetSuite: ${cleanNetsuiteUrl(form.jt_url)}`}
+                      title={`Open in NetSuite: Case ${form.jt_no || ''}`}
                     >
                       🔗 Open in NetSuite
                     </a>

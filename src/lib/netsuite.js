@@ -133,3 +133,23 @@ export function extractHrefFromHtml(html, pastedText = '') {
   return toAbsolute(anchors[0].href)
 }
 
+
+// NetSuite account base URL - update this if your account ID changes.
+const NS_BASE = 'https://11128201.app.netsuite.com'
+
+// Build a FRESH, non-expiring NetSuite case search URL from a case number.
+// This avoids the "search criteria expired" error that appears when a
+// copied search-results URL is opened after 15 minutes of inactivity.
+// Instead of storing the copied URL, we construct a new search every time.
+export function buildNetsuiteUrl(caseNumber) {
+  if (!caseNumber) return ''
+  const num = String(caseNumber).trim()
+  if (!num) return ''
+  const params = new URLSearchParams({
+    searchtype: 'Case',
+    Case_CASENUMBERtype: 'IS',
+    Case_CASENUMBER: num,
+    action: 'search',
+  })
+  return `${NS_BASE}/app/common/search/searchresults.nl?${params.toString()}`
+}

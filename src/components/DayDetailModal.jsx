@@ -1,6 +1,6 @@
 import { useApp } from '../lib/AppContext'
 import { TYPES, STATUS } from '../lib/constants'
-import { cleanNetsuiteUrl } from '../lib/netsuite'
+import { buildNetsuiteUrl } from '../lib/netsuite'
 import { parseYMD } from '../lib/dates'
 
 export default function DayDetailModal({ dateKey, jobs, onClose, onOpenJob, canOpenJobModal }) {
@@ -55,15 +55,15 @@ export default function DayDetailModal({ dateKey, jobs, onClose, onOpenJob, canO
                   {/* Top row: status dot + NS# (linked) + type tag + status pill */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span className={`st ${STATUS[j.status]?.dot || ''}`} />
-                    {j.jt_url && !isAbsence ? (
+                    {j.jt_no && !isAbsence ? (
                       <a
                         className="jn jn-link"
-                        href={cleanNetsuiteUrl(j.jt_url)}
+                        href={buildNetsuiteUrl(j.jt_no)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={e => e.stopPropagation()}
-                        title={cleanNetsuiteUrl(j.jt_url)}
-                      >{j.jt_no || '—'}</a>
+                        title={`Open in NetSuite: Case ${j.jt_no}`}
+                      >{j.jt_no || '--'}</a>
                     ) : (
                       <span className="jn">{isAbsence ? TYPES[j.type]?.label : (j.jt_no || '—')}</span>
                     )}

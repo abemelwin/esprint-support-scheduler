@@ -3,7 +3,7 @@ import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
 import { TYPES, STATUS, DOW, namesMatch } from '../lib/constants'
-import { cleanNetsuiteUrl } from '../lib/netsuite'
+import { cleanNetsuiteUrl, buildNetsuiteUrl } from '../lib/netsuite'
 import AvailabilityPanel from './AvailabilityPanel'
 import DayDetailModal from './DayDetailModal'
 
@@ -340,15 +340,15 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
                               : e => e.stopPropagation()}
                           >
                             <span className={`st ${STATUS[j.status]?.dot || ''}`} />
-                            {j.jt_url && !isAbsence ? (
+                            {j.jt_no && !isAbsence ? (
                               <a
                                 className="jn jn-link"
-                                href={cleanNetsuiteUrl(j.jt_url)}
+                                href={buildNetsuiteUrl(j.jt_no)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 draggable={false}
                                 onClick={e => e.stopPropagation()}
-                                title={`Open in NetSuite: ${cleanNetsuiteUrl(j.jt_url)}`}
+                                title={`Open in NetSuite: Case ${j.jt_no}`}
                               >{jtLabel}</a>
                             ) : (
                               <span className="jn">{jtLabel}</span>
