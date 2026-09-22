@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { ymd, fmtD, monthName } from '../lib/dates'
-import { TYPES, TYPE_KEYS, ROLES, ROLE_ORDER, STATUS, namesMatch } from '../lib/constants'
+import { TYPES, TYPE_KEYS, ROLES, ROLE_ORDER, STATUS, namesMatch, isAdminOrCoordinator } from '../lib/constants'
 
 function AvailableNamesDropdown({ staffList }) {
   const [selected, setSelected] = useState('')
@@ -51,24 +51,34 @@ function AvailableNamesDropdown({ staffList }) {
   )
 }
 
-export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, onClose }) {
+export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, filters, onClose }) {
   const { jobs, staff, appUsers, branches, inScope, scopedBranches, visibleStaff, isAdmin, scopedBranchIds } = useApp()
   const m = view === 'reports' ? reportMonth : currentMonth
   const todayKey = ymd(new Date())
   const todayLbl = fmtD(new Date())
-  const branchList = scopedBranches()
+  const branchList = scopedBranches().filter(b => {
+    if (filters?.branch) return b.id === filters.branch
+    return true
+  })
+
+  const isAbsence = j => j.type === 'leave' || j.type === 'absent'
+
+  function matchesFilter(j) {
+    if (!filters) return true
+    if (filters.branch && j.branch_id !== filters.branch) return false
+    if (filters.emp    && j.staff_id  !== filters.emp)    return false
+    if (filters.type   && j.type      !== filters.type)   return false
+    if (filters.status && j.status    !== filters.status) return false
+    return true
+  }
 
   const staffById  = id => staff.find(s => s.id === id)
   const branchById = id => branches.find(b => b.id === id)
 
+  // Admin and Service Coordinator are strictly excluded from staff lists/counts
   const activeStaffList = (staff || []).filter(s => {
-    if (s.name?.toLowerCase().includes('eileen')) return false
-    if (!isAdmin) {
-      const r = (s.role || '').toLowerCase()
-      if (r === 'coordinator' || r === 'service_coordinator') return false
-      const matchedUser = appUsers?.find(u => namesMatch(u.name, s.name))
-      if (matchedUser && (matchedUser.role === 'coordinator' || matchedUser.role === 'service_coordinator')) return false
-    }
+    if (isAdminOrCoordinator(s, appUsers)) return false
+    if (filters?.emp && s.id !== filters.emp) return false
     return true
   })
 
@@ -82,15 +92,18 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
   function monthJobs() {
     return jobs.filter(j => {
       if (!inScope(j)) return false
+      if (isAbsence(j)) return false
+      if (!matchesFilter(j)) return false
       const d = new Date(j.date + 'T00:00:00')
       return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear()
     })
   }
 
+
   let title = '', sub = '', content = null
 
   if (kind === 'job-today') {
-    const todayJobs = jobs.filter(j => inScope(j) && j.date === todayKey)
+    const todayJobs = jobs.filter(j => inScope(j) && !isAbsence(j) && j.date === todayKey && matchesFilter(j))
     title = 'Ongoing Today — per Branch'
     sub   = `${todayLbl} · ${todayJobs.length} job ticket(s)`
     const tot = {}; TYPE_KEYS.forEach(k => tot[k] = 0)
@@ -145,7 +158,7 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
   }
 
   else if (kind === 'avail-today') {
-    const assigned = new Set(jobs.filter(j => inScope(j) && j.date === todayKey).map(j => j.staff_id))
+    const assigned = new Set(jobs.filter(j => inScope(j) && j.date === todayKey && (filters?.branch ? j.branch_id === filters.branch : true)).map(j => j.staff_id))
     title = 'Available Today — per Branch'
     let freeCount = 0
     const rows = branchList.map(b => {
@@ -188,7 +201,7 @@ export default function KpiDrillModal({ kind, currentMonth, reportMonth, view, o
 
   else if (kind === 'staff') {
     title = 'Total Staff — per Branch'
-    const activeRoles = isAdmin ? ROLE_ORDER : ROLE_ORDER.filter(r => r !== 'coordinator')
+    const activeRoles = ['manager', 'bsm', 'senior', 'junior', 'trainee']
     const tot = {}; activeRoles.forEach(r => tot[r] = 0); let totH = 0, totAll = 0
     const rows = branchList.map(b => {
       const homed = getBranchHomedStaff(b.id); if (!homed.length) return null

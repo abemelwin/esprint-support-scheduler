@@ -1,8 +1,8 @@
-﻿﻿import { useState, useMemo, useRef } from 'react'
+﻿import { useState, useMemo, useRef } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
-import { TYPES, STATUS, DOW, namesMatch } from '../lib/constants'
+import { TYPES, STATUS, DOW, namesMatch, isAdminOrCoordinator } from '../lib/constants'
 import { cleanNetsuiteUrl, buildNetsuiteUrl } from '../lib/netsuite'
 import AvailabilityPanel from './AvailabilityPanel'
 import DayDetailModal from './DayDetailModal'
@@ -100,16 +100,11 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
   const visibleBranches = branches
   const visibleStaffList = useMemo(() => {
     return (staff || []).filter(s => {
-      if (s.name?.toLowerCase().includes('eileen')) return false
-      if (!isAdmin) {
-        const r = (s.role || '').toLowerCase()
-        if (r === 'coordinator' || r === 'service_coordinator') return false
-        const matchedUser = appUsers?.find(u => namesMatch(u.name, s.name))
-        if (matchedUser && (matchedUser.role === 'coordinator' || matchedUser.role === 'service_coordinator')) return false
-      }
+      if (isAdminOrCoordinator(s, appUsers)) return false
+      if (filters.branch && s.home_branch_id !== filters.branch) return false
       return true
     })
-  }, [staff, isAdmin, appUsers])
+  }, [staff, appUsers, filters.branch])
 
   return (
     <div>
@@ -141,7 +136,17 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
             <div className="toolbar-filters">
               <div className="fl">
                 <label>Branch</label>
-                <select className="sel" value={filters.branch} onChange={e => setFilters(f => ({...f, branch: e.target.value}))}>
+                <select
+                  className="sel"
+                  value={filters.branch}
+                  onChange={e => {
+                    const nextBranch = e.target.value
+                    setFilters(f => {
+                      const empValid = !nextBranch || (staff.find(s => s.id === f.emp)?.home_branch_id === nextBranch)
+                      return { ...f, branch: nextBranch, emp: empValid ? f.emp : '' }
+                    })
+                  }}
+                >
                   <option value="">All Branches</option>
                   {visibleBranches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>

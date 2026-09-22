@@ -155,6 +155,7 @@ export default function App() {
           currentMonth={currentMonth}
           reportMonth={reportMonth}
           view={view}
+          filters={view === 'calendar' ? filters : (view === 'reports' ? rFilters : null)}
           onClose={() => setKpiDrill(null)}
         />
       )}

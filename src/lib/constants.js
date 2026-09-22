@@ -132,3 +132,169 @@ export function namesMatch(n1, n2) {
   return matches.length >= 2 || (words1.length === 1 && words2.includes(words1[0])) || (words2.length === 1 && words1.includes(words2[0]))
 }
 
+export const ALL_BRANCH_CODES = ['BAC','BUK','BUT','CAB','CAMSUR','CAV','CDO','CEB','DAV','GENSAN','ILO','ISA','MAK','PAG','PAL','PANG','RIZ','TAC','TAG','ZAM']
+
+export const DESIGNATED_MANAGERS = [
+  // Service Managers / Admins
+  {
+    nameKey: 'rioja',
+    fullName: 'Arnold Rioja',
+    role: 'manager',
+    isAdmin: true,
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Admin)',
+  },
+  {
+    nameKey: 'danilo',
+    fullName: 'Danilo Carangan',
+    role: 'manager',
+    isAdmin: true,
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Admin)',
+  },
+  {
+    nameKey: 'eina',
+    fullName: 'Ricky Eina',
+    role: 'manager',
+    branchCodes: ['MAK'],
+    label: '🏢 MAK · Makati',
+  },
+  {
+    nameKey: 'de chavez',
+    fullName: 'Limwel De Chavez',
+    role: 'manager',
+    branchCodes: ['ISA', 'PANG', 'CAB', 'CAMSUR'],
+    label: '✏️ ISA, PANG, CAB, CAMSUR',
+  },
+  // Branch Service Managers
+  {
+    nameKey: 'almoite',
+    fullName: 'Michael Almoite',
+    role: 'bsm',
+    branchCodes: ['PAL'],
+    label: '🏢 PAL · Palawan',
+  },
+  {
+    nameKey: 'coliflores',
+    fullName: 'Darel Coliflores',
+    role: 'bsm',
+    branchCodes: ['TAC'],
+    label: '🏢 TAC · Tacloban',
+  },
+  {
+    nameKey: 'calvo',
+    fullName: 'Jessriel Calvo',
+    role: 'bsm',
+    branchCodes: ['CEB'],
+    filterMatch: (nameNorm) => nameNorm.includes('jessriel') || (nameNorm.includes('calvo') && !nameNorm.includes('jerus')),
+    label: '🏢 CEB · Cebu',
+  },
+  {
+    nameKey: 'sacuan',
+    fullName: 'Gerald Sacuan',
+    role: 'bsm',
+    branchCodes: ['CDO', 'BUT', 'PAG', 'ZAM', 'BUK'],
+    label: '✏️ North Mindanao',
+  },
+  {
+    nameKey: 'genabe',
+    fullName: 'Martin Genabe',
+    role: 'bsm',
+    branchCodes: ['TAG', 'DAV', 'GENSAN'],
+    label: '✏️ South Mindanao',
+  },
+  // Service Coordinators
+  {
+    nameKey: 'venus',
+    fullName: 'Venus Liloan',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'angelie',
+    fullName: 'Angelie Tamondong',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'arianne',
+    fullName: 'Arianne Espinosa',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'philip',
+    fullName: 'June Philip Garcia',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'sioco',
+    fullName: 'John Trent Sioco',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'natan',
+    fullName: 'Dennis Natan',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'yumang',
+    fullName: 'Don Alexander Yumang',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+  {
+    nameKey: 'templa',
+    fullName: 'Marvin Jay Templa',
+    role: 'coordinator',
+    branchCodes: ALL_BRANCH_CODES,
+    label: '🌐 All Branches (Coordinator)',
+  },
+]
+
+/**
+ * Returns true if a person or user is an Admin or Service Coordinator (not field staff / technician).
+ */
+export function isAdminOrCoordinator(person, appUsers = []) {
+  if (!person) return false
+  const r = (person.role || '').toLowerCase()
+  if (r === 'admin' || r === 'coordinator' || r === 'service_coordinator') return true
+
+  const pName = (person.name || '').trim().toLowerCase()
+  if (!pName) return false
+  if (pName.includes('eileen')) return true
+
+  // Check matching app_users record
+  if (appUsers && appUsers.length > 0) {
+    const matchedUser = appUsers.find(u => u.name && namesMatch(u.name, person.name))
+    if (matchedUser) {
+      const ur = (matchedUser.role || '').toLowerCase()
+      if (ur === 'admin' || ur === 'service_coordinator' || ur === 'coordinator') return true
+    }
+  }
+
+  // Check designated managers/coordinators
+  const des = DESIGNATED_MANAGERS.find(m => {
+    if (m.filterMatch) return m.filterMatch(pName)
+    return pName.includes(m.nameKey) || (m.fullName && namesMatch(m.fullName, person.name))
+  })
+  if (des) {
+    if (des.role === 'coordinator' || des.isAdmin || des.label?.includes('Admin') || des.label?.includes('Coordinator')) {
+      return true
+    }
+  }
+
+  return false
+}
+
+

@@ -1,8 +1,9 @@
 import { useApp } from '../lib/AppContext'
 import { ymd, fmtD } from '../lib/dates'
+import { isAdminOrCoordinator } from '../lib/constants'
 
 export default function KpiRow({ view, currentMonth, reportMonth, onDrill, filters }) {
-  const { jobs, staff, inScope, visibleStaff, isAdmin, isServiceManager } = useApp()
+  const { jobs, staff, appUsers, branches, inScope, visibleStaff, isAdmin, isServiceManager } = useApp()
 
   const isAbsence = j => j.type === 'leave' || j.type === 'absent'
 
@@ -25,13 +26,15 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill, filte
     return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear()
   })
 
-  // For staff/availability counts, filter by branch if branch filter is set
+  // For staff/availability counts: Admin and Service Coordinator are strictly excluded
+  // Apply branch and employee filters if selected
   const roster = visibleStaff().filter(s => {
-    if (!filters?.branch) return true
-    return s.home_branch_id === filters.branch
+    if (isAdminOrCoordinator(s, appUsers)) return false
+    if (filters?.branch && s.home_branch_id !== filters.branch) return false
+    if (filters?.emp && s.id !== filters.emp) return false
+    return true
   })
-  const total     = roster.length
-  const rosterIds = new Set(roster.map(s => s.id))
+  const total = roster.length
 
   const todayKey  = ymd(new Date())
   const todayLbl  = fmtD(new Date())
@@ -41,9 +44,16 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill, filte
     if (!matchesFilter(j)) return false
     return j.date === todayKey
   })
-  const todayBusy = jobs.filter(j => inScope(j) && j.date === todayKey && matchesFilter(j))
+
+  // Staff assigned or on leave/absent today (considering active branch filter)
+  const todayBusy = jobs.filter(j => {
+    if (!inScope(j)) return false
+    if (j.date !== todayKey) return false
+    if (filters?.branch && j.branch_id !== filters.branch) return false
+    return true
+  })
   const todayAssigned = new Set(todayBusy.map(j => j.staff_id))
-  const availToday = total - [...todayAssigned].filter(id => rosterIds.has(id)).length
+  const availToday = roster.filter(s => !todayAssigned.has(s.id)).length
 
   const success = monthJobs.filter(j => j.status === 'success').length
   const open    = monthJobs.filter(j => j.status !== 'success').length
@@ -52,10 +62,14 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill, filte
   const pending = monthJobs.filter(j => j.status === 'pending').length
   const rate    = monthJobs.length ? Math.round(success / monthJobs.length * 100) : 0
 
+  const branchObj = filters?.branch ? branches.find(b => b.id === filters.branch) : null
+  const empObj    = filters?.emp ? staff.find(s => s.id === filters.emp) : null
+  const filterSubtitle = branchObj ? branchObj.name : (empObj ? empObj.name : 'per branch')
+
   return (
     <div className="kpis">
       <KpiCard reportKind="job-today" label="Ongoing Today" value={todayJobs.length}
-        foot={<>▸ {todayLbl} · per branch</>}
+        foot={<>▸ {todayLbl} · {filterSubtitle}</>}
         onDrill={onDrill} />
       <KpiCard reportKind="success" label="Successful (mo.)" value={success}
         foot={<>▸ {rate}% success rate</>} cls="accent-good"
@@ -69,10 +83,10 @@ export default function KpiRow({ view, currentMonth, reportMonth, onDrill, filte
       {(isAdmin || isServiceManager) && (
         <>
           <KpiCard reportKind="avail-today" label="Available Today" value={availToday}
-            foot={<>▸ {todayLbl} · per branch</>}
+            foot={<>▸ {todayLbl} · {filterSubtitle}</>}
             onDrill={onDrill} />
           <KpiCard reportKind="staff" label="Total Staff" value={total}
-            foot={<>▸ per-branch headcount</>}
+            foot={<>▸ {branchObj ? `${branchObj.name} headcount` : (empObj ? `${empObj.name}` : 'per-branch headcount')}</>}
             onDrill={onDrill} />
         </>
       )}
@@ -89,3 +103,4 @@ function KpiCard({ reportKind, label, value, foot, cls, prefix, onDrill }) {
     </div>
   )
 }
+
