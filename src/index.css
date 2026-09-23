@@ -571,6 +571,7 @@ select.sel { cursor: pointer; }
 .jchip .st.pending { background: var(--st-pending); }
 .jchip .st.ongoing { background: var(--st-ongoing); }
 .jchip .st.fail { background: var(--st-fail); }
+.jchip .st.cancel { background: var(--st-pending); }
 .jchip .jn { font-weight: 700; color: var(--ink-1); }
 .cell-more-btn {
   font-family: var(--font); font-size: 11px; font-weight: 600;
@@ -642,6 +643,8 @@ select.sel { cursor: pointer; }
 
 .badge { font-size: 10px; padding: 1px 7px; border-radius: 20px; font-weight: 700; line-height: 1.4; }
 .badge.free { background: color-mix(in srgb, var(--st-success) 16%, transparent); color: var(--st-success-ink); }
+.badge.leave { background: color-mix(in srgb, var(--trainee) 16%, transparent); color: var(--trainee); }
+.badge.absent { background: color-mix(in srgb, var(--st-fail) 16%, transparent); color: var(--st-fail); }
 .empty-note { color: var(--muted); font-size: 12px; padding: 10px 4px; text-align: center; }
 .swatch { width: 9px; height: 9px; border-radius: 3px; flex: none; display: inline-block; }
 
@@ -681,6 +684,7 @@ table.rt tr.tot td { font-weight: 800; border-top: 2px solid var(--border); back
 .pill.ongoing { background: color-mix(in srgb, var(--st-ongoing) 16%, transparent); color: var(--st-ongoing); }
 .pill.fail { background: color-mix(in srgb, var(--st-fail) 16%, transparent); color: var(--st-fail); }
 .pill.success { background: color-mix(in srgb, var(--st-success) 16%, transparent); color: var(--st-success-ink); }
+.pill.cancel { background: color-mix(in srgb, var(--st-pending) 16%, transparent); color: var(--st-pending); }
 
 .type-tag { font-size: 10px; padding: 1.5px 7px; border-radius: 5px; font-weight: 700; color: #fff; }
 .type-tag.t-install { background: var(--t-install); }
@@ -749,6 +753,7 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
 .seg-radio.status button.active[data-v="ongoing"] { background: var(--st-ongoing); border-color: var(--st-ongoing); }
 .seg-radio.status button.active[data-v="success"] { background: var(--st-success); border-color: var(--st-success); }
 .seg-radio.status button.active[data-v="fail"] { background: var(--st-fail); border-color: var(--st-fail); }
+.seg-radio.status button.active[data-v="cancel"] { background: var(--st-pending); border-color: var(--st-pending); }
 
 /* ── Enhanced Job Modal & Fields ─────────────────────────────────── */
 .job-modal-card {
@@ -887,9 +892,12 @@ label.fld { display: block; font-size: 11px; font-weight: 700; color: var(--mute
   border-color: color-mix(in srgb, var(--st-fail) 40%, var(--border));
   background: color-mix(in srgb, var(--st-fail) 6%, var(--surface-1));
 }
-.status-note-container.is-ongoing {
-  border-color: color-mix(in srgb, var(--senior) 35%, var(--border));
+.status-note-container.is-ongoing {  border-color: color-mix(in srgb, var(--senior) 35%, var(--border));
   background: color-mix(in srgb, var(--senior) 6%, var(--surface-1));
+}
+.status-note-container.is-cancel {
+  border-color: color-mix(in srgb, var(--st-pending) 40%, var(--border));
+  background: color-mix(in srgb, var(--st-pending) 6%, var(--surface-1));
 }
 .note-fld {
   margin-bottom: 6px !important;

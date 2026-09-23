@@ -141,8 +141,8 @@ export default function JobModal({ payload, onClose }) {
     if (customerRequired && !form.customer.trim()) return 'Customer name is required.'
     if (!form.type)            return 'Type is required.'
     if (form.type === 'others' && !form.type_other.trim()) return 'Please describe the service.'
-    if ((form.status === 'fail' || form.status === 'ongoing') && !form.status_note.trim())
-      return form.status === 'fail' ? 'Please provide the reason for failure.' : 'Please provide an ongoing note.'
+    if ((form.status === 'fail' || form.status === 'ongoing' || form.status === 'cancel') && !form.status_note.trim())
+      return form.status === 'fail' ? 'Please provide the reason for failure.' : form.status === 'cancel' ? 'Please provide a reason for cancellation.' : 'Please provide an ongoing note.'
     return null
   }
 
@@ -210,7 +210,7 @@ export default function JobModal({ payload, onClose }) {
       type:        form.type,
       type_other:  form.type === 'others' ? form.type_other.trim() : '',
       status:      isAbsence ? 'pending' : form.status,
-      status_note: (!isAbsence && (form.status === 'fail' || form.status === 'ongoing')) ? form.status_note.trim() : '',
+      status_note: (!isAbsence && (form.status === 'fail' || form.status === 'ongoing' || form.status === 'cancel')) ? form.status_note.trim() : '',
     }
     let error
     if (isEdit) {
@@ -308,7 +308,7 @@ export default function JobModal({ payload, onClose }) {
     return extraBranch ? [...availableBranches, extraBranch] : availableBranches
   }, [availableBranches, branches, form.branch_id])
 
-  const showStatusNote = form.status === 'fail' || form.status === 'ongoing'
+  const showStatusNote = form.status === 'fail' || form.status === 'ongoing' || form.status === 'cancel'
   const currentBranchObj = branches.find(b => b.id === (form.branch_id || payload.job?.branch_id))
   const assignedStaffObj = staffList.find(s => s.id === form.staff_id)
   const jobDateFormatted = payload.job?.date || payload.date
@@ -623,7 +623,7 @@ export default function JobModal({ payload, onClose }) {
                 <div className="full">
                   <label className="fld">Status</label>
                   <div className="seg-radio status enhanced-seg" style={{ flexWrap:'wrap' }}>
-                    {['pending','ongoing','success','fail'].map(s => (
+                    {['pending','ongoing','success','fail','cancel'].map(s => (
                       <button
                         key={s}
                         type="button"
@@ -637,9 +637,10 @@ export default function JobModal({ payload, onClose }) {
                           {s === 'ongoing' && '◐'}
                           {s === 'success' && '✓'}
                           {s === 'fail' && '✕'}
+                          {s === 'cancel' && '🚫'}
                         </span>
                         <span>
-                          {s === 'pending' ? 'Pending' : s === 'ongoing' ? 'Ongoing' : s === 'success' ? 'Successful' : 'Not successful'}
+                          {s === 'pending' ? 'Pending' : s === 'ongoing' ? 'Ongoing' : s === 'success' ? 'Successful' : s === 'fail' ? 'Not successful' : 'Cancelled'}
                         </span>
                       </button>
                     ))}
@@ -649,14 +650,14 @@ export default function JobModal({ payload, onClose }) {
 
               {!isAbsence && showStatusNote && (
                 <div className="full">
-                  <div className={`status-note-container ${form.status === 'fail' ? 'is-fail' : 'is-ongoing'}`}>
+                  <div className={`status-note-container ${form.status === 'fail' ? 'is-fail' : form.status === 'cancel' ? 'is-cancel' : 'is-ongoing'}`}>
                     <label className="fld note-fld">
-                      {form.status === 'fail' ? '⚠️ Reason for failure' : '📝 Ongoing note'} <span className="req">*</span>
+                      {form.status === 'fail' ? '⚠️ Reason for failure' : form.status === 'cancel' ? '🚫 Reason for cancellation' : '📝 Ongoing note'} <span className="req">*</span>
                     </label>
                     <input
                       type="text"
                       className="txt"
-                      placeholder={form.status === 'fail' ? 'e.g. Missing parts, client rescheduled…' : 'e.g. Waiting for parts delivery…'}
+                      placeholder={form.status === 'fail' ? 'e.g. Missing parts, client rescheduled…' : form.status === 'cancel' ? 'e.g. Client cancelled, no-show…' : 'e.g. Waiting for parts delivery…'}
                       value={form.status_note}
                       disabled={!canEditJob}
                       onChange={e => set('status_note', e.target.value)}

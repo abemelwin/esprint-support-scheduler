@@ -26,6 +26,7 @@ export const STATUS = {
   ongoing: { label: 'Ongoing',        cls: 'ongoing', dot: 'ongoing' },
   success: { label: 'Successful',     cls: 'success', dot: 'success' },
   fail:    { label: 'Not successful', cls: 'fail',    dot: 'fail' },
+  cancel:  { label: 'Cancelled',      cls: 'cancel',  dot: 'cancel' },
 }
 
 export const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']

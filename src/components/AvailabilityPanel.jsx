@@ -73,6 +73,21 @@ export default function AvailabilityPanel({ currentMonth }) {
     })
   }
 
+  // absence entries (leave / absent) for the selected period
+  function absenceFor(staffId) {
+    if (mode === 'day') {
+      return jobs.filter(j => inScope(j) && j.staff_id === staffId && j.date === availDay
+        && (j.type === 'leave' || j.type === 'absent'))
+    }
+    const y = currentMonth.getFullYear(), mo = currentMonth.getMonth()
+    return jobs.filter(j => {
+      if (!inScope(j) || j.staff_id !== staffId) return false
+      if (j.type !== 'leave' && j.type !== 'absent') return false
+      const d = new Date(j.date + 'T00:00:00')
+      return d.getFullYear() === y && d.getMonth() === mo
+    })
+  }
+
   // Helper to get complete branch info for a staff member
   function getStaffBranchInfo(s) {
     if (!s) return { label: '—', isAll: false, branchIds: [] }
@@ -429,6 +444,7 @@ export default function AvailabilityPanel({ currentMonth }) {
               </h3>
               {grp.map(s => {
                 const tasks = tasksFor(s.id)
+                const absence = absenceFor(s.id)
                 const isCoord = isPersonCoordinator(s) || s.role === 'coordinator' || s.role === 'service_coordinator'
                 const rawInfo = getStaffBranchInfo(s)
                 const branchInfo = isCoord
@@ -437,12 +453,12 @@ export default function AvailabilityPanel({ currentMonth }) {
                     ? { label: s._displayLabel, isAll: s._displayLabel.includes('🌐') || s._displayLabel.includes('All Branches'), branchIds: rawInfo.branchIds }
                     : rawInfo
                 return (
-                  <div key={s.id} className={`person${tasks.length === 0 ? ' free' : ' busy-row'}`}>
+                  <div key={s.id} className={`person${tasks.length === 0 && absence.length === 0 ? ' free' : ' busy-row'}`}>
                     <div className="person-main">
                       <div className="person-top-row">
                         <div className="pname" title={s.name}>{s.name}</div>
                         <div className="person-status-area">
-                          <StaffStatusBadge tasks={tasks} />
+                          <StaffStatusBadge tasks={tasks} absence={absence} />
                           {s.hotline && <span className="htag" title="Hotline Staff">☎</span>}
                         </div>
                       </div>
@@ -474,12 +490,24 @@ export default function AvailabilityPanel({ currentMonth }) {
 }
 
 // ── Badge showing task status(es) for a staff member ─────────────────────────
-function StaffStatusBadge({ tasks }) {
-  if (tasks.length === 0) {
+function StaffStatusBadge({ tasks, absence = [] }) {
+  // If the staff member is on leave or absent, show that badge (possibly alongside tasks)
+  const hasAbsence = absence.length > 0
+  const absenceType = hasAbsence ? absence[0].type : null // 'leave' or 'absent'
+
+  if (tasks.length === 0 && !hasAbsence) {
     return <span className="badge free">Free</span>
   }
 
-  if (tasks.length === 1) {
+  if (tasks.length === 0 && hasAbsence) {
+    return (
+      <span className={`badge ${absenceType}`}>
+        {absenceType === 'leave' ? '🌴 Leave' : '🚫 Absent'}
+      </span>
+    )
+  }
+
+  if (tasks.length === 1 && !hasAbsence) {
     const t = tasks[0]
     const typeLabel = t.type === 'others' && t.type_other?.trim()
       ? t.type_other.trim()
@@ -493,19 +521,22 @@ function StaffStatusBadge({ tasks }) {
     )
   }
 
-  // multiple tasks — show count + status summary pills
+  // multiple tasks (or tasks + absence) — show count + status summary pills
   const ongoingCount = tasks.filter(t => t.status === 'ongoing').length
   const pendingCount = tasks.filter(t => t.status === 'pending').length
   const successCount = tasks.filter(t => t.status === 'success').length
   const failCount    = tasks.filter(t => t.status === 'fail').length
+  const cancelCount  = tasks.filter(t => t.status === 'cancel').length
 
   return (
     <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-      <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{tasks.length} tasks</span>
+      {hasAbsence && <span className={`badge ${absenceType}`}>{absenceType === 'leave' ? '🌴 Leave' : '🚫 Absent'}</span>}
+      {tasks.length > 0 && <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{tasks.length} tasks</span>}
       {ongoingCount > 0 && <span className="pill ongoing">{ongoingCount} ongoing</span>}
       {pendingCount > 0 && <span className="pill pending">{pendingCount} next</span>}
       {successCount > 0 && <span className="pill success">{successCount} done</span>}
       {failCount    > 0 && <span className="pill fail">{failCount} failed</span>}
+      {cancelCount  > 0 && <span className="pill cancel">{cancelCount} cancelled</span>}
     </div>
   )
 }
