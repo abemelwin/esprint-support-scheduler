@@ -134,7 +134,6 @@ function StaffRow({ person, tasks, onOpenJob, readOnly }) {
   // Status summary counts for collapsed view
   const ongoingCount  = workTasks.filter(j => j.status === 'ongoing').length
   const pendingCount  = workTasks.filter(j => j.status === 'pending').length
-  const successCount  = workTasks.filter(j => j.status === 'success').length
   const failCount     = workTasks.filter(j => j.status === 'fail').length
 
   // When a staff member has multiple tasks, pending ones are queued — label them "Next"
@@ -168,7 +167,6 @@ function StaffRow({ person, tasks, onOpenJob, readOnly }) {
                   <span className="ovl-status-pills">
                     {ongoingCount  > 0 && <span className="pill ongoing">{ongoingCount} ongoing</span>}
                     {pendingCount  > 0 && <span className="pill pending">{pendingCount} {hasMultipleTasks ? 'next' : 'pending'}</span>}
-                    {successCount  > 0 && <span className="pill success">{successCount} done</span>}
                     {failCount     > 0 && <span className="pill fail">{failCount} failed</span>}
                   </span>
                 )}
@@ -193,11 +191,13 @@ function StaffRow({ person, tasks, onOpenJob, readOnly }) {
               </span>
               <span className="ovl-cust">{j.customer || '—'}</span>
               <div className="ovl-spacer" />
-              <span className={`pill ${STATUS[j.status]?.cls || ''}`}>
-                {j.status === 'pending' && hasMultipleTasks
-                  ? 'Next'
-                  : STATUS[j.status]?.label || j.status}
-              </span>
+              {j.status !== 'success' && (
+                <span className={`pill ${STATUS[j.status]?.cls || ''}`}>
+                  {j.status === 'pending' && hasMultipleTasks
+                    ? 'Next'
+                    : STATUS[j.status]?.label || j.status}
+                </span>
+              )}
             </div>
           ))}
         </div>

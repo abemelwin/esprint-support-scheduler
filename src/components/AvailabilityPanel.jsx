@@ -513,6 +513,14 @@ function StaffStatusBadge({ tasks, absence = [] }) {
       ? t.type_other.trim()
       : TYPES[t.type]?.label || t.type
     const st = STATUS[t.status]
+    // Don't show a status pill for successful tasks — type tag alone is enough
+    if (t.status === 'success') {
+      return (
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <span className={`type-tag ${TYPES[t.type]?.cls || ''}`}>{typeLabel}</span>
+        </div>
+      )
+    }
     return (
       <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <span className={`type-tag ${TYPES[t.type]?.cls || ''}`}>{typeLabel}</span>
@@ -524,7 +532,6 @@ function StaffStatusBadge({ tasks, absence = [] }) {
   // multiple tasks (or tasks + absence) — show count + status summary pills
   const ongoingCount = tasks.filter(t => t.status === 'ongoing').length
   const pendingCount = tasks.filter(t => t.status === 'pending').length
-  const successCount = tasks.filter(t => t.status === 'success').length
   const failCount    = tasks.filter(t => t.status === 'fail').length
   const cancelCount  = tasks.filter(t => t.status === 'cancel').length
 
@@ -534,7 +541,6 @@ function StaffStatusBadge({ tasks, absence = [] }) {
       {tasks.length > 0 && <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{tasks.length} tasks</span>}
       {ongoingCount > 0 && <span className="pill ongoing">{ongoingCount} ongoing</span>}
       {pendingCount > 0 && <span className="pill pending">{pendingCount} next</span>}
-      {successCount > 0 && <span className="pill success">{successCount} done</span>}
       {failCount    > 0 && <span className="pill fail">{failCount} failed</span>}
       {cancelCount  > 0 && <span className="pill cancel">{cancelCount} cancelled</span>}
     </div>
