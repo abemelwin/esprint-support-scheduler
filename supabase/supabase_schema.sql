@@ -30,7 +30,7 @@ create table if not exists public.jobs (
   location    text default '',
   type        text not null check (type in ('installation','onsite','hotline','others','leave','absent')),
   type_other  text default '',
-  status      text not null default 'pending' check (status in ('pending','ongoing','success','fail')),
+  status      text not null default 'pending' check (status in ('pending','ongoing','success','fail','cancel')),
   status_note text default '',
   created_at  timestamptz default now()
 );
