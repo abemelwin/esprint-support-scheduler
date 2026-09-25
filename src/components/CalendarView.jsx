@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useRef } from 'react'
+﻿import { useState, useMemo, useRef, useEffect } from 'react'
 import { useApp } from '../lib/AppContext'
 import { supabase } from '../lib/supabase'
 import { ymd, monthName, mondayOf, addDays, sameYMD } from '../lib/dates'
@@ -6,6 +6,7 @@ import { TYPES, STATUS, DOW, namesMatch, isAdminOrCoordinator } from '../lib/con
 import { cleanNetsuiteUrl, buildNetsuiteUrl } from '../lib/netsuite'
 import AvailabilityPanel from './AvailabilityPanel'
 import DayDetailModal from './DayDetailModal'
+import DatePickerPopup from './DatePickerPopup'
 
 export default function CalendarView({ currentMonth, setCurrentMonth, filters, setFilters, onOpenJob }) {
   const { jobs, branches, staff, appUsers, inScope, currentUser, isAdmin, canEditBranch, setJobs, loadJobs } = useApp()
@@ -13,6 +14,22 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
   const [dragOverDate, setDragOverDate] = useState(null)
   const [dayDetail, setDayDetail] = useState(null)   // { dateKey, jobs }
   const dragJustEndedRef = useRef(false)
+  const todayCellRef = useRef(null)
+  const today = new Date()
+
+  // ── Day / Month toggle (default to Specific day = today) ─────────────────
+  const [calViewMode,  setCalViewMode]  = useState('day')
+  const [specificDay,  setSpecificDay]  = useState(ymd(today))
+
+  // When month navigates, sync specificDay to the 1st of that month if it's not the current month
+  // (so "Specific day" always shows a valid day within the visible month)
+  const todayYMD = ymd(today)
+
+  function goToday() {
+    setCurrentMonth(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1) })
+    setSpecificDay(todayYMD)
+    setCalViewMode('day')
+  }
 
   const isFieldStaff = currentUser?.role === 'senior_fse' ||
                        currentUser?.role === 'junior_fse' ||
@@ -31,7 +48,6 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
 
   function prevMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
   function nextMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)) }
-  function goToday()   { setCurrentMonth(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1) }) }
 
   // build calendar grid (Mon-start)
   const firstDay   = currentMonth
@@ -44,7 +60,16 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
   let cur = new Date(firstMon)
   while (cur <= gridEnd) { cells.push(new Date(cur)); cur = addDays(cur, 1) }
 
-  const today = new Date()
+  // In "Specific day" mode, only show the week row that contains specificDay
+  const visibleCells = useMemo(() => {
+    if (calViewMode === 'month') return cells
+    const target = specificDay  // YYYY-MM-DD
+    // find the Monday of the week containing specificDay
+    const d = new Date(target + 'T00:00:00')
+    const weekStart = mondayOf(d)
+    const weekEnd   = addDays(weekStart, 6)
+    return cells.filter(c => c >= weekStart && c <= weekEnd)
+  }, [calViewMode, specificDay, cells.length, firstMon.getTime()])
 
   const staffById   = id => staff.find(s => s.id === id)
   const branchById  = id => branches.find(b => b.id === id)
@@ -117,6 +142,21 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
             <button className="btn sm" onClick={nextMonth}>&#9654;</button>
           </div>
           <button className="btn sm today-btn" onClick={goToday}>Today</button>
+          {/* Day / Month toggle */}
+          <div className="seg-toggle" style={{ flexShrink: 0 }}>
+            <button className={calViewMode === 'day'   ? 'active' : ''} onClick={() => setCalViewMode('day')}>Specific day</button>
+            <button className={calViewMode === 'month' ? 'active' : ''} onClick={() => setCalViewMode('month')}>This month</button>
+          </div>
+          {calViewMode === 'day' && (
+            <DatePickerPopup
+              value={specificDay}
+              onChange={day => {
+                setSpecificDay(day)
+                const d = new Date(day + 'T00:00:00')
+                setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+              }}
+            />
+          )}
           {canOpenJobModal && (
             <button
               type="button"
@@ -196,7 +236,7 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
         {/* Calendar panel */}
         <div className="panel">
           <div className="panel-head">
-            <h2>Monthly Schedule</h2>
+            <h2>{calViewMode === 'day' ? 'Daily Schedule' : 'Monthly Schedule'}</h2>
             <div className="spacer" />
             <div className="legend">
               <span className="li"><span className="swatch" style={{background:'var(--t-install)'}} />Installation</span>
@@ -212,17 +252,19 @@ export default function CalendarView({ currentMonth, setCurrentMonth, filters, s
           <div className="cal-wrap">
             <div className="cal">
               {DOW.map(d => <div key={d} className="dow">{d}</div>)}
-              {cells.map(cell => {
+              {visibleCells.map(cell => {
                 const isOther     = cell.getMonth() !== currentMonth.getMonth()
                 const isToday     = sameYMD(cell, today)
                 const dateKey     = ymd(cell)
+                const isSpecific  = calViewMode === 'day' && dateKey === specificDay
                 const dayJobs     = filteredJobs(dateKey)
                 const isDragOver  = dragOverDate === dateKey && draggedJob && draggedJob.date !== dateKey
 
                 return (
                   <div
                     key={dateKey}
-                    className={`cell${isOther ? ' other' : ''}${isToday ? ' today' : ''}${isDragOver ? ' drag-over' : ''}`}
+                    ref={isToday ? todayCellRef : null}
+                    className={`cell${isOther ? ' other' : ''}${isToday || isSpecific ? ' today' : ''}${isDragOver ? ' drag-over' : ''}`}
                     style={{ cursor: (isFieldStaff || !canOpenJobModal) ? 'default' : 'pointer' }}
                     onClick={(isFieldStaff || !canOpenJobModal) ? undefined : () => {
                       if (dragJustEndedRef.current) return
