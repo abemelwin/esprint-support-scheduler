@@ -321,7 +321,11 @@ export default function OverviewView({ currentMonth, setCurrentMonth, onOpenJob,
   const isCurrentMonth =
     currentMonth.getFullYear() === new Date().getFullYear() &&
     currentMonth.getMonth()    === new Date().getMonth()
-  const [viewMode,    setViewMode]    = useState(isCurrentMonth ? 'day' : 'month')  // 'month' | 'day'
+  const [viewMode,    setViewMode]    = useState(() => {
+    const n = new Date()
+    return (currentMonth.getFullYear() === n.getFullYear() && currentMonth.getMonth() === n.getMonth())
+      ? 'day' : 'month'
+  })
   const [specificDay, setSpecificDay] = useState(todayYMD)
 
   function prevMonth() { setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)) }
