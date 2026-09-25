@@ -6,7 +6,7 @@ import { ROLES, ROLE_ORDER, TYPES, STATUS, formatBranchSummary, getBranchRegion,
 
 export default function AvailabilityPanel({ currentMonth }) {
   const { jobs, inScope, visibleStaff, branches, staff, appUsers, currentUser, editableBranchIds, scopedBranchIds, loadStaff, loadAppUsers, loadJobs, isAdmin } = useApp()
-  const [mode,         setMode]         = useState('month')   // 'month' | 'day'
+  const [mode,         setMode]         = useState('day')     // 'month' | 'day'
   const [availDay,     setAvailDay]     = useState(ymd(new Date()))
   const [search,       setSearch]       = useState('')
   const [branchFilter, setBranchFilter] = useState('')
